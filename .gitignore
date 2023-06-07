@@ -1,6 +1,7 @@
-demo.py
+demos
 scratch
 .vscode
+PRIVNOTES.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
