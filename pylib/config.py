@@ -1,26 +1,33 @@
 # ogbujipt.config
+# Given the nature of a config module, we don't use __all__
+# & avoid top-level imports where possible, and at the end of the module
+# del any symbols we don't want exposed
+# pylint: disable=wrong-import-position
 
 '''
 Configuration & globally-relevant values
 '''
 
-import os
+#  Don't include in import *. Could use , but tricky with the nature of 
 
-DEFAULT_API_HOST = 'http://127.0.0.1'  # Running on the same server
-DEFAULT_API_PORT = '5001'  # or 5001?
 
-DEBUG_API = True
+def openai_emulation(
+        host='http://127.0.0.1',
+        port='8000',  # llama-cpp-python; for Ooba, use '5001'
+        rev='v1',
+        oaikey='BOGUS', oaitype='open_ai', debug=True):
+    '''
+    Set up to use OpenAI, or (an e.g. self-hosted) host that emulates it
+    '''
+    import os
 
-# Note: a lot of OpenAI tutorials tell you to do this & it leads to people
-# stuffing private APi keys into their code. Bad idea. In this case, these
-# Are dummy values, so NBD
-os.environ['OPENAI_API_TYPE'] = 'open_ai'
-os.environ['OPENAI_API_KEY'] = '123'
-os.environ['OPENAI_API_BASE'] = f'{DEFAULT_API_HOST}:{DEFAULT_API_PORT}/v1'
+    # Side note: a lot of OpenAI tutorials suggest that you embed your
+    # OpenAI private key into the code, which is a terrible idea
+    os.environ['OPENAI_API_KEY'] = oaikey  # Dummy val, so NBD
 
-# The check is actually the presence of OPENAI_DEBUG
-if DEBUG_API:
-    os.environ['OPENAI_DEBUG'] = 'true'
+    os.environ['OPENAI_API_TYPE'] = oaitype
+    os.environ['OPENAI_API_BASE'] = f'{host}:{port}/{rev}'
 
-# Don't include in import *. Could use __all__, but tricky with the nature of a config module
-del os
+    # Tools such s langchain will check just for the presence of OPENAI_DEBUG
+    if debug:
+        os.environ['OPENAI_DEBUG'] = 'true'

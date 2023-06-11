@@ -9,6 +9,8 @@ Model style for Alpaca, Instruction based.
 Works, for example, with:
 
 * https://huggingface.co/NousResearch/Nous-Hermes-13b
+
+Useful collection of Alpaca demo prompts: https://huggingface.co/datasets/tatsu-lab/alpaca
 '''
 
 # from functools import partial
