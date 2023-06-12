@@ -1,6 +1,12 @@
 # OgbujiPT
 
-AGI/AutoGPT-style toolkit using self-hosted LLMs (via langchain & self-hosted models—GPU capable)
+Toolkit for using self-hosted large language models, through langchain & other means
+
+Includes demos with chat-your-documents and AGI/AutoGPT/privateGPT-style capabilities.
+
+The main, tested front-end is langchain, but this can be used in a very shallow way to interact with LLMs (see, e.g. the `alpaca_simple_fix_xml.py` demo where really only 3 lines are langchain-specific).
+
+Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba). In our own practice we use boh of these with Nvidia GPU.
 
 <!--
 Not yet in PyPI
@@ -49,6 +55,16 @@ This project is packaged using [hatch](https://hatch.pypa.io/), a modern Python 
 
 A central concept of OgbujiPT is model styles. There are [numerous Open LLMs out there](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard), and each one tends to have some specialization, including in how prompt it. Here we define model styles to help encapsulate these differences, and make it easier to quickly launch experiments, adapt to and adopt other models.
 
+# Contributions
+
+For reasons I'm still investigating (some of the more recent developments and issues in Python packaging are [quite esoteric](https://chriswarrick.com/blog/2023/01/15/how-to-improve-python-packaging/)), some of the hatch tools such as `hatch run` are problematic. I suspect they might not like the way I rename directories during build, but I won't be compromising on that. So, for example, to run tests, just stick to:
+
+```shell
+pytest test
+```
+
+More [notes for contributors in the wiki](https://github.com/uogbuji/OgbujiPT/wiki/Notes-for-contributors).
+
 # License
 
 Apache 2. For tha culture!
@@ -62,12 +78,26 @@ Some initial ideas & code were borrowed from these projects, but with heavy refa
 
 # FAQ
 
+- [What's unique about this toolkit?](#whats-unique-about-this-toolkit)
 - [Does this support GPU for locally-hosted models](#does-this-support-gpu-for-locally-hosted-models)
 - [What's with the crazy name?](#whats-with-the-crazy-name)
 
+## What's unique about this toolkit?
+
+I mentioned the bias to software engineering, but what does this mean?
+
+* Emphasis on modularity, but seeking as much consistency as possible
+* Support for multitasking
+* Finding ways to apply automated testing
+
 ## Does this support GPU for locally-hosted models
 
-Yes, but you have to make sure you set up your system and text-generation-webui install with GPU, and properly configure the model you load into it (via the WebUI or launch arguments). I may try to write up some sort of helper docs for that, at some point, because I had to find tidbits from all over the place, and experiment madly, in order to get it to work myself. But if you can use the webui to query your model and get GPU usage, that will also apply here in OgbujiPT.
+Yes, but you have to make sure you set up your back end LLm server (llama.cpp or text-generation-webui) with GPU, and properly configure the model you load into it. If you can use the webui to query your model and get GPU usage, that will also apply here in OgbujiPT.
+
+Many install guides I've found for Mac, Linux and Windows touch on enabling GPU, but the ecosystem is still in its early days, and helpful resouces can feel scattered.
+
+* [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
+* [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
 
 ## What's with the crazy name?
 

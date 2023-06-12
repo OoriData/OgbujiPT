@@ -58,12 +58,12 @@ ENDINSTRUCTION
 
 '''
 
-import re
-from functools import partial
-from typing import Optional, List, Mapping, Any, Union
+# import re
+# from functools import partial
+# from typing import Optional, List, Mapping, Any, Union
 
-from langchain.schema import AgentAction, AgentFinish
-from langchain.agents import Tool, LLMSingleActionAgent, AgentOutputParser
+# from langchain.schema import AgentAction, AgentFinish
+# from langchain.agents import Tool, LLMSingleActionAgent, AgentOutputParser
 
 # Composing prompts from input sequences, rather than fixed, composite structure, so don't actually need PipelinePromptTemplate
 # https://python.langchain.com/en/latest/modules/prompts/prompt_templates/examples/prompt_composition.html
@@ -108,10 +108,9 @@ def concat_input_prompts(context_content_pairs):
     # pre_tmpl = ''.join(parts)
     # return PromptTemplate.from_template(''.join(parts))
     return ''.join(parts)
-        
+
 
 AIR_CONOB_PROMPT_TMPL = PromptTemplate(
     input_variables=['given_inputs', 'instructions'],
     template=AIR_CONOB_OUTER_TMPL,
 )
-

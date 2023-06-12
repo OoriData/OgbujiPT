@@ -22,10 +22,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    "langchain",
-    "openai",
-    # Really only used in demo.py
-    "wikipedia"
+  "langchain",
+  "openai",
+  "hatch",
 ]
 
 [project.urls]
@@ -40,11 +39,18 @@ path = "pylib/__about__.py"
 [tool.hatch.build.sources]
 "pylib" = "ogbujipt"
 
+# Hatch environemnts aren't working. For example, from `hatch run test` I get 
+# ModuleNotFoundError: No module named 'ogbujipt'
+# This may well have to do with my rewriting path in distribution,
+# But I'm not compromising on that, so I guess just install & use
+# e.g. pytest directly (tried dev-mode false, but no difference)
 [tool.hatch.envs.default]
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "pytest-mock"
 ]
+dev-mode = false
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:test}"
 test-cov = "coverage run -m pytest {args:test}"

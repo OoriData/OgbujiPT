@@ -3,6 +3,9 @@ scratch
 .vscode
 PRIVNOTES.md
 
+# Ignored while making tooling decisions
+noxfile.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

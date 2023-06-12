@@ -14,7 +14,6 @@ Useful collection of Alpaca demo prompts: https://huggingface.co/datasets/tatsu-
 '''
 
 # from functools import partial
-from typing import Optional, List, Mapping, Any, Union
 
 # XXX Try out preambles to instructions, e.f. for jailbreaks?
 ALPACA_PROMPT_TMPL = '''\
@@ -27,6 +26,6 @@ ALPACA_PROMPT_TMPL = '''\
 
 
 def prep_instru_inputs(instru, inputs=''):
-    # ROundabout method needed pre Python 3.12 because of escaping limitations
+    # Roundabout method needed pre Python 3.12 because of escaping limitations
     cr = '\n'
     return f'{instru}\n{"### Inputs:" + cr + inputs if inputs else "" }\n'
