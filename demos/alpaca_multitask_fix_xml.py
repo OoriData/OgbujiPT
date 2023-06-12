@@ -1,5 +1,5 @@
 '''
-More advanced demo using an LLM to repair data (XML), like
+Advanced demo using an LLM to repair data (XML), like
 alpaca_simple_fix_xml.py
 but rnning a separate, progress indicator task in the background
 while the LLm works, using asyncio. This should work even
@@ -26,7 +26,7 @@ DOTS_SPACING = 0.5  # Number of seconds between each dot printed to console
 
 
 # Could probably use something like tqdm.asyncio, if we wanted to be fancy
-async def indicate_progress(pause):
+async def indicate_progress(pause=DOTS_SPACING):
     '''
     Simple progress indicator for the console. Just prints dots.
     '''
@@ -60,7 +60,10 @@ async def async_main(llm):
     # In some cases asyncio.TaskGroup (new in Python 3.11) are a better alternative,
     # But we can't use them in this case because they wait for all tasks to complete
     # Whereas we want to be done once only the LLM call is complete
-    indicator_task = asyncio.create_task(indicate_progress(DOTS_SPACING))
+    indicator_task = asyncio.create_task(indicate_progress())
+    # Notice the pattern of pssing in the callable iself, then the params
+    # You can't just do, say llm(prompt) because that will actually
+    # call the function & block on the LLM request
     llm_task = asyncio.create_task(schedule_llm_call(llm, prompt))
     tasks = [indicator_task, llm_task]
     done, _ = await asyncio.wait(

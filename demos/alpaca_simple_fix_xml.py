@@ -2,7 +2,7 @@
 Quick demo, sending an Alpaca-compatible LLm some bad XML & asking it
 to make corrections.
 
-You need access to an OpenAI-like service. Default assumption is that you
+Needs access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
 running. Say it's at my-llm-host:8000, you can do:
 
