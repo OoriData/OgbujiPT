@@ -1,12 +1,12 @@
 '''
 Advanced demo of a Discord chatbot with an LLM back end
 
-Demonstrates:
-* Async processing via ogbujipt.async_helper
-* Discord API integration
-* Client-side serialization of requests to the server. An important
-consideration until more sever-side LLM hosting frameworks reliablly
-support multiprocessing
+Demonstrates async processing via ogbujipt.async_helper & Discord API integration.
+Users can make an LLM request by @mentioning the bot by its user ID
+
+Note: This is a simple demo, which doesn't do any client-side job management,
+so for example if a request is sent, and a second comes in before it has completed,
+only the latter cill complete.
 
 You need access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
@@ -17,7 +17,7 @@ Prerequisites: python-dotenv discord.py
 You also need to have a file, just named `.env`, in the same directory,
 with contents such as:
 
-You also need ot make sure Python has root SSL certificates installed
+You also need to make sure Python has root SSL certificates installed
 On Mac this is via double-clicking `Install Certificates.command`
 
 ```env
@@ -54,11 +54,6 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 
-class llm_manager:
-    def __init__(self, llm):
-        self.llm = llm
-
-
 async def send_llm_msg(msg):
     '''
     Schedule the LLM request
@@ -66,8 +61,6 @@ async def send_llm_msg(msg):
     prompt = ALPACA_PROMPT_TMPL.format(
         instru_inputs=prep_instru_inputs(msg))
     print(prompt)
-
-    llm = llm_man.llm
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
     llm_task = asyncio.create_task(schedule_llm_call(llm, prompt))
@@ -103,7 +96,7 @@ async def on_message(message):
 
 
 def main():
-    global llm_man  # Ick! Ideally should be better scope/context controlled
+    global llm  # Ick! Ideally should be better scope/context controlled
 
     load_dotenv()  # From .env file
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -115,7 +108,7 @@ def main():
     openai_emulation(host=LLM_HOST, port=LLM_PORT)
     llm = OpenAI(temperature=LLM_TEMP)
 
-    llm_man = llm_manager(llm)
+    # launch Discord client event loop
     client.run(DISCORD_TOKEN)
 
 
