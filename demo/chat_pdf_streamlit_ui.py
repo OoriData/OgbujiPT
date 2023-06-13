@@ -6,7 +6,8 @@ before swapping this in.
 UI: Streamlit - streamlit.io
 Vector store: Qdrant - https://qdrant.tech/
 
-Single-PDF support, for now, though you can extend it to e.g. work with multiple docs
+Single-PDF support, for now, to keep the demo code simple, 
+though you can easily extend it to e.g. work with multiple docs
 dropped in a directory
 
 Based on https://github.com/wafflecomposite/langchain-ask-pdf-local
