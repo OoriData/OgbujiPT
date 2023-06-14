@@ -6,7 +6,7 @@ Users can make an LLM request by @mentioning the bot by its user ID
 
 Note: This is a simple demo, which doesn't do any client-side job management,
 so for example if a request is sent, and a second comes in before it has completed,
-only the latter cill complete.
+only the latter will complete.
 
 You need access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
