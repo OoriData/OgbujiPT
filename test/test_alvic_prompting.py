@@ -5,6 +5,7 @@ or
 
 pytest test/test_alvic_prompting.py
 '''
+import pytest
 
 from ogbujipt.model_style.alvic import make_prompt, sub_style
 
@@ -42,6 +43,12 @@ def test_basic_prompt_substyles():
     assert prompt == EXPECTED_PROMPT
 
     EXPECTED_PROMPT = '### USER:\n\nWhat is the capital of Cross River state?\n\n### ASSISTANT:\n'  # noqa
+    with pytest.warns(UserWarning):
+        prompt = make_prompt(
+            'What is the capital of Cross River state?',
+            inputs='NONSENSE',  # Meaningless for Vicuña
+            sub=sub_style.VICUNA)
+
     prompt = make_prompt('What is the capital of Cross River state?',
                          sub=sub_style.VICUNA)
     assert prompt == EXPECTED_PROMPT

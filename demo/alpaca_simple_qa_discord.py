@@ -44,7 +44,7 @@ from langchain import OpenAI
 
 from ogbujipt.config import openai_emulation
 from ogbujipt.async_helper import schedule_llm_call
-from ogbujipt.model_style.alpaca import prep_instru_inputs, ALPACA_PROMPT_TMPL
+from ogbujipt.model_style.alvic import make_prompt
 
 # Enable all standard intents, plus message content
 # The bot app you set up on Discord will require this intent (Bot tab)
@@ -65,8 +65,8 @@ async def send_llm_msg(msg):
     '''
     Schedule the LLM request
     '''
-    prompt = ALPACA_PROMPT_TMPL.format(
-        instru_inputs=prep_instru_inputs(msg))
+    # Regular Alpaca prompt style (the default)
+    prompt = make_prompt(msg)
     print(prompt)
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here

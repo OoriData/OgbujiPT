@@ -13,7 +13,7 @@ import click
 from langchain import OpenAI
 
 from ogbujipt.config import openai_emulation
-from ogbujipt.model_style.alpaca import prep_instru_inputs, ALPACA_PROMPT_TMPL
+from ogbujipt.model_style.alvic import make_prompt, sub_style
 
 
 # Command line arguments defined in decorators
@@ -26,17 +26,16 @@ def main(host, port):
     llm = OpenAI(temperature=0.1)
 
     BAD_XML_CODE = '''\
-    <earth>    
-    <country><b>Russia</country></b>
-    <capital>Moscow</capital>
-    </Earth>'''
+<earth>
+<country><b>Russia</country></b>
+<capital>Moscow</capital>
+</Earth>'''
 
-    instru_inputs = prep_instru_inputs(
+    prompt = make_prompt(
         'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE
+        inputs=BAD_XML_CODE,
+        sub=sub_style.ALPACA_INSTRUCT
         )
-
-    prompt = ALPACA_PROMPT_TMPL.format(instru_inputs=instru_inputs)
     # print(prompt)
 
     response = llm(prompt)

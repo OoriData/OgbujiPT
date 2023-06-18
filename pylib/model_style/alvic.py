@@ -21,9 +21,8 @@ Vicuña style, e.g.
 Useful collection of Alpaca demo prompts: https://huggingface.co/datasets/tatsu-lab/alpaca
 '''
 
+import warnings
 from enum import Enum
-
-from functools import partial
 
 
 class sub_style(Enum):
@@ -56,9 +55,9 @@ VICUNA_PROMPT_TMPL = '''\
 '''
 
 
-def make_prompt(msg, inputs='', sub=sub_style.ALPACA):
+def make_prompt(msg, inputs='', sub=sub_style.ALPACA) -> str:
     '''
-
+    Build a string prompt based on Alpaca, Alpaca Instruct or Vicuña
     '''
     if sub in (sub_style.ALPACA, sub_style.ALPACA_INSTRUCT):
         # Roundabout method needed pre Python 3.12 because of escaping limitations
@@ -69,6 +68,8 @@ def make_prompt(msg, inputs='', sub=sub_style.ALPACA):
             instru_marker=instru_marker,
             instru_inputs=instru_inputs)
     elif sub == sub_style.VICUNA:
+        if inputs:
+            warnings.warn('inputs are not defined for Vicuña style, and will be ignored')
         return VICUNA_PROMPT_TMPL.format(query=msg)
     else:
         raise ValueError('Prompt substyle should be Alpaca or Vicuna, not ', sub)

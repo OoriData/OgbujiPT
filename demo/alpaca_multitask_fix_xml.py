@@ -14,13 +14,18 @@ python demos/alpaca_multitask_fix_xml.py --host=http://my-llm-host --port=8000
 '''
 
 import asyncio
+from functools import partial
 
 import click
 from langchain import OpenAI
 
 from ogbujipt.config import openai_emulation
 from ogbujipt.async_helper import schedule_llm_call
-from ogbujipt.model_style.alpaca import prep_instru_inputs, ALPACA_PROMPT_TMPL
+from ogbujipt.model_style.alvic import make_prompt, sub_style
+
+# Establish the Alpaca prompting style through "currying" make_prompt
+alpaca_instruct_make_prompt = partial(
+    make_prompt, sub=sub_style.ALPACA_INSTRUCT)
 
 DOTS_SPACING = 0.5  # Number of seconds between each dot printed to console
 
@@ -41,17 +46,14 @@ async def async_main(llm):
     to run a progress indicator in the background
     '''
     BAD_XML_CODE = '''\
-    <earth>    
-    <country><b>Russia</country></b>
-    <capital>Moscow</capital>
-    </Earth>'''
+<earth>
+<country><b>Russia</country></b>
+<capital>Moscow</capital>
+</Earth>'''
 
-    instru_inputs = prep_instru_inputs(
+    prompt = alpaca_instruct_make_prompt(
         'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE
-        )
-
-    prompt = ALPACA_PROMPT_TMPL.format(instru_inputs=instru_inputs)
+        inputs=BAD_XML_CODE)
     # print(prompt)
 
     # Pro tip: Always be mindful when creating tasks with asyncio.create_task

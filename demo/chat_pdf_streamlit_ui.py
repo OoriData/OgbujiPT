@@ -15,6 +15,8 @@ but taking advantage of OgbujiPT
 
 Uses ogbujipt.async_helper to demo multitasking ability you could use in a more real-world app
 
+Prompts via langchain, rather than one of the OgbujiPT models styles
+
 You need access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
 running. Assume for the following it's at my-llm-host:8000
