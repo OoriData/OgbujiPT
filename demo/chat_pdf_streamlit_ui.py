@@ -1,6 +1,6 @@
 '''
 Advanced, "Chat my PDF" demo, but using self-hosted LLM
-definitely a good idea for you to understand demos/alpaca_multitask_fix_xml.py
+definitely a good idea for you to understand demo/alpaca_multitask_fix_xml.py
 before swapping this in.
 
 UI: Streamlit - streamlit.io
@@ -165,7 +165,7 @@ async def async_main(llm):
             st.write(response)
 
 
-# See e.g. demos/alpaca_multitask_fix_xml.py for more explanation
+# See e.g. demo/alpaca_multitask_fix_xml.py for more explanation
 @click.command()
 @click.option('--host', default='http://127.0.0.1', help='OpenAI API host')
 @click.option('--port', default='8000', help='OpenAI API port')

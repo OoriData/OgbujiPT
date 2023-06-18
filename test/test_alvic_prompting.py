@@ -12,7 +12,7 @@ from ogbujipt.model_style.alvic import make_prompt, sub_style
 
 def test_basic_prompt_substyles():
     BAD_XML_CODE = '''\
-<earth>    
+<earth>
 <country><b>Russia</country></b>
 <capital>Moscow</capital>
 </Earth>'''

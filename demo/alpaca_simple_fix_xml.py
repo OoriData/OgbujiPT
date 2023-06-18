@@ -6,7 +6,7 @@ Needs access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
 running. Say it's at my-llm-host:8000, you can do:
 
-python demos/alpaca_simple_fix_xml.py --host=http://my-llm-host --port=8000
+python demo/alpaca_simple_fix_xml.py --host=http://my-llm-host --port=8000
 '''
 
 import click
