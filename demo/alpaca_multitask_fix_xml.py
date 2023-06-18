@@ -1,10 +1,10 @@
 '''
-Advanced demo using an LLM to repair data (XML), like
+Intermediate demo using an LLM to repair data (XML), like
 alpaca_simple_fix_xml.py
-but rnning a separate, progress indicator task in the background
+but running a separate, progress indicator task in the background
 while the LLm works, using asyncio. This should work even
 if the LLM framework we're using doesn't suport asyncio,
-thanks to ogbujipt.async_helper 
+thanks to ogbujipt.async_helper
 
 You need access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui

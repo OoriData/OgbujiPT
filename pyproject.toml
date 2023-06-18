@@ -24,7 +24,8 @@ classifiers = [
 dependencies = [
   "langchain",
   "openai",
-  "hatch",
+  "python-dotenv",
+  "llama_index",
 ]
 
 [project.urls]

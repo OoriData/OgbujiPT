@@ -1,4 +1,8 @@
+# SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
+#
+# SPDX-License-Identifier: Apache-2.0
 # ogbujipt.config
+
 # Given the nature of a config module, we don't use __all__
 # & avoid top-level imports where possible, and at the end of the module
 # del any symbols we don't want exposed
@@ -8,7 +12,17 @@
 Configuration & globally-relevant values
 '''
 
-#  Don't include in import *. Could use , but tricky with the nature of 
+
+def openai_live(debug=True):
+    '''
+    Set up to use OpenAI proper. Assumes your APi key is in a .env file
+    Make sure you have the .env file in .gitignore or equivalent
+    '''
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    if debug:
+        os.environ['OPENAI_DEBUG'] = 'true'
 
 
 def openai_emulation(
@@ -17,7 +31,7 @@ def openai_emulation(
         rev='v1',
         oaikey='BOGUS', oaitype='open_ai', debug=True):
     '''
-    Set up to use OpenAI, or (an e.g. self-hosted) host that emulates it
+    Set up emulation, to use a alternative, OpenAI API compatible service
     '''
     import os
 

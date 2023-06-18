@@ -54,6 +54,8 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 
+# To-do: Incorporate work by @Choccccy in https://github.com/choccccy/choccys_toolbox/blob/main/demo/alpaca_simple_jjonah.py
+
 class llm_manager:
     def __init__(self, llm):
         self.llm = llm
