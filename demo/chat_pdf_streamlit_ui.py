@@ -29,7 +29,7 @@ pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-
 ```
 
 Notice the -- to separate our program's cmdline args from streamlit's
-streamlit run demos/chat_pdf_streamlit_ui.py -- --host=http://my-llm-host --port=8000
+streamlit run demo/chat_pdf_streamlit_ui.py -- --host=http://my-llm-host --port=8000
 '''
 
 import asyncio
