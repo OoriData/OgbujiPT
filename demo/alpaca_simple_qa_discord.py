@@ -14,11 +14,11 @@ running. Say it's at my-llm-host:8000, you can do:
 
 Prerequisites: python-dotenv discord.py
 
+You also need to make sure Python has root SSL certificates installed
+On MacOS this is via double-clicking `Install Certificates.command`
+
 You also need to have a file, just named `.env`, in the same directory,
 with contents such as:
-
-You also need to make sure Python has root SSL certificates installed
-On Mac this is via double-clicking `Install Certificates.command`
 
 ```env
 DISCORD_TOKEN={your-bot-token}
@@ -53,6 +53,9 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 
+@client.event
+async def on_ready():
+    print(f"Bot is ready. Connected to {len(client.guilds)} guild(s).")
 
 async def send_llm_msg(msg):
     '''
@@ -70,7 +73,7 @@ async def send_llm_msg(msg):
         )
 
     response = next(iter(done)).result()
-    print('\nResponse from LLM: ', response)
+    print('\nResponse from LLM:\n', response)
     return response
 
 
