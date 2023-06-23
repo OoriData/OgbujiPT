@@ -61,17 +61,30 @@ PDF_USER_QUESTION_PROMPT = 'Ask a question about your PDF:'
 # Not sure where we use this via OpenAI API. Not a kword to OpenAI initializer
 STOP_WORDS = ['### Human:']
 # FIXME: We probably want to get this value from the remote API. Figure out how
-N_CTX = 512
+N_CTX = 2048
 
-# FIXME: Parameterize these, perhaps in streamlit controls
+# FIXME: Parameterize these, perhaps in streamlit controls, also how many k docs to return
+# Chunk size is the number of characters counted in the chunks
 EMBED_CHUNK_SIZE = 500
-EMBED_CHUNK_OVERLAP = 250
+
+# Model Chunk Overlap to connect ends of chunks together using 
+# the last 100 chars and first 100 chars of two chunks
+EMBED_CHUNK_OVERLAP = 100
 
 # https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 DOC_EMBEDDINGS_LLM = 'all-MiniLM-L6-v2'
 
+# FIXME: stop using an absolute path, grab from the internet or smth
+# define throbber absolutely
+throbber = '/Users/osi/dev/OgbujiPT/demo/assets/ooriThrobber.gif'
+
 
 async def prep_pdf(pdf):
+    '''
+    Convert "pdf" into chunks according to chunk size and overlap
+    Take "chunks" and vectorize it for SLLM lookup
+    return "knowledge_base" as the vectorized sets of chunks
+    '''
     pdf_reader = PdfReader(pdf)
 
     # Collect text from pdf
@@ -88,7 +101,7 @@ async def prep_pdf(pdf):
     )
     chunks = text_splitter.split_text(text)
 
-    # LLM will be downloaded fro HuggingFace automatically
+    # LLM will be downloaded from HuggingFace automatically
     embeddings = SentenceTransformerEmbeddings(model_name=DOC_EMBEDDINGS_LLM)
 
     # Create in-memory Qdrant instance for the embeddings
@@ -102,16 +115,24 @@ async def prep_pdf(pdf):
     return knowledge_base
 
 
-async def handle_user_q(kb, llm, chain):
+async def handle_user_q(kb, chain):
+    '''
+    Get a "user_question" from Streamlit
+    Get the top K chunks relevant to the user's question
+    Return the chunks and user question
+    '''
     user_question = st.text_input(PDF_USER_QUESTION_PROMPT)
 
     docs = None
     if user_question:
+        # Return the "k" most relevant objects to the "user_question" as "docs"
         docs = kb.similarity_search(user_question, k=4)
 
         # Calculating prompt (takes time and can optionally be removed)
         prompt_len = chain.prompt_length(docs=docs, question=user_question)
-        st.write(f'Prompt len: {prompt_len}')
+        print(f'Prompt len: {prompt_len}')
+        # Used to catch and prevent long wait times and a potential crash 
+        # in a situation where model is fed too many chars
         if prompt_len > N_CTX:
             st.write(
                 "Prompt length is more than n_ctx. This will likely fail."
@@ -128,7 +149,7 @@ async def handle_user_q(kb, llm, chain):
 async def async_main(llm):
     # Doc strings turn into streamlit headers
     '''
-    OgbujiPT—Ask your PDF 💬
+    Oori — Ask your PDF 📄💬
     '''
     chain = load_qa_chain(llm, chain_type=QA_CHAIN_TYPE)
 
@@ -142,27 +163,39 @@ async def async_main(llm):
             )
         )
 
+    # create file upload box on Streamlit, then set "pdf" as the pdf that the user uploads
     pdf = st.file_uploader("Upload a PDF", type=["pdf"])
 
     if pdf:
-        kb = await prep_pdf(pdf)
-        docs, user_q = await handle_user_q(kb, llm, chain)
+        # Show throbber, and vectorize the PDF, and setup for similarity search
+        with st.empty():
+            st.image(throbber)
+            kb = await prep_pdf(pdf)
+            
+            docs, user_q = await handle_user_q(kb, chain)
 
         if docs:
-            # Set up LLM propt task
+            # Set up LLM prompt task
             llm_task = asyncio.create_task(
                 schedule_llm_call(
-                    chain.run, input_documents=docs, question=user_q
+                    chain.run, 
+                    input_documents=docs, 
+                    question=user_q
                     )
                 )
-            # TODO: Add some sort of streamlit progress indicator
-            tasks = [llm_task]  # [indicator_task, llm_task]
-            done, _ = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-                )
-            response = next(iter(done)).result()
-            # print('\nResponse from LLM: ', response)
-            st.write(response)
+            
+            # Show throbber, and send LLM prompt
+            with st.empty():
+                st.image(throbber)
+                tasks = [llm_task]
+                done, _ = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                    )
+                response = next(iter(done)).result()
+                
+                # Write reponse to console and Streamlit
+                print('\nResponse from LLM: ', response)
+                st.write(response)
 
 
 # See e.g. demo/alpaca_multitask_fix_xml.py for more explanation
@@ -174,6 +207,7 @@ def main(host, port, temp):
     # Callback just to stream output to stdout, can be removed
     callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
+    # Emulate OpenAI API with "host" and "port" for LLM call
     openai_emulation(host=host, port=port)
     llm = OpenAI(
         temperature=temp,
@@ -181,15 +215,17 @@ def main(host, port, temp):
         verbose=True,
         )
 
-    # UI page setup
+    # Page setup
     st.set_page_config(
         page_title="Ask your PDF",
-        page_icon="💬",
+        page_icon="📄💬",
         layout="wide",
         initial_sidebar_state="expanded",
     )
+    
     asyncio.run(async_main(llm))
 
 
 if __name__ == "__main__":
+    # TODO: Look into isolating hugginface's one time per process setup routines
     main()
