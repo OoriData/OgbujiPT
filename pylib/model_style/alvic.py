@@ -36,10 +36,11 @@ ALPACA = sub_style.ALPACA
 VICUNA = sub_style.VICUNA
 ALPACA_INSTRUCT = sub_style.ALPACA_INSTRUCT
 
-
 # XXX Try out preambles to instructions, e.f. for jailbreaks?
 
 ALPACA_PROMPT_TMPL = '''\
+{preamble}
+
 {instru_marker}{instru_inputs}
 
 ### Response:
@@ -47,6 +48,8 @@ ALPACA_PROMPT_TMPL = '''\
 
 
 VICUNA_PROMPT_TMPL = '''\
+{preamble}
+
 ### USER:
 
 {query}
@@ -55,7 +58,7 @@ VICUNA_PROMPT_TMPL = '''\
 '''
 
 
-def make_prompt(msg, inputs='', sub=sub_style.ALPACA) -> str:
+def make_prompt(msg: str, sub=sub_style.ALPACA, preamble='', inputs='') -> str:
     '''
     Build a string prompt based on Alpaca, Alpaca Instruct or Vicuña
     '''
@@ -65,11 +68,16 @@ def make_prompt(msg, inputs='', sub=sub_style.ALPACA) -> str:
         instru_inputs = f'{msg}\n{"### Inputs:" + cr + inputs if inputs else "" }\n'
         instru_marker = '### Instruction:\n\n' if sub == sub_style.ALPACA_INSTRUCT else ''
         return ALPACA_PROMPT_TMPL.format(
+            preamble=preamble,
             instru_marker=instru_marker,
-            instru_inputs=instru_inputs)
+            instru_inputs=instru_inputs
+            )
     elif sub == sub_style.VICUNA:
         if inputs:
             warnings.warn('inputs are not defined for Vicuña style, and will be ignored')
-        return VICUNA_PROMPT_TMPL.format(query=msg)
+        return VICUNA_PROMPT_TMPL.format(
+            preamble=preamble,
+            query=msg
+            )
     else:
         raise ValueError('Prompt substyle should be Alpaca or Vicuna, not ', sub)
