@@ -43,14 +43,13 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
     parts = [preamble] if preamble + delimiters.get(
         pdelim.PREAMBLE, '\n') else []
     
+    parts.append(delimiters.get(pdelim.PREQUERY, ''))
     if contexts:
         for c in contexts:
             parts.append(str(c))
             parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
         del parts[-1]  # Final intercontext not needed
 
-    parts.append(delimiters.get(pdelim.PREAMBLE, ''))
-    parts.append(delimiters.get(pdelim.PREQUERY, ''))
     parts.append(query)
     parts.append(delimiters.get(pdelim.POSTQUERY, ''))
     
