@@ -58,9 +58,8 @@ langchain.verbose = False
 
 QA_CHAIN_TYPE = 'stuff'
 PDF_USER_QUESTION_PROMPT = 'Ask a question about your PDF:'
-# Not sure where we use this via OpenAI API. Not a kword to OpenAI initializer
-STOP_WORDS = ['### Human:']
-# FIXME: We probably want to get this value from the remote API. Figure out how
+# LLM max context size
+# FIXME: Probably want to get this value from the remote API. Figure out how
 N_CTX = 2048
 
 # FIXME: Parameterize these, perhaps in streamlit controls, also how many k docs to return
@@ -87,9 +86,7 @@ async def prep_pdf(pdf):
     pdf_reader = PdfReader(pdf)
 
     # Collect text from pdf
-    text = ''
-    for page in pdf_reader.pages:
-        text += page.extract_text()
+    text = ''.join((page.extract_text() for page in pdf_reader.pages))
 
     # Split the text into chunks
     text_splitter = CharacterTextSplitter(
@@ -220,7 +217,7 @@ def main(host, port, temp):
         layout="wide",
         initial_sidebar_state="expanded",
     )
-    
+
     asyncio.run(async_main(llm))
 
 
