@@ -10,9 +10,10 @@ python demo/alpaca_simple_fix_xml.py --host=http://my-llm-host --port=8000
 '''
 
 import click
-from langchain import OpenAI
-
-from ogbujipt.config import openai_emulation
+import os
+# from langchain import OpenAI
+import openai
+from ogbujipt.config import openai_live
 # from ogbujipt.model_style.alvic import make_prompt, sub_style
 from ogbujipt.prompting.basic import context_build, pdelim
 
@@ -23,9 +24,11 @@ from ogbujipt.prompting.basic import context_build, pdelim
 @click.option('--port', default='8000', help='OpenAI API port')
 def main(host, port):
     # Set up API connector
-    openai_emulation(host=host, port=port)
-    llm = OpenAI(temperature=0.1)
+    # openai_emulation(host=host, port=port)
+    openai_live()
 
+    # llm = OpenAI(temperature=0.1)
+    # print(os.environ["API_KEY"])
     BAD_XML_CODE = '''\
 <earth>
 <country><b>Russia</country></b>
@@ -43,7 +46,20 @@ def main(host, port):
         delimiters=vicuna_delimiters)
     print(prompt)
 
-    response = llm(prompt)
+    openai.api_key = 'BOGUS'
+    #API key is stopping openAI
+    # print(openai.api_key)
+
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=prompt,
+        temperature=1,
+        max_tokens=60,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=1
+        )
+    #response is a json and needs to be parsed for the text
     print(response)
 
 
