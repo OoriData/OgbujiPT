@@ -19,12 +19,12 @@ class pdelim(Enum):
     '''
     Types of delimiters used in prompts. Prompt delimiters can be anything
     from simple spacing/formatting aids to control text such as the
-    '### User:\n' but in Alpaca-style prompting, for example
+    '### Instruction:\n' but in Alpaca-style prompting, for example
     '''
     PREAMBLE = 1  # Post preamble
     INTERCONTEXT = 2  # Between multiple context sections
-    PREQUERY = 3  # e.g. '### User:\n\n' in Vicuña
-    POSTQUERY = 4  # e.g. '### Assistant:\n\n' in Vicuña
+    PREQUERY = 3  # e.g. '### Instruction:\n\n' in Alpaca
+    POSTQUERY = 4  # e.g. '### Response:\n\n' in Alpaca
 
 
 def context_build(query, preamble='', contexts=None, delimiters=None):

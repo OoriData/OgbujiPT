@@ -13,7 +13,8 @@ import click
 from langchain import OpenAI
 
 from ogbujipt.config import openai_emulation
-from ogbujipt.model_style.alvic import make_prompt, sub_style
+# from ogbujipt.model_style.alvic import make_prompt, sub_style
+from ogbujipt.prompting.basic import context_build, pdelim
 
 
 # Command line arguments defined in decorators
@@ -31,12 +32,16 @@ def main(host, port):
 <capital>Moscow</capital>
 </Earth>'''
 
-    prompt = make_prompt(
-        'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE,
-        sub=sub_style.ALPACA_INSTRUCT
-        )
-    # print(prompt)
+    vicuna_delimiters = {
+        pdelim.PREQUERY: '### USER',
+        pdelim.POSTQUERY: '### ASSISTANT',
+    }
+
+    prompt = context_build(
+        f'Correct the following XML to make it well-formed\n\n{BAD_XML_CODE}',
+        preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
+        delimiters=vicuna_delimiters)
+    print(prompt)
 
     response = llm(prompt)
     print(response)
