@@ -50,5 +50,5 @@ def test_basic_prompt_substyles():
             sub=sub_style.VICUNA)
 
     prompt = make_prompt('What is the capital of Cross River state?',
-                         sub=sub_style.VICUNA)
+        sub=sub_style.VICUNA)
     assert prompt == EXPECTED_PROMPT

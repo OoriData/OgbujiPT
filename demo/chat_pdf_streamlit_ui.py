@@ -105,7 +105,7 @@ async def prep_pdf(pdf):
         chunks,
         embeddings,
         location=':memory:',
-        collection_name='doc_chunks',
+        collection_name='doc_chunks'
     )
 
     return knowledge_base
