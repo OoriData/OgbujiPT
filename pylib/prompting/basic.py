@@ -48,6 +48,7 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
             parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
         del parts[-1]  # Final intercontext not needed
     parts.append(delimiters.get(pdelim.PREAMBLE, ''))
+    parts.append(delimiters.get(pdelim.PREQUERY, ''))
     parts.append(query)
     parts.append(delimiters.get(pdelim.POSTQUERY, ''))
     full_context = '\n'.join(parts)
