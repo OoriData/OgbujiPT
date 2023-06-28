@@ -23,8 +23,8 @@ class pdelim(Enum):
     '''
     PREAMBLE = 1  # Post preamble
     INTERCONTEXT = 2  # Between multiple context sections
-    PREQUERY = 3  # e.g. '### User:\n\n' in Alapaca
-    POSTQUERY = 4  # e.g. '### Assistant:\n\n' in Alapaca
+    PREQUERY = 3  # e.g. '### User:\n\n' in Vicuña
+    POSTQUERY = 4  # e.g. '### Assistant:\n\n' in Vicuña
 
 
 def context_build(query, preamble='', contexts=None, delimiters=None):
@@ -36,19 +36,22 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
 
     >>> from ogbujipt.prompting.basic import context_build
     >>> context_build('How are you?', preamble='You are a friendly AI who loves conversation') 
-'You are a friendly AI who loves conversation\n\nHow are you?\n'
+    'You are a friendly AI who loves conversation\n\nHow are you?\n'
     '''
     contexts = contexts or []
     delimiters = delimiters or {}
     parts = [preamble] if preamble + delimiters.get(
         pdelim.PREAMBLE, '\n') else []
+    
     if contexts:
         for c in contexts:
             parts.append(str(c))
             parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
         del parts[-1]  # Final intercontext not needed
+
     parts.append(delimiters.get(pdelim.PREAMBLE, ''))
     parts.append(query)
     parts.append(delimiters.get(pdelim.POSTQUERY, ''))
+    
     full_context = '\n'.join(parts)
     return full_context
