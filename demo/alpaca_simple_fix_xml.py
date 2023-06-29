@@ -11,11 +11,10 @@ python demo/alpaca_simple_fix_xml.py --host=http://my-llm-host --port=8000
 
 import click
 import os
-# from langchain import OpenAI
-import openai
+import openai as openai_api  # pip install openai
 from dotenv import load_dotenv
-from ogbujipt.config import openai_live
-from ogbujipt.prompting.basic import context_build, pdelim
+from ogbujipt.config import openai_live, openai_emulation
+from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
 
 
@@ -23,13 +22,25 @@ from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
 @click.command()
 @click.option('--host', default='http://127.0.0.1', help='OpenAI API host')
 @click.option('--port', default='8000', help='OpenAI API port')
-def main(host, port):
-    # Set up API connector
-    # openai_emulation(host=host, port=port)
-    openai_live()
-    load_dotenv()
-    # llm = OpenAI(temperature=0.1)
-    # print(os.environ["API_KEY"])
+@click.option('--llmtemp', default='0.1', type=float, help='LLM temperature')
+@click.option('--openai', is_flag=True, default=False, type=bool,
+              help='Use live OpenAI API. If you use this option, you must have ' +
+              '"OPENAI_API_KEY" defined in your environmnt')
+@click.option('--model', default='', type=str, help='OpenAI model to use (see https://platform.openai.com/docs/models)')
+def main(host, port, llmtemp, openai, model):
+    # Use OpenAI API if specified, otherwise use host as user defines
+    if openai:
+        openai_api.api_key = os.getenv('OPENAI_API_KEY')
+        openai_live(debug=True)
+        model = model or 'text-ada-001'
+        openai_model = {'model': model}
+    else:
+        # Emulate OpenAI API with "host" and "port" for LLM call
+        openai_api.api_key = 'BOGUS'
+        openai_emulation(host=host, port=port)
+        model = model or 'LOCAL'
+        openai_model = {}
+
     BAD_XML_CODE = '''\
 <earth>
 <country><b>Russia</country></b>
@@ -41,20 +52,23 @@ def main(host, port):
         preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
         delimiters=VICUNA_DELIMITERS)
     print(prompt, '\n')
+    print(openai_api.api_key)
 
-    #Load API Key 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
-    response = openai.Completion.create(
-        model="text-davinci-003", #Model (Required)
-        prompt=prompt, #Prompt (Required)
-        temperature=.5, #Temp (Default 1)
-        max_tokens=60, #Max Token length of generated text (Default no max)
-        top_p=1, #Also known as nucleus sampling, 
-                 #This can help to increase the diversity of the generated text (Default 1)
-        frequency_penalty=0, #influences the model to favor more or less frequent tokens (Default 0)
-        presence_penalty=1 #influences the model to use new tokens it has not yet used (Default 0)
+    response = openai_api.Completion.create(
+        host=host,
+        port=port,
+        model="bogus",  # Model (Required)
+        # model="text-davinci-003",  # Model (Required)
+        prompt=prompt,  # Prompt (Required)
+        temperature=llmtemp,  # Temp (Default 1)
+        max_tokens=60,  # Max Token length of generated text (Default no max)
+        top_p=1,  # Also known as nucleus sampling, 
+                  # This can help to increase the diversity of the generated
+                  # text (Default 1)
+        frequency_penalty=0,    # influences the model to favor more or less
+                                # frequent tokens (Default 0)
+        presence_penalty=1  # influences the model to use new tokens it has
+                            # not yet used (Default 0)
         )
     
     # Response is a json and this is how you extract the text
