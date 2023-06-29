@@ -12,36 +12,47 @@
 Configuration & globally-relevant values
 '''
 
+import openai as openai_api
 
-def openai_live(debug=True):
+
+def openai_live(
+        debug=True,
+        apikey=None):
     '''
-    Set up to use OpenAI proper. Assumes your APi key is in a .env file
-    Make sure you have the .env file in .gitignore or equivalent
+    Set up to use OpenAI proper. If you don't pass in an API key, the
+    environment variable OPENAI_API_KEY will be checked
+
+    Side note: a lot of OpenAI tutorials suggest that you embed your
+    OpenAI private key into the code, which is a terrible idea
+
+    Extra reminder: If you set up your environment via .env file, make sure
+     it's in .gitignore or equivalent so it never gets accisentally committed!
     '''
-    import os
     from dotenv import load_dotenv
     load_dotenv()
     if debug:
         os.environ['OPENAI_DEBUG'] = 'true'
+
+    return openai_api
 
 
 def openai_emulation(
         host='http://127.0.0.1',
         port='8000',  # llama-cpp-python; for Ooba, use '5001'
         rev='v1',
-        oaikey='BOGUS', oaitype='open_ai', debug=True):
+        apikey='BOGUS',
+        oaitype='open_ai', debug=True):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
     '''
     import os
 
-    # Side note: a lot of OpenAI tutorials suggest that you embed your
-    # OpenAI private key into the code, which is a terrible idea
-    os.environ['OPENAI_API_KEY'] = oaikey  # Dummy val, so NBD
+    # apikey = apikey or os.getenv('OPENAI_API_KEY')
+    # os.environ['OPENAI_API_KEY'] = oaikey  # Dummy val, so NBD
 
-    os.environ['OPENAI_API_TYPE'] = oaitype
-    os.environ['OPENAI_API_BASE'] = f'{host}:{port}/{rev}'
+    openai_api.api_key = apikey
+    openai_api.api_type = oaitype
+    openai_api.api_base = f'{host}:{port}/{rev}'
+    openai_api.debug = debug
 
-    # Tools such s langchain will check just for the presence of OPENAI_DEBUG
-    if debug:
-        os.environ['OPENAI_DEBUG'] = 'true'
+    return openai_api

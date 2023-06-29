@@ -11,8 +11,9 @@ python demo/alpaca_simple_fix_xml.py --host=http://my-llm-host --port=8000
 
 import click
 import os
-import openai as openai_api  # pip install openai
-from dotenv import load_dotenv
+
+# from dotenv import load_dotenv
+
 from ogbujipt.config import openai_live, openai_emulation
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
@@ -30,16 +31,15 @@ from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
 def main(host, port, llmtemp, openai, model):
     # Use OpenAI API if specified, otherwise use host as user defines
     if openai:
-        openai_api.api_key = os.getenv('OPENAI_API_KEY')
-        openai_live(debug=True)
+        assert not (host or port), 'Don\'t use --host or --port with --openai'
+        openai_api = openai_live(debug=True)
         model = model or 'text-ada-001'
-        openai_model = {'model': model}
+        # openai_model = {'model': model}
     else:
         # Emulate OpenAI API with "host" and "port" for LLM call
-        openai_api.api_key = 'BOGUS'
-        openai_emulation(host=host, port=port)
+        openai_api = openai_emulation(host=host, port=port)
         model = model or 'LOCAL'
-        openai_model = {}
+        # openai_model = {}
 
     BAD_XML_CODE = '''\
 <earth>
@@ -52,12 +52,10 @@ def main(host, port, llmtemp, openai, model):
         preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
         delimiters=VICUNA_DELIMITERS)
     print(prompt, '\n')
-    print(openai_api.api_key)
+    # print(os.environ['OPENAI_API_BASE'])
 
     response = openai_api.Completion.create(
-        host=host,
-        port=port,
-        model="bogus",  # Model (Required)
+        model=model,  # Model (Required)
         # model="text-davinci-003",  # Model (Required)
         prompt=prompt,  # Prompt (Required)
         temperature=llmtemp,  # Temp (Default 1)
@@ -72,7 +70,7 @@ def main(host, port, llmtemp, openai, model):
         )
     
     # Response is a json and this is how you extract the text
-    print(response["choices"][0]["text"])
+    print(response['choices'][0]['text'])
 
 
 # CLI entry point

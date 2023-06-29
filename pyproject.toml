@@ -22,7 +22,6 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "langchain",
   "openai",
   "python-dotenv",
   "llama_index",
