@@ -13,6 +13,7 @@ import click
 import os
 # from langchain import OpenAI
 import openai
+from dotenv import load_dotenv
 from ogbujipt.config import openai_live
 # from ogbujipt.model_style.alvic import make_prompt, sub_style
 from ogbujipt.prompting.basic import context_build, pdelim
@@ -26,7 +27,7 @@ def main(host, port):
     # Set up API connector
     # openai_emulation(host=host, port=port)
     openai_live()
-
+    load_dotenv()
     # llm = OpenAI(temperature=0.1)
     # print(os.environ["API_KEY"])
     BAD_XML_CODE = '''\
@@ -46,21 +47,23 @@ def main(host, port):
         delimiters=vicuna_delimiters)
     print(prompt)
 
-    openai.api_key = 'BOGUS'
-    #API key is stopping openAI
-    # print(openai.api_key)
+    #Load API Key 
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
     response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt=prompt,
-        temperature=1,
-        max_tokens=60,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=1
+        model="text-davinci-003", #Model (Required)
+        prompt=prompt, #Prompt (Required)
+        temperature=.5, #Temp (Default 1)
+        max_tokens=60, #Max Token length of generated text (Default no max)
+        top_p=1, #Also known as nucleus sampling, 
+                 #This can help to increase the diversity of the generated text (Default 1)
+        frequency_penalty=0, #influences the model to favor more or less frequent tokens (Default 0)
+        presence_penalty=1 #influences the model to use new tokens it has not yet used (Default 0)
         )
-    #response is a json and needs to be parsed for the text
-    print(response)
+    
+    # Response is a json and this is how you extract the text
+    print(response["choices"][0]["text"])
 
 
 # CLI entry point
