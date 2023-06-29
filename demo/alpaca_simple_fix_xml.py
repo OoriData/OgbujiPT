@@ -36,16 +36,11 @@ def main(host, port):
 <capital>Moscow</capital>
 </Earth>'''
 
-    vicuna_delimiters = {
-        pdelim.PREQUERY: '### USER',
-        pdelim.POSTQUERY: '### ASSISTANT',
-    }
-
     prompt = context_build(
         f'Correct the following XML to make it well-formed\n\n{BAD_XML_CODE}',
         preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
         delimiters=vicuna_delimiters)
-    print(prompt)
+    print(prompt, '\n')
 
     #Load API Key 
     openai.api_key = os.getenv("OPENAI_API_KEY")

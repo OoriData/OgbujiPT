@@ -13,6 +13,7 @@ Also, trying to avoid more complex templating such as Jinja or Mako
 '''
 
 from enum import Enum
+from collections.abc import Sequence
 
 
 class pdelim(Enum):
@@ -25,6 +26,19 @@ class pdelim(Enum):
     INTERCONTEXT = 2  # Between multiple context sections
     PREQUERY = 3  # e.g. '### Instruction:\n\n' in Alpaca
     POSTQUERY = 4  # e.g. '### Response:\n\n' in Alpaca
+    PRECONTEXT = 5  # e.g. '### Input:\n\n' in Alpaca instruct variation
+    POSTCONTEXT = 6
+    PRE_ALL_CONTEXT = 7
+    POST_ALL_CONTEXT = 8
+    META_ORDERING = 100
+
+
+class ordering(Enum):
+    '''
+    Ordering of complex prompt compoents. Of course preamble always comes 1st
+    '''
+    QUERY_CONTEXT = 1
+    CONTEXT_QUERY = 2
 
 
 def context_build(query, preamble='', contexts=None, delimiters=None):
@@ -39,19 +53,47 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
     'You are a friendly AI who loves conversation\n\nHow are you?\n'
     '''
     contexts = contexts or []
+    if isinstance(contexts, str):
+        contexts = [contexts]
     delimiters = delimiters or {}
+
     parts = [preamble] if preamble + delimiters.get(
         pdelim.PREAMBLE, '\n') else []
-    
-    parts.append(delimiters.get(pdelim.PREQUERY, ''))
-    if contexts:
-        for c in contexts:
-            parts.append(str(c))
-            parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
-        del parts[-1]  # Final intercontext not needed
 
-    parts.append(query)
+    # XXX Maybe find a more efficient way than closures (re: function-call overhead)
+    def add_context():
+        '''
+        Append the context info to the output parts
+        '''
+        if contexts:
+            parts.append(delimiters.get(pdelim.PRE_ALL_CONTEXT, ''))
+            for c in contexts:
+                # Some prompt conventions might use a pre & post context convention
+                # Some use internal delimiters only
+                parts.append(delimiters.get(pdelim.PRECONTEXT, ''))
+                parts.append(str(c))
+                parts.append(delimiters.get(pdelim.POSTCONTEXT, ''))
+                parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
+            del parts[-1]  # Final intercontext (might be empty anyway) not needed
+            parts.append(delimiters.get(pdelim.POST_ALL_CONTEXT, ''))
+
+    def add_query():
+        '''
+        Append the main query to the output parts
+        '''
+        parts.append(delimiters.get(pdelim.PREQUERY, ''))
+        parts.append(query)
+
+    if delimiters.get(pdelim.META_ORDERING, ordering.CONTEXT_QUERY) \
+            == ordering.CONTEXT_QUERY:
+        add_context()
+        add_query()
+    else:
+        add_query()
+        add_context()
+
+    # XXX: Feels a bit weird that the post-query bit must be outside the query
+    # clusure. Maybe needs a rename?
     parts.append(delimiters.get(pdelim.POSTQUERY, ''))
-    
     full_context = '\n'.join(parts)
     return full_context
