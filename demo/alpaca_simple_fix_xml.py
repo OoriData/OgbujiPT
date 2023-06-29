@@ -15,8 +15,7 @@ import os
 import openai
 from dotenv import load_dotenv
 from ogbujipt.config import openai_live
-# from ogbujipt.model_style.alvic import make_prompt, sub_style
-from ogbujipt.prompting.basic import context_build, pdelim
+from ogbujipt.prompting.basic import context_build, pdelim, VICUNA_DELIMITERS
 
 
 # Command line arguments defined in decorators
@@ -39,7 +38,7 @@ def main(host, port):
     prompt = context_build(
         f'Correct the following XML to make it well-formed\n\n{BAD_XML_CODE}',
         preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
-        delimiters=vicuna_delimiters)
+        delimiters=VICUNA_DELIMITERS)
     print(prompt, '\n')
 
     #Load API Key 
