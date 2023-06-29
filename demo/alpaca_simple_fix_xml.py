@@ -15,7 +15,8 @@ import os
 import openai
 from dotenv import load_dotenv
 from ogbujipt.config import openai_live
-from ogbujipt.prompting.basic import context_build, pdelim, VICUNA_DELIMITERS
+from ogbujipt.prompting.basic import context_build, pdelim
+from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
 
 
 # Command line arguments defined in decorators
