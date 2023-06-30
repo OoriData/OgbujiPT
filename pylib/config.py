@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
-#
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.config
 
@@ -12,12 +11,23 @@
 Configuration & globally-relevant values
 '''
 
-import openai as openai_api
+# Really just a bogus name for cases when OpenAPI is being emulated
+# OpenAI API requires the model be specified, but many compaitble APIs
+# have a model predetermined by the host
+HOST_DEFAULT = 'HOST-DEFAULT'
+
+
+class attr_dict(dict):
+    # XXX: Should unknown attr access return None rather than raise?
+    # If so, this line should be: __getattr__ = dict.get
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
 def openai_live(
-        debug=True,
-        apikey=None):
+        apikey=None,
+        debug=True):
     '''
     Set up to use OpenAI proper. If you don't pass in an API key, the
     environment variable OPENAI_API_KEY will be checked
@@ -28,10 +38,16 @@ def openai_live(
     Extra reminder: If you set up your environment via .env file, make sure
      it's in .gitignore or equivalent so it never gets accisentally committed!
     '''
+    import openai as openai_api
     from dotenv import load_dotenv
+
     load_dotenv()
-    if debug:
-        os.environ['OPENAI_DEBUG'] = 'true'
+    openai_api.debug = debug
+    openai_api.params = attr_dict(
+        api_key=apikey,
+        api_base=openai_api.api_base,
+        debug=debug
+        )
 
     return openai_api
 
@@ -40,19 +56,24 @@ def openai_emulation(
         host='http://127.0.0.1',
         port='8000',  # llama-cpp-python; for Ooba, use '5001'
         rev='v1',
-        apikey='BOGUS',
-        oaitype='open_ai', debug=True):
+        model=HOST_DEFAULT,
+        apikey='BOGUS', oaitype='open_ai', debug=True):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
     '''
-    import os
-
-    # apikey = apikey or os.getenv('OPENAI_API_KEY')
-    # os.environ['OPENAI_API_KEY'] = oaikey  # Dummy val, so NBD
+    import openai as openai_api
 
     openai_api.api_key = apikey
     openai_api.api_type = oaitype
     openai_api.api_base = f'{host}:{port}/{rev}'
     openai_api.debug = debug
+
+    openai_api.params = attr_dict(
+        api_key=apikey,
+        api_type=oaitype,
+        api_base=openai_api.api_base,
+        model=model,
+        debug=debug
+        )
 
     return openai_api

@@ -5,7 +5,7 @@ or
 
 pytest test/test_alvic_prompting.py
 '''
-import pytest
+# import pytest
 
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import (
@@ -29,7 +29,7 @@ def test_basic_prompt_substyles():
         BAD_XML_CODE,
         preamble='Correct the following XML to make it well-formed\n',
         delimiters=ALPACA_DELIMITERS
-    ) 
+    )
     # 'You are a friendly AI who loves conversation\n\nHow are you?\n'
 
     assert prompt == EXPECTED_PROMPT
@@ -40,7 +40,7 @@ def test_basic_prompt_substyles():
         BAD_XML_CODE,
         preamble='Correct the following XML to make it well-formed\n',
         delimiters=ALPACA_INSTRUCT_DELIMITERS
-    ) 
+    )
 
     assert prompt == EXPECTED_PROMPT
 
@@ -51,7 +51,7 @@ def test_basic_prompt_substyles():
         preamble='Have a look at the following XML',
         contexts=BAD_XML_CODE,
         delimiters=ALPACA_INSTRUCT_INPUT_DELIMITERS
-    ) 
+    )
 
     # print(prompt)
     assert prompt == EXPECTED_PROMPT
@@ -61,7 +61,7 @@ def test_basic_prompt_substyles():
     prompt = context_build(
         'Correct the following XML to make it well-formed\n' + BAD_XML_CODE,
         delimiters=VICUNA_DELIMITERS
-    ) 
+    )
     # 'You are a friendly AI who loves conversation\n\nHow are you?\n'
 
     assert prompt == EXPECTED_PROMPT
