@@ -3,6 +3,7 @@
 scratch
 .vscode
 PRIVNOTES.md
+.flake8
 
 # Ignored while making tooling decisions
 noxfile.py

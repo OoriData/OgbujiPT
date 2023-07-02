@@ -131,9 +131,9 @@ async def handle_user_q(kb, chain):
         if prompt_len > N_CTX:
             st.write(
                 "Prompt length is more than n_ctx. This will likely fail."
-                    "Increase model's context, reduce chunk size or question length,"
-                    "or change k to retrieve fewer docs."
-                    "Debug info on docs for the prompt:"
+                "Increase model's context, reduce chunk size or question length,"
+                "or change k to retrieve fewer docs."
+                "Debug info on docs for the prompt:"
             )
             st.text_area(repr(docs))
 

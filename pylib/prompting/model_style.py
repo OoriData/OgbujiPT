@@ -138,4 +138,3 @@ def concat_input_prompts(context_content_pairs):
     # pre_tmpl = ''.join(parts)
     # return PromptTemplate.from_template(''.join(parts))
     return ''.join(parts)
-
