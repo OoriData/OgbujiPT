@@ -42,6 +42,7 @@ def openai_live(
     from dotenv import load_dotenv
 
     load_dotenv()
+    # openai_api.api_version
     openai_api.debug = debug
     openai_api.params = attr_dict(
         api_key=apikey,
