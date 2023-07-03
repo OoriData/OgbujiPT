@@ -11,8 +11,7 @@ OVERLAP_FULL = -1
 
 # Credit this useful work by rajib76 re some of the langchain onion peeling:
 # https://github.com/rajib76/TextSplitter/blob/main/CharTextSplitter.py
-def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
-                  len_func=len):
+def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n', len_func=len):
     '''
 
     Much like langchain's CharTextSplitter.py
