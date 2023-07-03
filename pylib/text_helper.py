@@ -7,10 +7,9 @@ Routines to help with text processing
 '''
 import re
 
-OVERLAP_FULL = -1
+# OVERLAP_FULL = -1
 
-# Credit this useful work by rajib76 re some of the langchain onion peeling:
-# https://github.com/rajib76/TextSplitter/blob/main/CharTextSplitter.py
+
 def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
                   len_func=len):
     '''
@@ -37,7 +36,6 @@ chunk_size must be an integer greater than 0. Got {chunk_overlap}''')
         raise ValueError(f'''\
 chunk_overlap must be an integer greater than 0 and smaller than chunk_size. \
 Got {chunk_overlap}''')
-
     # Split up the text by the separator
     # FIXME: Need a step for escaping regex
     sep_pat = re.compile(separator)
@@ -46,7 +44,7 @@ Got {chunk_overlap}''')
 
     # Combine the small pieces into medium size chunks to send to LLM
     # Initialize accumulators; chunks will be the target list of the chunks so far
-    # curr_chunk will be a list of parts comprizing the main, current chunk
+    # curr_chunk will be a list of parts comprising the main, current chunk
     # back_overlap will be appended, once ready, to the end of the previous chunk (if any)
     # fwd_overlap will be prepended, once ready, to the start of the next chunk
     chunks = []
@@ -55,6 +53,7 @@ Got {chunk_overlap}''')
     fwd_overlap, fwd_overlap_len = None, 0
 
     for s in fine_split:
+        if not s: continue  # noqa E701
         split_len = len_func(s) + separator_len
         # Check for full back_overlap (if relevant, i.e. back_overlap isn't None)
         if back_overlap is not None and (back_overlap_len + split_len > chunk_overlap):  # noqa: F821

@@ -25,18 +25,17 @@ def test_split_basic():
         ]
 
 
-@pytest.mark.skip(reason="Still working on it")
+# @pytest.mark.skip(reason="Still working on it")
 def test_split_poem():
     # Just use a subset of the poem
     poem_text = COME_THUNDER.partition('The arrows of God')[0]
     chunks = text_splitter(poem_text, chunk_size=200, chunk_overlap=30)
-    print(chunks[0], '\n---')
-    print(chunks[1], '\n---')
-    print(chunks[2], '\n---')
-    print(chunks[3], '\n---')
+    # print(chunks[0], '\n---')
+    assert chunks[0] == 'Now that the triumphant march has entered the last street corners,\nRemember, O dancers, the thunder among the clouds…\n\nNow that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…'
+    assert chunks[1] == 'Now that the triumphant march has entered the last street corners,\nRemember, O dancers, the thunder among the clouds…\n\nNow that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…\n\nThe smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.'
+    assert chunks[2] == 'Now that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…\n\nThe smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.\n\nThe drowsy heads of the pods in barren farmlands witness it,\nThe homesteads abandoned in this century’s brush fire witness it:\nThe myriad eyes of deserted corn cobs in burning barns witness it:\nMagic birds with the miracle of lightning flash on their feathers…'
     # import pprint; pprint.pprint(chunks)  # noqa
     assert len(chunks) == 3
-    assert chunks[0] == ''
 
 
 # One of Christopher Okigbo's greatest poems
