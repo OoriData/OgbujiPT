@@ -48,5 +48,5 @@ def openai_api_surrogate(prompt, api_func=openai.Completion.create, **kwargs):
     # Reset API details, relevant when emulating OpenAI
     openai.api_base = kwargs['api_base']
     openai.api_key = kwargs['api_key']
-    # Send otehr, provided args to the generation function
+    # Send other, provided args to the generation function
     return api_func(prompt=prompt, **kwargs)
