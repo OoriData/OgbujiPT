@@ -11,8 +11,7 @@ import warnings
 # OVERLAP_FULL = -1
 
 
-def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
-                  len_func=len):
+def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n', len_func=len):
     '''
 
     Much like langchain's CharTextSplitter.py
