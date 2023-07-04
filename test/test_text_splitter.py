@@ -38,6 +38,23 @@ def test_split_poem():
     assert len(chunks) == 3
 
 
+def test_separator_not_found():
+    with pytest.warns(UserWarning):
+        chunks = text_splitter(
+            BASIC_EVEN_BLOCK, chunk_size=21, chunk_overlap=3, separator='!!!')
+    assert len(chunks) == 1
+    assert len(chunks[0]) == len(BASIC_EVEN_BLOCK)
+
+
+def test_separator_chunk_size_too_large():
+    # Just use a subset of the poem
+    with pytest.warns(UserWarning):
+        chunks = text_splitter(
+            BASIC_EVEN_BLOCK, chunk_size=100, chunk_overlap=10, separator='!!!')
+    assert len(chunks) == 1
+    assert len(chunks[0]) == len(BASIC_EVEN_BLOCK)
+
+
 # One of Christopher Okigbo's greatest poems
 COME_THUNDER = '''\
 Now that the triumphant march has entered the last street corners,
