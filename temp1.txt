@@ -1,0 +1,9 @@
+{'cache_folder': None,
+ 'client': SentenceTransformer(
+  (0): Transformer({'max_seq_length': 256, 'do_lower_case': False}) with Transformer model: BertModel 
+  (1): Pooling({'word_embedding_dimension': 384, 'pooling_mode_cls_token': False, 'pooling_mode_mean_tokens': True, 'pooling_mode_max_tokens': False, 'pooling_mode_mean_sqrt_len_tokens': False})
+  (2): Normalize()
+),
+ 'encode_kwargs': {},
+ 'model_kwargs': {},
+ 'model_name': 'all-MiniLM-L6-v2'}

@@ -43,7 +43,7 @@ from PyPDF2 import PdfReader
 import langchain
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.question_answering import load_qa_chain
-from langchain.vectorstores import Qdrant
+from langchain.vectorstores import Qdrant as lcQdrant  # RENAMED TO MAKE IT CLEAR *WHO DID THIS*
 from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -101,7 +101,7 @@ async def prep_pdf(pdf):
     embeddings = SentenceTransformerEmbeddings(model_name=DOC_EMBEDDINGS_LLM)
 
     # Create in-memory Qdrant instance for the embeddings
-    knowledge_base = Qdrant.from_texts(
+    knowledge_base = lcQdrant.from_texts(
         chunks,
         embeddings,
         location=':memory:',
@@ -166,7 +166,7 @@ async def async_main(llm):
         with st.empty():
             st.image(throbber)
             kb = await prep_pdf(pdf)
-            
+
             docs, user_q = await handle_user_q(kb, chain)
 
         if docs:
@@ -178,7 +178,7 @@ async def async_main(llm):
                     question=user_q
                     )
                 )
-            
+
             # Show throbber, and send LLM prompt
             with st.empty():
                 st.image(throbber)
@@ -187,7 +187,7 @@ async def async_main(llm):
                     tasks, return_when=asyncio.FIRST_COMPLETED
                     )
                 response = next(iter(done)).result()
-                
+
                 # Write reponse to console and Streamlit
                 print('\nResponse from LLM: ', response)
                 st.write(response)
