@@ -12,7 +12,7 @@ from qdrant_client.http import models
 
 def initialize_embedding_db(
         chunks, 
-        embedding, 
+        embedding_model, 
         collection_name, 
         distance_function='Cosine'
         ) -> QdrantClient:
@@ -33,7 +33,7 @@ def initialize_embedding_db(
         client (QdrantClient): The initialized Qdrant client object
     '''
     # Find the size of the first chunk's embedding
-    partial_embeddings = embedding.encode(list(chunks[0]))
+    partial_embeddings = embedding_model.encode(list(chunks[0]))
     vector_size = len(partial_embeddings[0])
 
     # Set the default distance function, and catch for incorrect capitalization
@@ -58,7 +58,7 @@ def initialize_embedding_db(
 def upsert_embedding_db(
         client, 
         chunks, 
-        embedding, 
+        embedding_model, 
         collection_name
         ) -> QdrantClient:
     '''
@@ -85,7 +85,7 @@ def upsert_embedding_db(
 
     for id, chunk in enumerate(chunks):  # For each chunk
         # Embed the chunk
-        embedded_chunk = list(embedding.encode(chunk))
+        embedded_chunk = list(embedding_model.encode(chunk))
 
         # Prepare the chunk as a list of (float) vectors
         prepped_chunk = [float(vector) for vector in embedded_chunk]
