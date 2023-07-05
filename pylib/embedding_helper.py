@@ -5,54 +5,102 @@
 '''
 Routines to help with embedding for vector databases such as Qdrant
 '''
+
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 
-def initialize_embedding_db(chunks, embedding, collection_name, distance_func='Cosine'):
+def initialize_embedding_db(
+        chunks, 
+        embedding, 
+        collection_name, 
+        distance_function='Cosine'
+        ) -> QdrantClient:
     '''
+    Set up a Qdrant client and a collection of embeddings inside of it.
 
+    Args:
+        chunks (List[str]): a list of similar length strings to vectorize
+
+        embedding (SentenceTransformer): The SentenceTransformer object of your choice
+        SentenceTransformer](https://huggingface.co/sentence-transformers)
+
+        collection_name (str): A name that describes "chunks"
+
+        distance_function (str): The distance function by which vectors will be compared
+
+    Returns:
+        client (QdrantClient): The initialized Qdrant client object
     '''
-    partial_embeddings = embedding.encode(chunks[:1])
+    # Find the size of the first chunk's embedding
+    partial_embeddings = embedding.encode(list(chunks[0]))
     vector_size = len(partial_embeddings[0])
 
-    distance_func = distance_func.lower().capitalize()
+    # Set the default distance function, and catch for incorrect capitalization
+    distance_function = distance_function.lower().capitalize()
 
+    # Create a Qdrant client running locally in memory
     client = QdrantClient(':memory:')
 
+    # Create a collection in the Qdrant client, and configure its vectors
     client.recreate_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(
             size=vector_size, 
-            distance=distance_func
+            distance=distance_function
             )
         )
 
+    # Return the Qdrant client object
     return client
 
 
-def upsert_chunks(client, chunks, embedding, collection_name):
+def upsert_embedding_db(
+        client, 
+        chunks, 
+        embedding, 
+        collection_name
+        ) -> QdrantClient:
     '''
+    Update/insert a Qdrant client's collection with the some chunks of text
 
+    Args:
+        client (QdrantClient): An initialized Qdrant client object
+
+        chunks (List[str]): a list of similar length strings to vectorize
+
+        embedding (SentenceTransformer): The SentenceTransformer object of your choice
+        SentenceTransformer](https://huggingface.co/sentence-transformers)
+
+        collection_name (str): The name of the collection being modified
+
+    Returns:
+        QdrantClient: The upserted Qdrant client object
     '''
+    #
     current_count = int(str(client.count(collection_name)).partition('=')[-1])
 
-    for id, chunk in enumerate(chunks):
-        vectorized_chunk = list(embedding.encode(chunk))
+    for id, chunk in enumerate(chunks):  # For each chunk
+        # Embed the chunk
+        embedded_chunk = list(embedding.encode(chunk))
 
-        prepped_chunk = [float(vector) for vector in vectorized_chunk]
+        # Prepare the chunk as a list of (float) vectors
+        prepped_chunk = [float(vector) for vector in embedded_chunk]
 
-        prepped_payload = {'chunk_text': chunk}
+        # Create a payload of the (now embedded) chunk
+        prepped_payload = {'chunk_string': chunk}
 
+        # Upsert the embedded chunk and its payload into the collection
         client.upsert(
             collection_name=collection_name,
             points=[
                 models.PointStruct(
-                    id=id + current_count,
+                    id=id + current_count,  # Make sure all chunks have sequential IDs
                     vector=prepped_chunk,
                     payload=prepped_payload
                     )
                 ]
             )
 
+    # Return the modified Qdrant client object
     return client

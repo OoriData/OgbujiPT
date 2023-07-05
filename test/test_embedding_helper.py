@@ -11,7 +11,7 @@ from ogbujipt.text_helper import text_splitter
 
 from sentence_transformers import SentenceTransformer
 
-from ogbujipt.embedding_helper import initialize_embedding_db, upsert_chunks
+from ogbujipt.embedding_helper import initialize_embedding_db, upsert_embedding_db
 
 from qdrant_client.http.models.models import ScoredPoint
 
@@ -30,6 +30,7 @@ def test_embed_poem():
 
     collection_name = 'test_collection'
 
+    # initialize a client
     client = initialize_embedding_db(
         collection_name=collection_name, 
         chunks=chunks, 
@@ -37,7 +38,12 @@ def test_embed_poem():
         )
 
     # insert the chunks into the Qdrant client
-    client = upsert_chunks(client, chunks, embedding, collection_name)
+    client = upsert_embedding_db(
+        client, 
+        chunks, 
+        embedding, 
+        collection_name
+        )
 
     embedded_question = embedding.encode(TEST_QUESTION)
 
@@ -47,7 +53,7 @@ def test_embed_poem():
         limit=1
         )
 
-    joined_answers = ''.join(relevant_answers[0].payload['chunk_text'])
+    joined_answers = ''.join(relevant_answers[0].payload['chunk_string'])
 
     assert 'O dancers' in joined_answers
 
