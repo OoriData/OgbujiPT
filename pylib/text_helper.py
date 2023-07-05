@@ -6,6 +6,7 @@
 Routines to help with text processing
 '''
 import re
+import warnings
 
 # OVERLAP_FULL = -1
 
@@ -41,6 +42,10 @@ Got {chunk_overlap}''')
     fine_split = re.split(sep_pat, text)
     separator_len = len_func(separator)
 
+    if len(fine_split) < 2:
+        warnings.warn(
+            f'No splits detected. Problem with separator ({separator})?')
+
     # Combine the small pieces into medium size chunks to send to LLM
     # Initialize accumulators; chunks will be the target list of the chunks so far
     # curr_chunk will be a list of parts comprising the main, current chunk
@@ -68,7 +73,7 @@ Got {chunk_overlap}''')
             # If so, complete current chunk & start a new one
 
             # fwd_overlap should be non-None at this point, so check empty
-            if not fwd_overlap:
+            if not fwd_overlap and curr_chunk:
                 # If empty, look back to make sure there is some overlap
                 fwd_overlap.append(curr_chunk[-1])
 
@@ -95,6 +100,11 @@ Got {chunk_overlap}''')
 
     # Concatenate all the split parts of all the chunks
     chunks = [separator.join(c) for c in chunks]
+
+    # Handle degenerate case where no splits found & chunk size too large
+    # Just becomes one big chunk
+    if not chunks:
+        chunks = [text]
 
     # chunks.append(separator.join(curr_chunk))
     return chunks
