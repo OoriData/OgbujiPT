@@ -77,7 +77,10 @@ def upsert_embedding_db(
     Returns:
         QdrantClient: The upserted Qdrant client object
     '''
-    #
+    # Get the current count of chunks in the collection
+    # TODO: the grossness here is a workaround for client.count() returning a unique
+    # class object "count=0". If a method becomes available to get the count as an int,
+    # this will be changed to use that method.
     current_count = int(str(client.count(collection_name)).partition('=')[-1])
 
     for id, chunk in enumerate(chunks):  # For each chunk
