@@ -24,7 +24,7 @@ running. Assume for the following it's at my-llm-host:8000
 Prerequisites. From OgbujiPT cloned dir:.
 
 ```
-pip install -upgrade .
+pip install --upgrade .
 pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-client tiktoken
 ```
 
