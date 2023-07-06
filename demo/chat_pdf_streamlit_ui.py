@@ -31,30 +31,21 @@ pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-
 Notice the -- to separate our program's cmdline args from streamlit's
 streamlit run demo/chat_pdf_streamlit_ui.py -- --host=http://my-llm-host --port=8000
 '''
-
 import asyncio
-
-# Could choose to use controls in streamlit rather than cmdline
-import click
 
 import streamlit as st
 from PyPDF2 import PdfReader
 
-import langchain
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains.question_answering import load_qa_chain
-from langchain.vectorstores import Qdrant as lcQdrant  # RENAMED TO MAKE IT CLEAR *WHO DID THIS*
-from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain import OpenAI  # Using the API, though on a self-hosted LLM
+from sentence_transformers import SentenceTransformer
+
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
 
 from ogbujipt.async_helper import schedule_llm_call
-from ogbujipt.config import openai_emulation
-
-# Workaround for AttributeError: module 'langchain' has no attribute 'verbose'
-# see: https://github.com/hwchase17/langchain/issues/4164
-langchain.verbose = False
+from ogbujipt.config import openai_emulation, openai_live
+from ogbujipt.prompting.basic import context_build, pdelim
+from ogbujipt.text_helper import text_splitter
+from ogbujipt.embedding_helper import initialize_embedding_db, upsert_embedding_db
 
 QA_CHAIN_TYPE = 'stuff'
 PDF_USER_QUESTION_PROMPT = 'Ask a question about your PDF:'
@@ -62,8 +53,8 @@ PDF_USER_QUESTION_PROMPT = 'Ask a question about your PDF:'
 # FIXME: Probably want to get this value from the remote API. Figure out how
 N_CTX = 2048
 
-# FIXME: Parameterize these, perhaps in streamlit controls, also how many k docs to return
 # Chunk size is the number of characters counted in the chunks
+# FIXME: Parameterize these, perhaps in streamlit controls, also how many k docs to return
 EMBED_CHUNK_SIZE = 500
 
 # Model Chunk Overlap to connect ends of chunks together using 
@@ -82,60 +73,57 @@ async def prep_pdf(pdf):
     # Convert "pdf" into chunks according to chunk size and overlap
     # Take "chunks" and vectorize it for SLLM lookup
     # return "knowledge_base" as the vectorized sets of chunks
-
     pdf_reader = PdfReader(pdf)
 
     # Collect text from pdf
     text = ''.join((page.extract_text() for page in pdf_reader.pages))
 
     # Split the text into chunks
-    text_splitter = CharacterTextSplitter(
-        separator='\n',
+    chunks = text_splitter(
+        text, 
         chunk_size=EMBED_CHUNK_SIZE,
         chunk_overlap=EMBED_CHUNK_OVERLAP,
-        length_function=len
-    )
-    chunks = text_splitter.split_text(text)
+        separator='\n'
+        )
 
     # LLM will be downloaded from HuggingFace automatically
-    embeddings = SentenceTransformerEmbeddings(model_name=DOC_EMBEDDINGS_LLM)
+    embedding_model = SentenceTransformer(model_name=DOC_EMBEDDINGS_LLM)
 
     # Create in-memory Qdrant instance for the embeddings
-    knowledge_base = lcQdrant.from_texts(
-        chunks,
-        embeddings,
-        location=':memory:',
-        collection_name='doc_chunks'
-    )
+    collection_name = 'pdf_chunks'
+    knowledge_base = initialize_embedding_db(
+        collection_name=collection_name, 
+        chunks=chunks, 
+        embedding=embedding_model
+        )
 
     return knowledge_base
 
 
-async def handle_user_q(kb, chain):
+async def handle_user_q(kb):
     # Get a "user_question" from Streamlit
     # Get the top K chunks relevant to the user's question
     # Return the chunks and user question
-
     user_question = st.text_input(PDF_USER_QUESTION_PROMPT)
 
     docs = None
     if user_question:
         # Return the "k" most relevant objects to the "user_question" as "docs"
-        docs = kb.similarity_search(user_question, k=4)
+        docs = kb.search(user_question, k=4)
 
         # Calculating prompt (takes time and can optionally be removed)
-        prompt_len = chain.prompt_length(docs=docs, question=user_question)
-        print(f'Prompt len: {prompt_len}')
+        # prompt_len = chain.prompt_length(docs=docs, question=user_question)
+        # print(f'Prompt len: {prompt_len}')
         # Used to catch and prevent long wait times and a potential crash 
         # in a situation where model is fed too many chars
-        if prompt_len > N_CTX:
-            st.write(
-                "Prompt length is more than n_ctx. This will likely fail."
-                "Increase model's context, reduce chunk size or question length,"
-                "or change k to retrieve fewer docs."
-                "Debug info on docs for the prompt:"
-            )
-            st.text_area(repr(docs))
+        # if prompt_len > N_CTX:
+        #     st.write(
+        #         "Prompt length is more than n_ctx. This will likely fail."
+        #         "Increase model's context, reduce chunk size or question length,"
+        #         "or change k to retrieve fewer docs."
+        #         "Debug info on docs for the prompt:"
+        #     )
+        #     st.text_area(repr(docs))
 
     return docs, user_question
 
@@ -146,17 +134,19 @@ async def async_main(llm):
     '''
     Oori — Ask your PDF 📄💬
     '''
-    chain = load_qa_chain(llm, chain_type=QA_CHAIN_TYPE)
-
-    # XXX: Do we need to tweak this for Nous-Hermes? It does seem to be working OK
-    # Patching qa_chain prompt template to better suit the stable-vicuna model
-    # see https://huggingface.co/TheBloke/stable-vicuna-13B-GGML#prompt-template
-    if "Helpful Answer:" in chain.llm_chain.prompt.template:
-        chain.llm_chain.prompt.template = (
-            f"### Human:{chain.llm_chain.prompt.template}".replace(
-                "Helpful Answer:", "\n### Assistant:"
-            )
+    # Page setup
+    st.set_page_config(
+        page_title="Ask your PDF",
+        page_icon="📄💬",
+        layout="wide",
+        initial_sidebar_state="expanded",
         )
+
+    # Define delimeters in OpenAI's style
+    openai_delimiters = {
+        pdelim.PREQUERY: '### USER:',
+        pdelim.POSTQUERY: '### ASSISTANT:',
+    }
 
     # create file upload box on Streamlit, then set "pdf" as the pdf that the user uploads
     pdf = st.file_uploader("Upload a PDF", type=["pdf"])
@@ -167,30 +157,51 @@ async def async_main(llm):
             st.image(throbber)
             kb = await prep_pdf(pdf)
 
-            docs, user_q = await handle_user_q(kb, chain)
+            docs, user_q = await handle_user_q(kb)
 
-        if docs:
-            # Set up LLM prompt task
-            llm_task = asyncio.create_task(
-                schedule_llm_call(
-                    chain.run, 
-                    input_documents=docs, 
-                    question=user_q
-                    )
+        # Collects "chunked_doc" into "gathered_chunks"
+        gathered_chunks = '\n\n'.join(doc.payload['chunk_string'] for doc in docs)
+
+        # Build "prompt" with the context of "chunked_doc"
+        prompt = context_build(
+            f'\nGiven the context, {user_q}\n\nContext: """\n{gathered_chunks}\n"""\n',
+            preamble='### SYSTEM:\n\nYou are a helpful assistant, who answers questions directly and as briefly as possible. If you cannot answer with the given context, just say so.\n',
+            delimiters=openai_delimiters
+            )
+
+        # Set up LLM prompt task
+        llm_task = asyncio.create_task(
+            schedule_llm_call(
+                input_documents=docs, 
+                question=user_q
                 )
+            )
+        
+        response = openai_api.Completion.create(
+            model=model,  # Model (Required)
+            prompt=prompt,  # Prompt (Required)
+            temperature=llmtemp,  # Temp (Default 1)
+            max_tokens=60,  # Max Token length of generated text (Default no max)
+            top_p=1,  # AKA nucleus sampling; can increase diversity of the
+                    # generated text (Default 1)
+            frequency_penalty=0,    # influences the model to favor more or less
+                                    # frequent tokens (Default 0)
+            presence_penalty=1  # influences the model to use new tokens it has
+                                # not yet used (Default 0)
+            )
 
-            # Show throbber, and send LLM prompt
-            with st.empty():
-                st.image(throbber)
-                tasks = [llm_task]
-                done, _ = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                response = next(iter(done)).result()
+        # Show throbber, and send LLM prompt
+        with st.empty():
+            st.image(throbber)
+            tasks = [llm_task]
+            done, _ = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+            response = next(iter(done)).result()
 
-                # Write reponse to console and Streamlit
-                print('\nResponse from LLM: ', response)
-                st.write(response)
+            # Write reponse to console and Streamlit
+            print('\nResponse from LLM: ', response)
+            st.write(response)
 
 
 # See e.g. demo/alpaca_multitask_fix_xml.py for more explanation
@@ -199,24 +210,14 @@ async def async_main(llm):
 @click.option('--port', default='8000', help='OpenAI API port')
 @click.option('--temp', default='0.1', type=float, help='LLM temperature')
 def main(host, port, temp):
-    # Callback just to stream output to stdout, can be removed
-    callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-
     # Emulate OpenAI API with "host" and "port" for LLM call
-    openai_emulation(host=host, port=port)
-    llm = OpenAI(
-        temperature=temp,
-        callback_manager=callback_manager,
-        verbose=True,
-        )
-
-    # Page setup
-    st.set_page_config(
-        page_title="Ask your PDF",
-        page_icon="📄💬",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
+    if openai:
+        assert not (host or port), 'Don\'t use --host or --port with --openai'
+        openai_api = openai_live(debug=True)
+        model = model or 'text-davinci-003'
+    else:
+        openai_api = openai_emulation(host=host, port=port)
+        model = model or 'LOCAL'
 
     asyncio.run(async_main(llm))
 
