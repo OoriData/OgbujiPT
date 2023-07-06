@@ -1,10 +1,12 @@
 # OgbujiPT
 
-Toolkit for using self-hosted large language models, through langchain & other means
+Toolkit for using self-hosted large language models, but also with support for e.g. ChatGPT.
 
-Includes demos with chat-your-documents and AGI/AutoGPT/privateGPT-style capabilities.
+Includes demos with chat-your-documents and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
-The main, tested front-end is langchain, but this can be used in a very shallow way to interact with LLMs (see, e.g. the `alpaca_simple_fix_xml.py` demo where really only 3 lines are langchain-specific).
+There are some helper functions for common LLM tasks, such as those provided by
+projects such as langchain, but not yet as extensive. The OgbujiPT versions,
+however, emphasize simplicity and transparency.
 
 Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba). In our own practice we use boh of these with Nvidia GPU.
 
@@ -36,7 +38,8 @@ pip install ogbujipt
 
 ## A bit more explanation
 
-Many self-hosted AI large language models are now astonishingly good, even running on consumer-grade hardware, which provides an alternative for those of us who would rather not be sending all our data out over the network to the likes of ChatGPT & Bard. OgbujiPT provides a toolkit for using and experimenting with LLMs via [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba), a popular tool for self-hosting such models. OgbujiPT can invoke these to complete prompted tasks on self-hosted LLMs.
+Many self-hosted AI large language models are now astonishingly good, even running on consumer-grade hardware, which provides an alternative for those of us who would rather not be sending all our data out over the network to the likes of ChatGPT & Bard. OgbujiPT provides a toolkit for using and experimenting with LLMs via [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba), a popular tool for self-hosting such models. OgbujiPT can invoke these to complete prompted tasks on self-hosted LLMs. It can also be used for
+building front end to ChatGPT and Bard, if these are suitable for you.
 
 * [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
 * [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
@@ -45,15 +48,20 @@ Right now OgbujiPT requires a bit of Python development on the user's part, but 
 
 ## Bias to good software engineering
 
-I've seen many projects talking stabs at something like this one, but they really just seem to be stabs, usually by folks interested in LLM who admit they don't have strong coding backgrounds. This not only leads to a lumpy patchwork of forks and variations, as people try to figure out the narrow, gnarly paths that cater to their own needs, but also hampers maintainability just at a time when everything seems to be changing drastically every few days.
+I've seen many projects taking stabs at something like this one, but they really just seem to be stabs, usually by folks interested in LLM who admit they don't have strong coding backgrounds. This not only leads to a lumpy patchwork of forks and variations, as people try to figure out the narrow, gnarly paths that cater to their own needs, but also hampers maintainability just at a time when everything seems to be changing drastically every few days.
 
 I have a strong Python and software engineering background, and I'm looking to apply that in this project, to hopefully create something more easily speclailized for other needs, built-upon, maintained and contributed to.
 
 This project is packaged using [hatch](https://hatch.pypa.io/), a modern Python packaging tool. I plan to write tests as I go along, and to incorporate continuous integration. Admit I may be slow to find the cycles for all that, but at least the intent and architecture is there from the beginning.
 
-## Model styles
+## Prompting patterns
 
-A central concept of OgbujiPT is model styles. There are [numerous Open LLMs out there](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard), and each one tends to have some specialization, including in how prompt it. Here we define model styles to help encapsulate these differences, and make it easier to quickly launch experiments, adapt to and adopt other models.
+Different LLMs have different conventions you want to use in order to get high
+quality responses. If you've looked into [self-hosted LLMs](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard) you might have heard
+of the likes of alpaca, vicuña or even airoboros. OgbujiPT includes some shallow
+tools in order to help construct prompts according to the particular conventions
+that would be best for your choice of LLM. This makes it easier to quickly launch
+experiments, adapt to and adopt other models.
 
 # Contributions
 
@@ -101,4 +109,5 @@ Many install guides I've found for Mac, Linux and Windows touch on enabling GPU,
 
 ## What's with the crazy name?
 
-Enh?! Yo mama! 😝 My surname is Ogbuji, so it's a bit of a pun: Ooba + GPT by Ogbuji = OgbujiPT, ya feel me?
+Enh?! Yo mama! 😝 My surname is Ogbuji, so it's a bit of a pun.
+This is the notorious OGPT, ya feel me?

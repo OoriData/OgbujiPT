@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "OgbujiPT"
 dynamic = ["version"]
-description = 'Simple, BabyAGI-like toolkit using locally hosted LLMs, via Oobabooga'
+description = 'Client-side tools for using large language models, full service (e.g. ChatGPT & Bard) or locally hosted (e.g. LLaMA derivatives)'
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
