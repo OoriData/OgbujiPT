@@ -164,10 +164,13 @@ async def async_main(openai_api, model, LLM_TEMP):
                         temperature=LLM_TEMP  # Temp (Default 1)
                         )
 
-                    # Write full reponse data sructure to console
-                    print('\nResponse from LLM: ', response)
-                    # Write just the best choice response text to Streamlit
-                    st.write(response['choices'][0]['text'].strip())
+                    # Response is a json-like object; extract the text
+                    print('\nFull response data from LLM:\n', response)
+
+                    # Response is a json-like object; 
+                    # just get back the text of the response
+                    response_text = response.choices[0].text.strip()
+                    print('\nResponse text from LLM:\n', response_text)
 
 
 def main():

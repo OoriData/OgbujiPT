@@ -83,7 +83,14 @@ async def async_main(openai_params):
 
     # Instance of openai.openai_object.OpenAIObject, with lots of useful info
     retval = next(iter(done)).result()
-    print('\nResponse from LLM: ', retval.choices[0].text)
+
+    # Response is a json-like object; extract the text
+    print('\nFull response data from LLM:\n', retval)
+
+    # response is a json-like object; 
+    # just get back the text of the response
+    response_text = retval.choices[0].text.strip()
+    print('\nResponse text from LLM:\n', response_text)
 
 
 # Command line arguments defined in click decorators

@@ -75,8 +75,15 @@ async def send_llm_msg(msg):
         )
 
     response = next(iter(done)).result()
-    response_text = response.choices[0].text
-    print('\nFull response data from LLM: ', response)
+
+    # Response is a json-like object; extract the text
+    print('\nFull response data from LLM:\n', response)
+
+    # Response is a json-like object; 
+    # just get back the text of the response
+    response_text = response.choices[0].text.strip()
+    print('\nResponse text from LLM:\n', response_text)
+
     return response_text
 
 
