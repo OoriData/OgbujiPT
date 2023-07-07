@@ -106,7 +106,8 @@ async def prep_pdf(pdf, embedding_model, collection_name):
     return knowledge_base
 
 
-# Schedule one task to do a long-running/blocking LLM request, and another to chat the PDF
+# Schedule one task to do a long-running/blocking LLM request, 
+# and another to chat the PDF
 async def async_main(openai_api, model, LLM_TEMP):
     # Doc strings turn into streamlit headers
     '''
@@ -145,12 +146,17 @@ async def async_main(openai_api, model, LLM_TEMP):
 
             if docs:
                 # Collects "chunked_doc" into "gathered_chunks"
-                gathered_chunks = '\n\n'.join(doc.payload['chunk_string'] for doc in docs)
+                gathered_chunks = '\n\n'.join(
+                    doc.payload['chunk_string'] for doc in docs
+                    )
 
                 # Build "prompt" with the context of "chunked_doc"
                 prompt = context_build(
-                    f'\nGiven the context, {user_question}\n\nContext: """\n{gathered_chunks}\n"""\n',
-                    preamble='### SYSTEM:\n\nYou are a helpful assistant, who answers questions directly and as briefly as possible. If you cannot answer with the given context, just say so.\n',
+                    f'\nGiven the context, {user_question}\n\n'
+                    f'Context: """\n{gathered_chunks}\n"""\n',
+                    preamble='### SYSTEM:\n\nYou are a helpful assistant, who answers '
+                    'questions directly and as briefly as possible. '
+                    'If you cannot answer with the given context, just say so.\n',
                     delimiters=openai_delimiters
                     )
 

@@ -56,8 +56,6 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 
-# To-do: Incorporate work by @Choccccy in https://github.com/choccccy/choccys_toolbox/blob/main/demo/alpaca_simple_jjonah.py
-
 async def send_llm_msg(msg):
     '''
     Schedule the LLM request
@@ -132,6 +130,6 @@ def main():
 
 if __name__ == '__main__':
     # Entry point protects against multiple launching of the overall program
-    # when a child process imports this
+    # when a child process imports this 
     # viz https://docs.python.org/3/library/multiprocessing.html#multiprocessing-safe-main-import
     main()

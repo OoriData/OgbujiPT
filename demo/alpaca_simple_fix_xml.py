@@ -23,9 +23,10 @@ from ogbujipt.prompting.model_style import VICUNA_DELIMITERS
 @click.option('--port', default='8000', help='OpenAI API port')
 @click.option('--llmtemp', default='0.1', type=float, help='LLM temperature')
 @click.option('--openai', is_flag=True, default=False, type=bool,
-              help='Use live OpenAI API. If you use this option, you must have ' +
+              help='Use live OpenAI API. If you use this option, you must have '
               '"OPENAI_API_KEY" defined in your environmnt')
-@click.option('--model', default='', type=str, help='OpenAI model to use (see https://platform.openai.com/docs/models)')
+@click.option('--model', default='', type=str, 
+              help='OpenAI model to use (see https://platform.openai.com/docs/models)')
 def main(host, port, llmtemp, openai, model):
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
     if openai:
@@ -44,7 +45,8 @@ def main(host, port, llmtemp, openai, model):
 
     prompt = context_build(
         f'Correct the following XML to make it well-formed\n\n{BAD_XML_CODE}',
-        preamble='You are a helpful assistant, who answers questions briefly, in 1st grade language',
+        preamble='You are a helpful assistant, '
+        'who answers questions briefly, in 1st grade language',
         delimiters=VICUNA_DELIMITERS)
     print(prompt, '\n')
 
