@@ -27,16 +27,25 @@ class attr_dict(dict):
 
 def openai_live(
         apikey=None,
-        debug=True):
+        debug=True
+        ):
     '''
     Set up to use OpenAI proper. If you don't pass in an API key, the
     environment variable OPENAI_API_KEY will be checked
 
     Side note: a lot of OpenAI tutorials suggest that you embed your
-    OpenAI private key into the code, which is a terrible idea
+    OpenAI private key into the code, which is a horrible, terrible idea
 
     Extra reminder: If you set up your environment via .env file, make sure
-     it's in .gitignore or equivalent so it never gets accisentally committed!
+    it's in .gitignore or equivalent so it never gets accidentally committed!
+
+    Args:
+        apikey (str, optional): OpenAI API key to use for authentication
+
+        debug (bool, optional): Debug flag
+
+    Returns:
+        openai_api (openai): Prepared OpenAI API
     '''
     import openai as openai_api
     from dotenv import load_dotenv
@@ -61,6 +70,22 @@ def openai_emulation(
         apikey='BOGUS', oaitype='open_ai', debug=True):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
+
+    Args:
+        host (str, optional): Host address
+
+        port (str, optional): Port to use at "host"
+
+        rev (str, optional): OpenAI revision to use
+
+        apikey (str, optional): API key to use for authentication
+
+        oaitype (str, optional): OpenAI type to use
+
+        debug (bool, optional): Debug flag
+
+    Returns:
+        openai_api (openai): Prepared (emulated) OpenAI API
     '''
     import openai as openai_api
 

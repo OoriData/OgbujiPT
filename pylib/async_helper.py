@@ -24,6 +24,12 @@ async def schedule_llm_call(callable, *args, **kwargs):
     e.g. `llm_task = asyncio.create_task(schedule_llm_call(llm, prompt))`
 
     Can then use asyncio.wait(), asyncio.gather(), etc. with `llm_task`
+
+    Args:
+        callable (callable): Callable to be scheduled
+
+    Returns:
+        response: Response object
     '''
     # Link up the current async event loop for multiprocess execution
     loop = asyncio.get_running_loop()
@@ -43,6 +49,14 @@ def openai_api_surrogate(prompt, api_func=openai.Completion.create, **kwargs):
     in multiprocessing because it seems when the openai library gets
     re-imported after the process fork, important attributes such as
     api_base & api_key get reset
+
+    Args:
+        prompt (str): Prompt string for the LLM to ingest
+
+        api_func: API function to utilize
+
+    Returns:
+        api_func (openai): OpenAI API object
     '''
     # Reset API details, relevant when emulating OpenAI
     openai.api_base = kwargs['api_base']

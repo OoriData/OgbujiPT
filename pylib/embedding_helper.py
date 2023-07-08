@@ -20,17 +20,17 @@ def initialize_embedding_db(
     Set up a Qdrant client and a collection of embeddings inside of it.
 
     Args:
-        chunks (List[str]): a list of similar length strings to vectorize
+        chunks (List[str]): List of similar length strings to vectorize
 
-        embedding (SentenceTransformer): The SentenceTransformer object of your choice
+        embedding (SentenceTransformer): SentenceTransformer object of your choice
         SentenceTransformer](https://huggingface.co/sentence-transformers)
 
-        collection_name (str): A name that describes "chunks"
+        collection_name (str): Name that describes "chunks"
 
-        distance_function (str): The distance function by which vectors will be compared
+        distance_function (str): Distance function by which vectors will be compared
 
     Returns:
-        client (QdrantClient): The initialized Qdrant client object
+        client (QdrantClient): Initialized Qdrant client object
     '''
     # Find the size of the first chunk's embedding
     partial_embeddings = embedding_model.encode(list(chunks[0]))
@@ -65,17 +65,17 @@ def upsert_embedding_db(
     Update/insert a Qdrant client's collection with the some chunks of text
 
     Args:
-        client (QdrantClient): An initialized Qdrant client object
+        client (QdrantClient): Initialized Qdrant client object
 
-        chunks (List[str]): a list of similar length strings to vectorize
+        chunks (List[str]): List of similar length strings to vectorize
 
-        embedding (SentenceTransformer): The SentenceTransformer object of your choice
+        embedding (SentenceTransformer): SentenceTransformer object of your choice
         SentenceTransformer](https://huggingface.co/sentence-transformers)
 
-        collection_name (str): The name of the collection being modified
+        collection_name (str): Name of the collection being modified
 
     Returns:
-        QdrantClient: The upserted Qdrant client object
+        QdrantClient: Upserted Qdrant client object
     '''
     # Get the current count of chunks in the collection
     # TODO: the grossness here is a workaround for client.count() returning a unique

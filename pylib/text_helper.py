@@ -7,11 +7,29 @@ Routines to help with text processing
 '''
 import re
 import warnings
+from typing import List
 
 # OVERLAP_FULL = -1
 
 
-def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n', len_func=len):
+def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n', len_func=len) -> List(str):
+    '''
+    Split text into a set of chunks
+
+    Args:
+        text (str): (Multiline) String to be split into chunks
+
+        chunk_size (int): Number of characters to include per chunk
+
+        chunk_overlap (int): Number of characters to overlap at the edges of chunks
+
+        seperator (str, optional): String that already splits "text" into sections
+
+        distance_function (callable, optional): Function to measure length, len() by default
+
+    Returns:
+        chunks (List[str]): List of chunks of the text provided
+    '''
     '''
 
     Much like langchain's CharTextSplitter.py

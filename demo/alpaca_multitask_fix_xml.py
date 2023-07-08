@@ -83,7 +83,7 @@ async def async_main(openai_params):
 
     # Instance of openai.openai_object.OpenAIObject, with lots of useful info
     retval = next(iter(done)).result()
-
+    print(type(retval))
     # Response is a json-like object; extract the text
     print('\nFull response data from LLM:\n', retval)
 
