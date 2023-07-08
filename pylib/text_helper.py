@@ -62,7 +62,7 @@ Got {chunk_overlap}''')
 
     if len(fine_split) < 2:
         warnings.warn(
-            f'No splits detected. Problem with separator ({separator})?')
+            f'No splits detected. Problem with separator ({repr(separator)})?')
 
     # Combine the small pieces into medium size chunks to send to LLM
     # Initialize accumulators; chunks will be the target list of the chunks so far
