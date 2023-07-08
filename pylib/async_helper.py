@@ -16,6 +16,7 @@ import openai
 
 async def schedule_llm_call(callable, *args, **kwargs):
     '''
+    TODO: rename me? this is convenent for more than just LLM calls
     Schedule task long-running/blocking LLM requests in a separate process,
     wrapped to work well in an asyncio event loop
 
