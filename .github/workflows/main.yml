@@ -19,10 +19,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Better solution would be to mock sentence-transformers and qdrant-client
           pip install ruff pytest sentence-transformers qdrant-client
           pip install -U $GITHUB_WORKSPACE
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names
