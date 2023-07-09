@@ -32,6 +32,9 @@ Then to launch the bot:
 ```shell
 python demo/alpaca_simple_qa_discord.py
 ```
+
+For hints on how t modify this to use OpenAI's actual services,
+see demo/alpaca_simple_fix_xml.py
 '''
 
 import os
@@ -40,11 +43,10 @@ import asyncio
 import discord
 from dotenv import load_dotenv
 
-from langchain import OpenAI
-
 from ogbujipt.config import openai_emulation
-from ogbujipt.async_helper import schedule_llm_call
-from ogbujipt.model_style.alvic import make_prompt
+from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
+from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
 # Enable all standard intents, plus message content
 # The bot app you set up on Discord will require this intent (Bot tab)
@@ -54,31 +56,33 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 
-# To-do: Incorporate work by @Choccccy in https://github.com/choccccy/choccys_toolbox/blob/main/demo/alpaca_simple_jjonah.py
-
-class llm_manager:
-    def __init__(self, llm):
-        self.llm = llm
-
-
 async def send_llm_msg(msg):
     '''
     Schedule the LLM request
     '''
-    # Regular Alpaca prompt style (the default)
-    prompt = make_prompt(msg)
-    print(prompt)
+    prompt = context_build(msg, delimiters=ALPACA_DELIMITERS)
+    print(prompt, '\n')
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
-    llm_task = asyncio.create_task(schedule_llm_call(llm, prompt))
+    llm_task = asyncio.create_task(
+        schedule_callable(openai_api_surrogate, prompt, **llm.params))
+
     tasks = [llm_task]
     done, _ = await asyncio.wait(
         tasks, return_when=asyncio.FIRST_COMPLETED
         )
 
     response = next(iter(done)).result()
-    print('\nResponse from LLM:\n', response)
-    return response
+
+    # Response is a json-like object; extract the text
+    print('\nFull response data from LLM:\n', response)
+
+    # Response is a json-like object; 
+    # just get back the text of the response
+    response_text = response.choices[0].text.strip()
+    print('\nResponse text from LLM:\n', response_text)
+
+    return response_text
 
 
 @client.event
@@ -108,17 +112,17 @@ async def on_ready():
 
 
 def main():
-    global llm  # Ick! Ideally should be better scope/context controlled
+    # A real app would probably use a discord.py cog w/ these as data members
+    global llm, llm_temp
 
     load_dotenv()  # From .env file
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
     LLM_HOST = os.getenv('LLM_HOST')
     LLM_PORT = os.getenv('LLM_PORT')
-    LLM_TEMP = os.getenv('LLM_TEMP')
 
-    # Set up API connector
-    openai_emulation(host=LLM_HOST, port=LLM_PORT)
-    llm = OpenAI(temperature=LLM_TEMP)
+    # Set up API connector & update temperature from environment
+    llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)
+    llm.params.llmtemp = os.getenv('LLM_TEMP')
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)
@@ -126,6 +130,6 @@ def main():
 
 if __name__ == '__main__':
     # Entry point protects against multiple launching of the overall program
-    # when a child process imports this
+    # when a child process imports this 
     # viz https://docs.python.org/3/library/multiprocessing.html#multiprocessing-safe-main-import
     main()

@@ -5,9 +5,15 @@ or
 
 pytest test/test_alvic_prompting.py
 '''
-import pytest
+# import pytest
 
-from ogbujipt.model_style.alvic import make_prompt, sub_style
+from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.model_style import (
+   ALPACA_DELIMITERS,
+   ALPACA_INSTRUCT_DELIMITERS,
+   ALPACA_INSTRUCT_INPUT_DELIMITERS,
+   VICUNA_DELIMITERS
+)
 
 
 def test_basic_prompt_substyles():
@@ -17,38 +23,46 @@ def test_basic_prompt_substyles():
 <capital>Moscow</capital>
 </Earth>'''
 
-    EXPECTED_PROMPT = 'Correct the following XML to make it well-formed\n### Inputs:\n<earth>    \n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n\n\n### Response:\n'  # noqa
-    # using the default sub-style, so Alpaca
-    prompt = make_prompt(
-        'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE,
-        )
+    EXPECTED_PROMPT = 'Correct the following XML to make it well-formed\n\n\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### Response:'  # noqa
+
+    prompt = context_build(
+        BAD_XML_CODE,
+        preamble='Correct the following XML to make it well-formed\n',
+        delimiters=ALPACA_DELIMITERS
+    )
+    # 'You are a friendly AI who loves conversation\n\nHow are you?\n'
 
     assert prompt == EXPECTED_PROMPT
 
-    # Explicitly state the Alpaca style. EXPECTED doesn't change
-    prompt = make_prompt(
-        'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE,
-        sub=sub_style.ALPACA
-        )
+    EXPECTED_PROMPT = 'Correct the following XML to make it well-formed\n\n### Instruction:\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### Response:'  # noqa
+
+    prompt = context_build(
+        BAD_XML_CODE,
+        preamble='Correct the following XML to make it well-formed\n',
+        delimiters=ALPACA_INSTRUCT_DELIMITERS
+    )
+
     assert prompt == EXPECTED_PROMPT
 
-    EXPECTED_PROMPT = '### Instruction:\n\nCorrect the following XML to make it well-formed\n### Inputs:\n<earth>    \n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n\n\n### Response:\n'  # noqa
-    prompt = make_prompt(
-        'Correct the following XML to make it well-formed',
-        inputs=BAD_XML_CODE,
-        sub=sub_style.ALPACA_INSTRUCT
-        )
+    EXPECTED_PROMPT = 'Have a look at the following XML\n### Instruction:\nPlease correct this XML to make it well-formed\n### Input:\n\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n\n\n### Response:'  # noqa
+
+    prompt = context_build(
+        'Please correct this XML to make it well-formed',
+        preamble='Have a look at the following XML',
+        contexts=BAD_XML_CODE,
+        delimiters=ALPACA_INSTRUCT_INPUT_DELIMITERS
+    )
+
+    # print(prompt)
     assert prompt == EXPECTED_PROMPT
 
-    EXPECTED_PROMPT = '### USER:\n\nWhat is the capital of Cross River state?\n\n### ASSISTANT:\n'  # noqa
-    with pytest.warns(UserWarning):
-        prompt = make_prompt(
-            'What is the capital of Cross River state?',
-            inputs='NONSENSE',  # Meaningless for Vicuña
-            sub=sub_style.VICUNA)
+    EXPECTED_PROMPT = '\n### USER:\nCorrect the following XML to make it well-formed\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### ASSISTANT:'  # noqa
 
-    prompt = make_prompt('What is the capital of Cross River state?',
-                         sub=sub_style.VICUNA)
+    prompt = context_build(
+        'Correct the following XML to make it well-formed\n' + BAD_XML_CODE,
+        delimiters=VICUNA_DELIMITERS
+    )
+    # 'You are a friendly AI who loves conversation\n\nHow are you?\n'
+
     assert prompt == EXPECTED_PROMPT
+

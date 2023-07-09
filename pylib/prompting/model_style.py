@@ -1,7 +1,51 @@
 # SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
-#
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.model_styles.airoboros
+# ogbujipt.prompting.model_style
+
+'''
+Delimiters for common LLM model prompting styles
+
+Plain Alpaca style, e.g.:
+
+* WizardLM
+
+Alpaca-instruct style, e.g.
+
+* Nous-Hermes
+
+Vicuña style, e.g.
+
+* Robin
+
+Also includes Airoboros
+
+Useful collection of Alpaca demo prompts: https://huggingface.co/datasets/tatsu-lab/alpaca
+'''
+
+from ogbujipt.prompting.basic import pdelim, ordering
+
+VICUNA_DELIMITERS = {
+    pdelim.PREQUERY: '### USER:',
+    pdelim.POSTQUERY: '### ASSISTANT:',
+}
+
+ALPACA_DELIMITERS = {
+    pdelim.POSTQUERY: '### Response:',
+}
+
+ALPACA_INSTRUCT_DELIMITERS = {
+    pdelim.PREQUERY: '### Instruction:',
+    pdelim.POSTQUERY: '### Response:',
+}
+
+ALPACA_INSTRUCT_INPUT_DELIMITERS = {
+    pdelim.PREQUERY: '### Instruction:',
+    pdelim.POSTQUERY: '### Response:',
+    # We just expect a single context item, which we treat as the input:
+    pdelim.PRE_ALL_CONTEXT: '### Input:',
+    pdelim.META_ORDERING: ordering.QUERY_CONTEXT
+}
+
 
 '''
 Model style for airoboros: https://huggingface.co/jondurbin/airoboros-13b-gpt4
@@ -58,39 +102,25 @@ ENDINSTRUCTION
 
 '''
 
-# import re
-# from functools import partial
-# from typing import Optional, List, Mapping, Any, Union
+# Closed-context prompting
+AIROBOROS_OBEDIENT_DELIMITERS = {
+    pdelim.PREQUERY: 'BEGININSTRUCTION',
+    pdelim.POSTQUERY: 'ENDINSTRUCTION\nASSISTANT:',
+    pdelim.PRECONTEXT: 'BEGININPUT',
+    pdelim.POSTCONTEXT: 'ENDINPUT',
+    pdelim.PRE_ALL_CONTEXT: 'USER:',
+}
 
-# from langchain.schema import AgentAction, AgentFinish
-# from langchain.agents import Tool, LLMSingleActionAgent, AgentOutputParser
+# If you're not using the closed-context/obedient prompting, it's just Vicuña style
+AIROBOROS_DELIMITERS = VICUNA_DELIMITERS
 
-# Composing prompts from input sequences, rather than fixed, composite structure, so don't actually need PipelinePromptTemplate
-# https://python.langchain.com/en/latest/modules/prompts/prompt_templates/examples/prompt_composition.html
-# from langchain.prompts.pipeline import PipelinePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-
-# Prompts for airoboros using the context-obedient question answering approach
-# as specified in the model card.
-AIR_CONOB_OUTER_TMPL = '''\
-A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
-
-USER:
-{given_inputs}
-BEGININSTRUCTION
-{instructions}
-ENDINSTRUCTION
-Don't make up answers if you don't know.
-ASSISTANT:
-'''
+AIROBOROS_SUGGESTED_PREAMBLE = 'A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user\'s questions, and doesn\'t make up answers if it doesn\'t know.'  # noqa
 
 AIR_CONOB_INPUT_PRETMPL = '''\
-BEGININPUT
 BEGINCONTEXT
 {context}
 ENDCONTEXT
 {text}
-ENDINPUT
 '''
 
 
@@ -108,9 +138,3 @@ def concat_input_prompts(context_content_pairs):
     # pre_tmpl = ''.join(parts)
     # return PromptTemplate.from_template(''.join(parts))
     return ''.join(parts)
-
-
-AIR_CONOB_PROMPT_TMPL = PromptTemplate(
-    input_variables=['given_inputs', 'instructions'],
-    template=AIR_CONOB_OUTER_TMPL,
-)
