@@ -47,6 +47,10 @@ def initialize_embedding_db(
 
         distance_function (str): Distance function by which vectors will be compared
 
+        qdrant_conn_params (mapping): keyword parameters for setting up QdrantClient
+        See the main docstring (or run `help(QdrantClient)`)
+        https://github.com/qdrant/qdrant-client/blob/master/qdrant_client/qdrant_client.py#L12
+
     Returns:
         client (QdrantClient): Initialized Qdrant client object
     '''
@@ -98,12 +102,13 @@ def upsert_embedding_db(
         QdrantClient: Upserted Qdrant client object
     '''
     # Get the current count of chunks in the collection
-    # TODO: the grossness here is a workaround for client.count() returning a unique
-    # class object "count=0". If a method becomes available to get the count as an int,
-    # this will be changed to use that method.
+    # TODO: the grossness here is a workaround for client.count() returning
+    # an object which can then be cast to a string such as "count=0"
+    # We'll prefer to use a method to get the count directly as an int,
+    # once one becomes available
     current_count = int(str(client.count(collection_name)).partition('=')[-1])
 
-    for id, chunk in enumerate(chunks):  # For each chunk
+    for id_, chunk in enumerate(chunks):  # For each chunk
         # Embed the chunk
         embedded_chunk = list(embedding_model.encode(chunk))
 
@@ -118,7 +123,7 @@ def upsert_embedding_db(
             collection_name=collection_name,
             points=[
                 models.PointStruct(
-                    id=id + current_count,  # Make sure all chunks have sequential IDs
+                    id=id_ + current_count,  # Make sure all chunks have sequential IDs
                     vector=prepped_chunk,
                     payload=prepped_payload
                     )
