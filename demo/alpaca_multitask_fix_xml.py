@@ -19,7 +19,7 @@ import asyncio
 
 import click
 
-from ogbujipt.async_helper import schedule_llm_call, openai_api_surrogate
+from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
 from ogbujipt import config
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_DELIMITERS
@@ -75,7 +75,7 @@ async def async_main(openai_params):
     # You can't just do, say llm(prompt) because that will actually
     # call the function & block on the LLM request
     llm_task = asyncio.create_task(
-        schedule_llm_call(openai_api_surrogate, prompt, **model_params))
+        schedule_callable(openai_api_surrogate, prompt, **model_params))
     tasks = [indicator_task, llm_task]
     done, _ = await asyncio.wait(
         tasks, return_when=asyncio.FIRST_COMPLETED

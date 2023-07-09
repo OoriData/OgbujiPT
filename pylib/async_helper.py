@@ -14,7 +14,7 @@ from functools import partial
 import openai
 
 
-async def schedule_llm_call(callable, *args, **kwargs):
+async def schedule_callable(callable, *args, **kwargs):
     '''
     TODO: rename me? this is convenent for more than just LLM calls
     Schedule task long-running/blocking LLM requests in a separate process,
@@ -22,7 +22,7 @@ async def schedule_llm_call(callable, *args, **kwargs):
 
     Basically hides away a bunch of the multiprocessing webbing
 
-    e.g. `llm_task = asyncio.create_task(schedule_llm_call(llm, prompt))`
+    e.g. `llm_task = asyncio.create_task(schedule_callable(llm, prompt))`
 
     Can then use asyncio.wait(), asyncio.gather(), etc. with `llm_task`
 

@@ -44,7 +44,7 @@ import discord
 from dotenv import load_dotenv
 
 from ogbujipt.config import openai_emulation
-from ogbujipt.async_helper import schedule_llm_call, openai_api_surrogate
+from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
@@ -65,7 +65,7 @@ async def send_llm_msg(msg):
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
     llm_task = asyncio.create_task(
-        schedule_llm_call(openai_api_surrogate, prompt, **llm.params))
+        schedule_callable(openai_api_surrogate, prompt, **llm.params))
 
     tasks = [llm_task]
     done, _ = await asyncio.wait(

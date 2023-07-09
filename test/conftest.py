@@ -41,5 +41,4 @@ def BASIC_EVEN_BLOCK():
 0123456789
 abcdefghij
 ABCDEFGHIJ
-klmnopqrst
-'''
+klmnopqrst'''

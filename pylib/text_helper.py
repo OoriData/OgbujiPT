@@ -17,6 +17,14 @@ def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
     '''
     Split text into a set of chunks
 
+    Much like langchain's CharTextSplitter.py
+
+    >>> from ogbujipt.text_helper import text_splitter
+    >>> from PyPDF2 import PdfReader
+    >>> pdf_reader = PdfReader('monopoly-board-game-manual.pdf')
+    >>> text = ''.join((page.extract_text() for page in pdf_reader.pages))
+    >>> chunks = text_splitter(text, chunk_size=500, separator='\n')
+
     Args:
         text (str): (Multiline) String to be split into chunks
 
@@ -30,16 +38,6 @@ def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
 
     Returns:
         chunks (List[str]): List of chunks of the text provided
-    '''
-    '''
-
-    Much like langchain's CharTextSplitter.py
-
-    >>> from ogbujipt.text_helper import text_splitter
-    >>> from PyPDF2 import PdfReader
-    >>> pdf_reader = PdfReader('monopoly-board-game-manual.pdf')
-    >>> text = ''.join((page.extract_text() for page in pdf_reader.pages))
-    >>> chunks = text_splitter(text, chunk_size=500, separator='\n')
     '''
     assert separator  # FIXME: Clean up error handling
     if chunk_overlap is None:
