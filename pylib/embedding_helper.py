@@ -4,17 +4,35 @@
 
 '''
 Routines to help with embedding for vector databases such as Qdrant
+
+Vector DBs are useful when you have a lot of context to use with LLMs,
+for example a large document or collection of documents. A common pattern
+is to create vector indices on this text. Given an LLM prompt, the vector
+DB can first be queried to find the most relevant "top k" chunks of the
+text based on the prompt, these chunks can be added as context in the
+ultimate LLM invocation.
+
+You need an LLM to turn the text into vectors for such indexing, and these
+vectors are called the embeddings. You can usually create useful embeddings
+with a less powerful (and more efficient) LLM.
+
+This module provides utilities to set up a vector DB, and use it to index
+chunks of text using a provided LLM model to create the embeddings.
 '''
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+
+# Option for running a Qdrant DB locally in memory
+MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 
 def initialize_embedding_db(
         chunks, 
         embedding_model, 
         collection_name, 
-        distance_function='Cosine'
+        distance_function='Cosine',
+        **qdrant_conn_params
         ) -> QdrantClient:
     '''
     Set up a Qdrant client and a collection of embeddings inside of it.
@@ -39,8 +57,10 @@ def initialize_embedding_db(
     # Set the default distance function, and catch for incorrect capitalization
     distance_function = distance_function.lower().capitalize()
 
-    # Create a Qdrant client running locally in memory
-    client = QdrantClient(':memory:')
+    # Create a Qdrant client
+    if not qdrant_conn_params:
+        qdrant_conn_params = MEMORY_QDRANT_CONNECTION_PARAMS
+    client = QdrantClient(**qdrant_conn_params)
 
     # Create a collection in the Qdrant client, and configure its vectors
     client.recreate_collection(
