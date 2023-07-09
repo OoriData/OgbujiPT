@@ -19,8 +19,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install ruff pytest pytest-mock
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install ruff pytest
+          # Install OgbujiPT itself, as checked out
           pip install -U $GITHUB_WORKSPACE
       - name: Lint with ruff
         run: |

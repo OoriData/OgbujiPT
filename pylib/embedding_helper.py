@@ -20,14 +20,20 @@ This module provides utilities to set up a vector DB, and use it to index
 chunks of text using a provided LLM model to create the embeddings.
 '''
 
-from qdrant_client import QdrantClient
-from qdrant_client.http import models
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models
+    QDRANT_AVAILABLE = True
+except ImportError:
+    QDRANT_AVAILABLE = False
+    QdrantClient = object()  # Set up a dummy to satisfy the type hints
+
 
 # Option for running a Qdrant DB locally in memory
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 
-def initialize_embedding_db(
+def qdrant_init_embedding_db(
         chunks, 
         embedding_model, 
         collection_name, 
@@ -55,6 +61,9 @@ def initialize_embedding_db(
         client (QdrantClient): Initialized Qdrant client object
     '''
     # Find the size of the first chunk's embedding
+    if not QDRANT_AVAILABLE: 
+        raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
+
     partial_embeddings = embedding_model.encode(list(chunks[0]))
     vector_size = len(partial_embeddings[0])
 
@@ -79,7 +88,7 @@ def initialize_embedding_db(
     return client
 
 
-def upsert_embedding_db(
+def qdrant_upsert_embedding_db(
         client, 
         chunks, 
         embedding_model, 
@@ -101,6 +110,9 @@ def upsert_embedding_db(
     Returns:
         QdrantClient: Upserted Qdrant client object
     '''
+    if not QDRANT_AVAILABLE:
+        raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
+
     # Get the current count of chunks in the collection
     # TODO: the grossness here is a workaround for client.count() returning
     # an object which can then be cast to a string such as "count=0"

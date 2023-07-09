@@ -41,7 +41,7 @@ from sentence_transformers import SentenceTransformer
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
 from ogbujipt.prompting.basic import context_build, pdelim
 from ogbujipt.text_helper import text_splitter
-from ogbujipt.embedding_helper import initialize_embedding_db, upsert_embedding_db
+from ogbujipt.embedding_helper import qdrant_initialize_embedding_db, qdrant_upsert_embedding_db
 
 # Load the main parameters from .env file
 load_dotenv()
@@ -89,15 +89,14 @@ async def prep_pdf(pdf, embedding_model, collection_name):
         separator='\n'
         )
 
-    # Create in-memory Qdrant instance
-    knowledge_base = initialize_embedding_db(
+    # Create in-memory Qdrant instance for the embeddings
+    knowledge_base = qdrant_initialize_embedding_db(
         collection_name=collection_name, 
         chunks=chunks, 
         embedding_model=embedding_model
         )
 
-    # Update/insert (upsert) chunks into the Qdrant instance
-    knowledge_base = upsert_embedding_db(
+    knowledge_base = qdrant_upsert_embedding_db(
         client=knowledge_base,
         collection_name=collection_name, 
         chunks=chunks, 
