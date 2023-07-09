@@ -89,13 +89,14 @@ async def prep_pdf(pdf, embedding_model, collection_name):
         separator='\n'
         )
 
-    # Create in-memory Qdrant instance for the embeddings
+    # Create in-memory Qdrant instance
     knowledge_base = initialize_embedding_db(
         collection_name=collection_name, 
         chunks=chunks, 
         embedding_model=embedding_model
         )
 
+    # Update/insert (upsert) chunks into the Qdrant instance
     knowledge_base = upsert_embedding_db(
         client=knowledge_base,
         collection_name=collection_name, 
