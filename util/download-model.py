@@ -15,7 +15,7 @@ Fork of https://github.com/oobabooga/text-generation-webui/blob/main/download-mo
 Adds --select option to download-model.py
 Also some code clean-up, e.g. avoiding shadowing builtins (i.e. dict & bytes)
 See also: https://github.com/oobabooga/text-generation-webui/pull/2508
-'''
+'''  # noqa: E501
 
 import argparse
 import base64
@@ -175,7 +175,7 @@ class ModelDownloader:
                             has_pt = True
                             classifications.append('pt')
                         elif is_ggml:
-                            has_ggml = True
+                            has_ggml = True  # noqa F841 (this will eventually be a useful flag)
                             classifications.append('ggml')
 
             # Set up to move the next page (if any) of HF repo contents
@@ -228,13 +228,15 @@ class ModelDownloader:
         with open(output_path, mode) as f:
             total_size = int(resp.headers.get('content-length', 0))
             block_size = 1024
-            with tqdm.tqdm(total=total_size, unit='iB', unit_scale=True, bar_format='{l_bar}{bar}| {n_fmt:6}/{total_fmt:6} {rate_fmt:6}') as t:
+            with tqdm.tqdm(total=total_size, unit='iB', unit_scale=True, 
+                           bar_format='{l_bar}{bar}| {n_fmt:6}/{total_fmt:6} {rate_fmt:6}') as t:
                 for data in resp.iter_content(block_size):
                     t.update(len(data))
                     f.write(data)
 
     def start_download_threads(self, file_list, output_folder, start_from_scratch=False, threads=1):
-        thread_map(lambda url: self.get_single_file(url, output_folder, start_from_scratch=start_from_scratch), file_list, max_workers=threads, disable=True)
+        thread_map(lambda url: self.get_single_file(url, output_folder, start_from_scratch=start_from_scratch), 
+                   file_list, max_workers=threads, disable=True)
 
     def download_model_files(self, model, branch, links, sha256, output_folder, start_from_scratch=False, threads=1):
         """
@@ -287,7 +289,6 @@ class ModelDownloader:
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument('MODEL', type=str, default=None, nargs='?')
     parser.add_argument('--branch', type=str, default='main', help='Name of the Git branch to download from.')
@@ -296,7 +297,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, default=None, help='The folder where the model should be saved.')
     parser.add_argument('--clean', action='store_true', help='Does not resume the previous download.')
     parser.add_argument('--check', action='store_true', help='Validates the checksums of model files.')
-    parser.add_argument('--select', type=str, help='Pipe separated list of .bin or .safetensors files to download. No other files of these extensions will be.')
+    parser.add_argument('--select', type=str, help='Pipe separated list of .bin or .safetensors files to download. '\
+                        'No other files of these extensions will be.')
     args = parser.parse_args()
 
     branch = args.branch
@@ -313,7 +315,8 @@ if __name__ == '__main__':
         sys.exit()
 
     # Getting the download links from Hugging Face
-    links, sha256, is_lora = downloader.get_download_links_from_huggingface(model, branch, text_only=args.text_only, select=args.select)
+    links, sha256, is_lora = downloader.get_download_links_from_huggingface(model, branch, text_only=args.text_only, 
+                                                                            select=args.select)
 
     # Getting the output folder
     output_folder = downloader.get_output_folder(model, branch, is_lora, base_folder=args.output)

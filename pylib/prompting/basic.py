@@ -13,7 +13,6 @@ Also, trying to avoid more complex templating such as Jinja or Mako
 '''
 
 from enum import Enum
-from collections.abc import Sequence
 
 
 class pdelim(Enum):
