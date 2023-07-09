@@ -9,8 +9,6 @@ import re
 import warnings
 from typing import List
 
-# OVERLAP_FULL = -1
-
 
 def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
                   len_func=len) -> List[str]:
