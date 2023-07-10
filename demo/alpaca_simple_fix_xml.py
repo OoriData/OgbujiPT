@@ -54,7 +54,7 @@ def main(host, port, llmtemp, openai, model):
         model=model,  # Model (Required)
         prompt=prompt,  # Prompt (Required)
         temperature=llmtemp,  # Temp (Default 1)
-        max_tokens=60,  # Max Token length of generated text (Default no max)
+        max_tokens=100,  # Max Token length of generated text (Default 16)
         top_p=1,  # AKA nucleus sampling; can increase diversity of the
                   # generated text (Default 1)
         frequency_penalty=0,    # influences the model to favor more or less

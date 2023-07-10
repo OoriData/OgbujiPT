@@ -1,5 +1,7 @@
 '''
-Advanced, "Chat my PDF" demo, but using self-hosted LLM
+Advanced, "Chat my PDF" demo, but using self-hosted LLM.
+
+Use a PDF document as a knowledge base to provide context for natural language Q&A
 
 UI: Streamlit - streamlit.io
 Vector store: Qdrant - https://qdrant.tech/
