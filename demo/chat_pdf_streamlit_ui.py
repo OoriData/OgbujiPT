@@ -5,6 +5,11 @@ Use a PDF document as a knowledge base to provide context for natural language Q
 
 UI: Streamlit - streamlit.io
 Vector store: Qdrant - https://qdrant.tech/
+    Alternatives: pgvector, Chroma, Faiss, Weaviate, etc.
+PDF to text: PyPDF2
+    Alternatives: pdfplumber
+Text to vector (embedding) model: 
+    Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
 
 Single-PDF support, for now, to keep the demo code simple, 
 though you can easily extend it to e.g. work with multiple docs

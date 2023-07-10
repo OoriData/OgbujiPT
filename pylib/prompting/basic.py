@@ -42,7 +42,7 @@ class ordering(Enum):
     CONTEXT_QUERY = 2
 
 
-def context_build(query, preamble='', contexts=None, delimiters=None):
+def format(query, preamble='', contexts=None, delimiters=None):
     '''
     Build a full LLM prompt out of the actual human/user query, an optional
     preamble (e.g. system message to condition the LLM's responses),
@@ -102,3 +102,7 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
     parts.append(delimiters.get(pdelim.POSTQUERY, ''))
     full_context = '\n'.join(parts)
     return full_context
+
+
+# Support former name, for now
+context_build = format

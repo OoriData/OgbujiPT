@@ -39,16 +39,16 @@ pip install ogbujipt
 
 ```py
 from ogbujipt.config import openai_emulation
-from ogbujipt.prompting.basic import context_build
-from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_DELIMITERS
+from ogbujipt import oapi_choice1_text
+from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 
 llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with your LLM host
 # CHange the delimiters to a prompting style that suits the LLM you're using
-prompt = context_build('Write a short birthday greeting for my star employee',
-                       delimiters=ALPACA_INSTRUCT_DELIMITERS)
+prompt = format('Write a short birthday greeting for my star employee',
+                delimiters=ALPACA_INSTRUCT_DELIMITERS)
 
 response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, max_tokens=100)
-print(response['choices'][0]['text'])
+print(oapi_choice1_text(response))
 ```
 
 The Nous-Hermes 13B LLM offered the following response:
