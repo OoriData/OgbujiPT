@@ -21,14 +21,16 @@ class pdelim(Enum):
     from simple spacing/formatting aids to control text such as the
     '### Instruction:\n' but in Alpaca-style prompting, for example
     '''
-    PREAMBLE = 1  # Post preamble
-    INTERCONTEXT = 2  # Between multiple context sections
-    PREQUERY = 3  # e.g. '### Instruction:\n\n' in Alpaca
-    POSTQUERY = 4  # e.g. '### Response:\n\n' in Alpaca
-    PRECONTEXT = 5  # e.g. '### Input:\n\n' in Alpaca instruct variation
-    POSTCONTEXT = 6
-    PRE_ALL_CONTEXT = 7
-    POST_ALL_CONTEXT = 8
+    FIXED_PREAMBLE = 1  # Preamble that's always set
+    PRE_PREAMBLE = 2  # Set as prefix to a preamble (e.g. ### System:)
+    POST_PREAMBLE = 3  # Set as prefix to a preamble (e.g. ### System:)
+    INTERCONTEXT = 4  # Between multiple context sections
+    PREQUERY = 5  # e.g. '### Instruction:\n\n' in Alpaca
+    POSTQUERY = 6  # e.g. '### Response:\n\n' in Alpaca
+    PRECONTEXT = 7  # e.g. '### Input:\n\n' in Alpaca instruct variation
+    POSTCONTEXT = 8
+    PRE_ALL_CONTEXT = 9
+    POST_ALL_CONTEXT = 10
     META_ORDERING = 100
 
 
@@ -56,8 +58,12 @@ def context_build(query, preamble='', contexts=None, delimiters=None):
         contexts = [contexts]
     delimiters = delimiters or {}
 
-    parts = [preamble] if preamble + delimiters.get(
-        pdelim.PREAMBLE, '\n') else []
+    parts = []
+    fixed = delimiters.get(pdelim.FIXED_PREAMBLE)
+    if fixed:
+        parts.append(fixed)
+    if preamble:
+        parts.extend([delimiters.get(pdelim.PRE_PREAMBLE, ''), preamble, '\n'])
 
     # XXX Maybe find a more efficient way than closures (re: function-call overhead)
     def add_context():

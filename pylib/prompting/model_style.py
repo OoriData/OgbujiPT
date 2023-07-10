@@ -17,7 +17,7 @@ Vicuña style, e.g.
 
 * Robin
 
-Also includes Airoboros
+Also includes Orca & Airoboros
 
 Useful collection of Alpaca demo prompts: https://huggingface.co/datasets/tatsu-lab/alpaca
 '''
@@ -41,7 +41,16 @@ ALPACA_INSTRUCT_DELIMITERS = {
 ALPACA_INSTRUCT_INPUT_DELIMITERS = {
     pdelim.PREQUERY: '### Instruction:',
     pdelim.POSTQUERY: '### Response:',
-    # We just expect a single context item, which we treat as the input:
+    # Expect a single context item, to treat as the input:
+    pdelim.PRE_ALL_CONTEXT: '### Input:',
+    pdelim.META_ORDERING: ordering.QUERY_CONTEXT
+}
+
+ORCA_DELIMITERS = {
+    pdelim.FIXED_PREAMBLE: '### System:\nYou are an AI assistant that follows instruction extremely well. Help as much as you can.',  # noqa E501
+    pdelim.PREQUERY: '### User:',
+    pdelim.POSTQUERY: '### Response:',
+    # Expect a single context item, to treat as the input:
     pdelim.PRE_ALL_CONTEXT: '### Input:',
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
