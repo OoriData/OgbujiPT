@@ -95,6 +95,9 @@ async def on_message(message):
             or str(client.user.id) not in message.content:
         return
 
+    # Send throbber placeholder message to discord:
+    return_msg = await message.channel.send('<a:oori_throbber:1119445227732742265>')
+
     # Assumes a single mention, for simplicity. If there are multiple,
     # All but the first will just be bundled over to the LLM
     mention_str = f'<@{client.user.id}>'
@@ -103,7 +106,7 @@ async def on_message(message):
 
     response = await send_llm_msg(clean_msg)
 
-    await message.channel.send(response)
+    await return_msg.edit(content=response[:2000])  # Discord messages cap at 2k characters
 
 
 @client.event
@@ -123,6 +126,7 @@ def main():
     # Set up API connector & update temperature from environment
     llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)
     llm.params.llmtemp = os.getenv('LLM_TEMP')
+    llm.params.max_tokens = 512
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)

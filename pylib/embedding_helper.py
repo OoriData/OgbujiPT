@@ -33,21 +33,47 @@ except ImportError:
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 
-def qdrant_init_embedding_db(
+def qdrant_init_embedding_db(**qdrant_conn_params) -> QdrantClient:
+    '''
+    Initialize a Qdrant client
+
+    Args:
+        qdrant_conn_params (mapping): keyword parameters for setting up QdrantClient
+        See the main docstring (or run `help(QdrantClient)`)
+        https://github.com/qdrant/qdrant-client/blob/master/qdrant_client/qdrant_client.py#L12
+
+    Returns:
+        QdrantClient: Qdrant client object
+    '''
+    if not QDRANT_AVAILABLE: 
+        raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
+    
+    # Create a Qdrant client
+    if not qdrant_conn_params:
+        qdrant_conn_params = MEMORY_QDRANT_CONNECTION_PARAMS
+    client = QdrantClient(**qdrant_conn_params)
+
+    # Return the Qdrant client object
+    return client
+
+
+def qdrant_add_collection(
+        client,
         chunks, 
         embedding_model, 
         collection_name, 
-        distance_function='Cosine',
-        **qdrant_conn_params
+        distance_function='Cosine'
         ) -> QdrantClient:
     '''
-    Set up a Qdrant client and a collection of embeddings inside of it.
+    Add a collection to a Qdrant client, and add some strings (chunks) to that collection
 
     Args:
-        chunks (List[str]): List of similar length strings to vectorize
+        client (QdrantClient): Initialized Qdrant client object
+
+        chunks (List[str]): List of similar length strings to embed
 
         embedding (SentenceTransformer): SentenceTransformer object of your choice
-        SentenceTransformer](https://huggingface.co/sentence-transformers)
+        https://huggingface.co/sentence-transformers
 
         collection_name (str): Name that describes "chunks"
 
@@ -58,24 +84,20 @@ def qdrant_init_embedding_db(
         https://github.com/qdrant/qdrant-client/blob/master/qdrant_client/qdrant_client.py#L12
 
     Returns:
-        client (QdrantClient): Initialized Qdrant client object
+        QdrantClient: Qdrant client object with new collection
     '''
-    # Find the size of the first chunk's embedding
-    if not QDRANT_AVAILABLE: 
+    if not QDRANT_AVAILABLE:
         raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
-
-    partial_embeddings = embedding_model.encode(list(chunks[0]))
-    vector_size = len(partial_embeddings[0])
+    
+    # Find the size of the first chunk's embedding
+    partial_embeddings = embedding_model.encode(chunks[0])
+    vector_size = len(partial_embeddings)
 
     # Set the default distance function, and catch for incorrect capitalization
     distance_function = distance_function.lower().capitalize()
 
-    # Create a Qdrant client
-    if not qdrant_conn_params:
-        qdrant_conn_params = MEMORY_QDRANT_CONNECTION_PARAMS
-    client = QdrantClient(**qdrant_conn_params)
-
-    # Create a collection in the Qdrant client, and configure its vectors
+    ## Create a collection in the Qdrant client, and configure its vectors
+    # Using REcreate_collection ensures overwrite
     client.recreate_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(
@@ -83,12 +105,20 @@ def qdrant_init_embedding_db(
             distance=distance_function
             )
         )
+    
+    # Put the chunks in the collection
+    client = qdrant_upsert_collection(
+        client=client,
+        chunks=chunks,
+        embedding_model=embedding_model,
+        collection_name=collection_name
+        )
 
     # Return the Qdrant client object
     return client
 
 
-def qdrant_upsert_embedding_db(
+def qdrant_upsert_collection(
         client, 
         chunks, 
         embedding_model, 
@@ -100,7 +130,7 @@ def qdrant_upsert_embedding_db(
     Args:
         client (QdrantClient): Initialized Qdrant client object
 
-        chunks (List[str]): List of similar length strings to vectorize
+        chunks (List[str]): List of similar length strings to embed
 
         embedding (SentenceTransformer): SentenceTransformer object of your choice
         SentenceTransformer](https://huggingface.co/sentence-transformers)
