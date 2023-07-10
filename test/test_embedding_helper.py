@@ -14,6 +14,7 @@ from ogbujipt.embedding_helper import qdrant_init_embedding_db, \
     qdrant_add_collection, qdrant_upsert_collection
 from ogbujipt.text_helper import text_splitter
 
+embedding_helper.QDRANT_AVAILABLE = True
 
 @pytest.fixture
 def CORRECT_STRING():
