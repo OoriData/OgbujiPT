@@ -47,12 +47,13 @@ from dotenv import load_dotenv
 import streamlit as st
 from PyPDF2 import PdfReader
 
-from sentence_transformers import SentenceTransformer
-
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
 from ogbujipt.prompting.basic import context_build, pdelim
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_init_embedding_db, qdrant_add_collection
+
+# Avoid re-entrace complaints from huggingface/tokenizers
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # Load the main parameters from .env file
 load_dotenv()
@@ -65,7 +66,7 @@ LLM_HOST = os.getenv('LLM_HOST', 'my-llm-host')
 LLM_PORT = os.getenv('LLM_PORT', '8000')
 LLM_TEMP = float(os.getenv('LLM_TEMP', '1'))
 N_CTX = int(os.getenv('N_CTX', '2048'))  # LLM max context size
-K = int(os.getenv('K', '4'))  # K - how many chunks to return for query context
+K = int(os.getenv('K', '6'))  # K - how many chunks to return for query context
 # Chunk size is the number of characters counted in the chunks
 EMBED_CHUNK_SIZE = int(os.getenv('EMBED_CHUNK_SIZE', '500'))
 # Chunk Overlap to connect ends of chunks together
@@ -125,6 +126,8 @@ async def async_main(openai_api, model, LLM_TEMP):
     }
 
     # LLM will be downloaded from HuggingFace automatically
+    # There seem to be reentrancy issues with HuggingFace; defer import
+    from sentence_transformers import SentenceTransformer
     embedding_model = SentenceTransformer(DOC_EMBEDDINGS_LLM)
 
     # Create in-memory Qdrant instance

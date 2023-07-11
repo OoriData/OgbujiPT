@@ -47,7 +47,9 @@ llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with yo
 prompt = format('Write a short birthday greeting for my star employee',
                 delimiters=ALPACA_INSTRUCT_DELIMITERS)
 
+# Just using pyopenai directly, for simplicity, setting params as needed
 response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, max_tokens=100)
+# Extract just the response text, but the entire structure is available
 print(oapi_choice1_text(response))
 ```
 
@@ -56,6 +58,8 @@ The Nous-Hermes 13B LLM offered the following response:
 > Dear [Employee's Name],
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
 > On this occasion, I want you to know that you are appreciated and valued beyond measure. May your day be filled with joy and laughter.
+
+For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo)
 
 ## A bit more explanation
 
@@ -67,7 +71,7 @@ building front end to ChatGPT and Bard, if these are suitable for you.
 
 Right now OgbujiPT requires a bit of Python development on the user's part, but more general capabilities are coming.
 
-## Bias to good software engineering
+## Bias to sound software engineering
 
 I've seen many projects taking stabs at something like this one, but they really just seem to be stabs, usually by folks interested in LLM who admit they don't have strong coding backgrounds. This not only leads to a lumpy patchwork of forks and variations, as people try to figure out the narrow, gnarly paths that cater to their own needs, but also hampers maintainability just at a time when everything seems to be changing drastically every few days.
 
