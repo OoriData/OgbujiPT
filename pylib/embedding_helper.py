@@ -160,12 +160,9 @@ def qdrant_upsert_collection(
     # once one becomes available
     current_count = int(str(client.count(collection_name)).partition('=')[-1])
 
-    for id_, chunk in enumerate(chunks):  # For each chunk
-        # Embed the chunk
-        embedded_chunk = list(embedding_model.encode(chunk))
-
-        # Prepare the chunk as a list of (float) vectors
-        prepped_chunk = [float(vector) for vector in embedded_chunk]
+    for ix, chunk in enumerate(chunks):  # For each chunk
+        # Embeddings as float/vectors
+        embeddings = list(map(float, embedding_model.encode(chunk)))
 
         # Create a payload of the (now embedded) chunk
         prepped_payload = {'chunk_string': chunk}
@@ -175,8 +172,8 @@ def qdrant_upsert_collection(
             collection_name=collection_name,
             points=[
                 models.PointStruct(
-                    id=id_ + current_count,  # Make sure all chunks have sequential IDs
-                    vector=prepped_chunk,
+                    id=ix + current_count,  # Make sure all chunks have sequential IDs
+                    vector=embeddings,
                     payload=prepped_payload
                     )
                 ]
