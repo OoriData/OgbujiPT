@@ -65,14 +65,17 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 LLM = os.getenv('LLM', 'LLM')  # TODO: get this from non-openai openai api hosts
 LLM_HOST = os.getenv('LLM_HOST', 'my-llm-host')
 LLM_PORT = os.getenv('LLM_PORT', '8000')
+# LLM "temperature"
 LLM_TEMP = float(os.getenv('LLM_TEMP', '1'))
-N_CTX = int(os.getenv('N_CTX', '2048'))  # LLM max context size
-K = int(os.getenv('K', '6'))  # K - how many chunks to return for query context
+# LLM max context size
+N_CTX = int(os.getenv('N_CTX', '2048'))
+# K - how many chunks to return for query context
+K = int(os.getenv('K', '6'))
 # Chunk size is the number of characters counted in the chunks
 EMBED_CHUNK_SIZE = int(os.getenv('EMBED_CHUNK_SIZE', '500'))
 # Chunk Overlap to connect ends of chunks together
 EMBED_CHUNK_OVERLAP = int(os.getenv('EMBED_CHUNK_OVERLAP', '100'))
-# sLLM for embeddings
+# small LM for embeddings
 # default https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 DOC_EMBEDDINGS_LLM = os.getenv('EMBED_CHUNK_OVERLAP', 'all-MiniLM-L6-v2')
 
@@ -121,7 +124,7 @@ async def async_main(openai_api, model, LLM_TEMP):
     Oori — Ask your PDF 📄💬
     '''
     # create file upload box on Streamlit, set from the user's upload
-    pdf = st.file_uploader("Upload a PDF", type=["pdf"], accept_multiple_files=False)
+    pdf = st.file_uploader('Upload a PDF', type=['pdf'], accept_multiple_files=False)
 
     if pdf:
         # Show throbber, vectorize the PDF, and setup for similarity search
@@ -178,7 +181,7 @@ async def async_main(openai_api, model, LLM_TEMP):
                     max_tokens=1024  # Maximum tokens to return (Default 16)
                     )
 
-                # Response is a json-like object; extract the text
+                # Response is a json-like object
                 print('\nFull response data from LLM:\n', response)
 
                 # Response is a json-like object; 
@@ -196,10 +199,10 @@ def main():
     # Describing function via comments instead:
     # Set up Streamlit page, LLM host connection & launch the main loop
     st.set_page_config(
-        page_title="Ask your PDF",
-        page_icon="📄💬",
-        layout="wide",
-        initial_sidebar_state="expanded",
+        page_title='Ask your PDF',
+        page_icon='📄💬',
+        layout='wide',
+        initial_sidebar_state='expanded',
         )
 
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
@@ -217,6 +220,6 @@ def main():
     asyncio.run(async_main(openai_api, model, LLM_TEMP))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # TODO: Look into isolating huggingface's one time per process setup routines
     main()
