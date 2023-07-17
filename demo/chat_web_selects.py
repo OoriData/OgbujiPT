@@ -21,6 +21,8 @@ click sentence_transformers qdrant-client httpx html2text
 ```sh
 python demo/chat_web_selects.py "www.newworldencyclopedia.org/entry/Igbo_People"
 ```
+
+An example question might be "Who are the neighbors of the Igbo people?"
 '''
 # en.wikipedia.org/wiki/Igbo_people|ahiajoku.igbonet.com/2000/|en.wikivoyage.org/wiki/Igbo_phrasebook"
 import asyncio
@@ -44,12 +46,12 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 DOC_EMBEDDINGS_LLM = 'all-MiniLM-L6-v2'
 
 COLLECTION_NAME = 'chat-web-selects'
-USER_PROMPT = 'What do you want to know from these sites?:'
+USER_PROMPT = 'What do you want to know from these sites?\n'
 
 # Hard-code for demo
 EMBED_CHUNK_SIZE = 200
 EMBED_CHUNK_OVERLAP = 20
-DOTS_SPACING = 0.5  # Number of seconds between each dot printed to console
+DOTS_SPACING = 0.2  # Number of seconds between each dot printed to console
 
 
 async def indicate_progress(pause=DOTS_SPACING):
@@ -99,6 +101,7 @@ async def async_main(sites, api_params):
 
     done = False
     while not done:
+        print()
         user_question = input(USER_PROMPT)
         if user_question == done:
             break
