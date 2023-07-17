@@ -64,7 +64,8 @@ class qdrant_collection:
         >>> from ogbujipt.text_helper import text_splitter
         >>> from ogbujipt.embedding_helper import qdrant_collection  # pip install qdrant_client
         >>> from sentence_transformers import SentenceTransformer  # pip install sentence_transformers
-        >>> text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.'
+        >>> text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
+        >>> text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
         >>> embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         >>> collection = qdrant_collection('my-text', embedding_model)
         >>> chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
