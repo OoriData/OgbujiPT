@@ -43,7 +43,7 @@ from ogbujipt import oapi_choice1_text
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 
 llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with your LLM host
-# CHange the delimiters to a prompting style that suits the LLM you're using
+# Change the delimiters to a prompting style that suits the LLM you're using
 prompt = format('Write a short birthday greeting for my star employee',
                 delimiters=ALPACA_INSTRUCT_DELIMITERS)
 
