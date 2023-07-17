@@ -16,10 +16,10 @@ Assume for the following it's at host my-llm-host, port 8000
 
 pip install prerequisites, in addition to OgbujiPT cloned dir:
 
-click sentence_transformers qdrant-client httpx html2text
+click sentence_transformers qdrant-client httpx html2text amara3.xml
 
 ```sh
-python demo/chat_web_selects.py "www.newworldencyclopedia.org/entry/Igbo_People"
+python demo/chat_web_selects.py --host http://my-llm-host --port 8000 "www.newworldencyclopedia.org/entry/Igbo_People"
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"
@@ -46,7 +46,7 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 DOC_EMBEDDINGS_LLM = 'all-MiniLM-L6-v2'
 
 COLLECTION_NAME = 'chat-web-selects'
-USER_PROMPT = 'What do you want to know from these sites?\n'
+USER_PROMPT = 'What do you want to know from this site(s)?: '
 
 # Hard-code for demo
 EMBED_CHUNK_SIZE = 200
@@ -67,9 +67,6 @@ async def read_site(url, collection):
     async with httpx.AsyncClient(verify=False) as client:
         resp = await client.get(url)
         html = resp.content.decode(resp.encoding or 'utf-8')
-
-    # with open('/tmp/ahiajoku.igbonet.com-2000.html') as fp:
-    #     html = fp.read()
 
     text = html2text.html2text(html)
 
@@ -103,7 +100,7 @@ async def async_main(sites, api_params):
     while not done:
         print()
         user_question = input(USER_PROMPT)
-        if user_question == done:
+        if user_question.strip() == 'done':
             break
 
         docs = collection.search(user_question, limit=4)
@@ -112,8 +109,7 @@ async def async_main(sites, api_params):
         if docs:
             # Collects "chunked_doc" into "gathered_chunks"
             gathered_chunks = '\n\n'.join(
-                doc.payload['_text'] for doc in docs if doc.payload
-                )
+                doc.payload['_text'] for doc in docs if doc.payload)
 
             # Build prompt the doc chunks as context
             prompt = format(
