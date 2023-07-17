@@ -107,6 +107,7 @@ class qdrant_collection:
 
         # Set the default distance function, giving grace to capitalization
         distance_function = distance_function.lower().capitalize()
+        distance_function = models.Distance.COSINE
 
         # Create a collection in the Qdrant client, and configure its vectors
         # Using REcreate_collection ensures overwrite
@@ -121,6 +122,9 @@ class qdrant_collection:
         # Put the items in the collection
         self.upsert(texts=texts, metas=metas)
 
+        current_count = int(str(self.db.count(self.name)).partition('=')[-1])
+        print('COLLECTION COUNT:', current_count)
+
     def upsert(self, texts, metas=None):
         '''
         Update/insert a Qdrant client's collection with the some chunks of text
@@ -132,6 +136,7 @@ class qdrant_collection:
             metas (List[dict]): Optional metadata per text, stored with the text and included whenever the text is
                                 retrieved via search/query
         '''
+        # This ugly declaration just gets the count as an integer
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         metas = metas or []
 
