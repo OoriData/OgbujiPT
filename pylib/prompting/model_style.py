@@ -55,7 +55,7 @@ AIROBOROS_OBEDIENT_DELIMITERS = {
 AIROBOROS_DELIMITERS = VICUNA_DELIMITERS
 
 # XXX: Should this just be a FIXED_PREAMBLE?
-AIROBOROS_SUGGESTED_PREAMBLE = 'A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user\'s questions, and doesn\'t make up answers if it doesn\'t know.'  # noqa
+AIROBOROS_SUGGESTED_PREAMBLE = 'A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user\'s questions, and doesn\'t make up answers if it doesn\'t know.'  # noqa E501
 
 AIR_CONOB_INPUT_PRETMPL = '''\
 BEGINCONTEXT

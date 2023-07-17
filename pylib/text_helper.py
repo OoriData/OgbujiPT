@@ -57,7 +57,7 @@ Got {chunk_overlap}''')
     fine_split = re.split(sep_pat, text)
     separator_len = len_func(separator)
 
-    if len(fine_split) < 2:
+    if len(fine_split) <= 1:
         warnings.warn(
             f'No splits detected. Problem with separator ({repr(separator)})?')
 
