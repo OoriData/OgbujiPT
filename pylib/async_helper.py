@@ -16,8 +16,7 @@ import openai
 
 async def schedule_callable(callable, *args, **kwargs):
     '''
-    TODO: rename me? this is convenent for more than just LLM calls
-    Schedule task long-running/blocking LLM requests in a separate process,
+    Schedule long-running/blocking function call in a separate process,
     wrapped to work well in an asyncio event loop
 
     Basically hides away a bunch of the multiprocessing webbing
@@ -38,8 +37,40 @@ async def schedule_callable(callable, *args, **kwargs):
     # Need to partial execute to get in any kwargs for the target callable
     prepped_callable = partial(callable, **kwargs)
     # Spawn a separate process for the LLM call
-    response = await loop.run_in_executor(
-        executor, prepped_callable, *args)
+    response = await loop.run_in_executor(executor, prepped_callable, *args)
+    return response
+
+
+async def schedule_openai_call(callable, *args, **kwargs):
+    '''
+    Schedule long-running/blocking LLM request in a separate process,
+    wrapped to work well in an asyncio event loop
+
+    Basically hides away a bunch of the multiprocessing webbing
+
+    e.g. `llm_task = asyncio.create_task(schedule_callable(llm, prompt))`
+
+    Can then use asyncio.wait(), asyncio.gather(), etc. with `llm_task`
+
+    Args:
+        callable (callable): Callable to be scheduled
+
+    Returns:
+        response: Response object
+    '''
+    # Link up the current async event loop for multiprocess execution
+    loop = asyncio.get_running_loop()
+    executor = concurrent.futures.ProcessPoolExecutor()
+    # Need to partial execute to get in any kwargs for the target callable
+    if 'model' not in kwargs:
+        kwargs['model'] = ''
+    prepped_callable = partial(
+        callable,
+        api_base=openai.api_base,
+        api_key=openai.api_key,
+        **kwargs)
+    # Spawn a separate process for the LLM call
+    response = await loop.run_in_executor(executor, prepped_callable, *args)
     return response
 
 

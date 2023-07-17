@@ -26,6 +26,8 @@ class attr_dict(dict):
 
 
 def openai_live(
+        rev='v1',
+        model='',
         apikey=None,
         debug=True
         ):
@@ -48,16 +50,14 @@ def openai_live(
         openai_api (openai): Prepared OpenAI API
     '''
     import openai as openai_api
-    from dotenv import load_dotenv
 
-    load_dotenv()
     # openai_api.api_version
     openai_api.debug = debug
     openai_api.params = attr_dict(
+        rev=rev,
         api_key=apikey,
-        api_base=openai_api.api_base,
-        debug=debug
-        )
+        model=model,
+        debug=debug)
 
     return openai_api
 
@@ -67,7 +67,9 @@ def openai_emulation(
         port='8000',  # llama-cpp-python; for Ooba, use '5001'
         rev='v1',
         model=HOST_DEFAULT,
-        apikey='BOGUS', oaitype='open_ai', debug=True):
+        apikey='BOGUS',
+        oaitype='open_ai',
+        debug=True):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
 

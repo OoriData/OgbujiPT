@@ -1,5 +1,5 @@
 '''
-Advanced, "Chat my PDF" demo, but using self-hosted LLM.
+Advanced, "Chat my PDF" demo
 
 Use a PDF document as a knowledge base to provide context for natural language Q&A
 

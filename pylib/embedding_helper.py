@@ -113,10 +113,11 @@ class qdrant_collection:
         Update/insert a Qdrant client's collection with the some chunks of text
 
         Args:
-            chunks (List[str]): List of similar length strings to embed
+            texts (List[str]): Strings to be stored and indexed. For best results these should be of similar length.
+                                They'll be converted to embeddings fo refficient lookup
 
-            embedding (SentenceTransformer): SentenceTransformer object of your choice
-            SentenceTransformer](https://huggingface.co/sentence-transformers)
+            metas (List[dict]): Optional metadata per text, stored with the text and included whenever the text is
+                                retrieved via search/query
         '''
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         metas = metas or []
@@ -139,3 +140,16 @@ class qdrant_collection:
                         )
                     ]
                 )
+
+    def search(self, text, **kwargs):
+        '''
+        Perform a search on this Qdrant collection
+
+        Args:
+            query (str): string to compare against items in the collection
+
+            kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
+                    limit - maximum number of results to return (useful for top-k query)
+        '''
+        embedded_text = self._embedding_model.encode(text)
+        return self.db.search(collection_name=self.name, query_vector=embedded_text, **kwargs)
