@@ -14,7 +14,7 @@ via e.g. llama-cpp-python or text-generation-webui
 
 Assume for the following it's at host my-llm-host, port 8000
 
-pip install rerequisites, in addition to OgbujiPT cloned dir:
+pip install prerequisites, in addition to OgbujiPT cloned dir:
 
 click sentence_transformers qdrant-client httpx html2text
 
@@ -64,7 +64,7 @@ async def read_site(url, collection):
     print('Downloading & processing', url)
     async with httpx.AsyncClient(verify=False) as client:
         resp = await client.get(url)
-        html = resp.content.decode(resp.encoding)
+        html = resp.content.decode(resp.encoding or 'utf-8')
 
     # with open('/tmp/ahiajoku.igbonet.com-2000.html') as fp:
     #     html = fp.read()
@@ -109,7 +109,7 @@ async def async_main(sites, api_params):
         if docs:
             # Collects "chunked_doc" into "gathered_chunks"
             gathered_chunks = '\n\n'.join(
-                doc.payload['_text'] for doc in docs
+                doc.payload['_text'] for doc in docs if doc.payload
                 )
 
             # Build prompt the doc chunks as context
