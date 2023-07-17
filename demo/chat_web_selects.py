@@ -46,7 +46,7 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 DOC_EMBEDDINGS_LLM = 'all-MiniLM-L6-v2'
 
 COLLECTION_NAME = 'chat-web-selects'
-USER_PROMPT = 'What do you want to know from these sites?\n'
+USER_PROMPT = 'What do you want to know from the site(s)?\n'
 
 # Hard-code for demo
 EMBED_CHUNK_SIZE = 200
@@ -126,7 +126,7 @@ async def async_main(sites, api_params):
 
             print(prompt)
 
-            # The rest is much like in alpaca_multitask_fix_xml.py
+            # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
                 max_tokens=1024,  # Limit number of generated tokens
                 top_p=1,  # AKA nucleus sampling; can increase generated text diversity
