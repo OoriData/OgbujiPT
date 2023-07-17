@@ -53,7 +53,7 @@ class qdrant_collection:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
             https://huggingface.co/sentence-transformers
 
-            db (optional QdrantClient): existing DB/cliient to use
+            db (optional QdrantClient): existing DB/client to use
 
             conn_params (mapping): keyword parameters for setting up QdrantClient
             See the main docstring (or run `help(QdrantClient)`)
@@ -124,7 +124,7 @@ class qdrant_collection:
 
         for ix, (text, meta) in enumerate(zip(texts, metas)):
             # Embeddings as float/vectors
-            # The inline prints actually turnn into a cool progress indicator in jupyter 😁
+            # The inline prints actually turn into a cool progress indicator in jupyter 😁
             embeddings = list(map(float, self._embedding_model.encode(text)))
 
             payload = dict(_text=text, **meta)
