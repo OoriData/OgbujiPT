@@ -14,7 +14,7 @@ import click
 
 from ogbujipt.config import openai_live, openai_emulation
 from ogbujipt.prompting.basic import context_build
-from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_DELIMITERS
+from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_INPUT_DELIMITERS
 
 
 # Command line arguments defined in click decorators
@@ -48,7 +48,7 @@ def main(host, port, llmtemp, openai, model):
         contexts= BAD_XML_CODE,
         preamble='You are a helpful assistant, '
         'who answers questions briefly, in 1st grade language',
-        delimiters=ALPACA_INSTRUCT_DELIMITERS)
+        delimiters=ALPACA_INSTRUCT_INPUT_DELIMITERS)
     print(prompt, '\n')
 
     response = openai_api.Completion.create(
