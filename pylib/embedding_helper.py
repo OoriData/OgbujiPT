@@ -30,6 +30,9 @@ to give the LLM a chance to make its responses coherent and on-topic
 responses to similar questions without having to use the most powerful LLM
 '''
 
+import warnings
+import itertools
+
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
@@ -84,9 +87,13 @@ class qdrant_collection:
             if not conn_params:
                 conn_params = MEMORY_QDRANT_CONNECTION_PARAMS
             self.db = QdrantClient(**conn_params)
+        self._vector_size = -1
 
-    def add(self, texts, distance_function='Cosine',
-            metas=None):
+    def _determine_vector_size(self, text):
+        partial_embeddings = self._embedding_model.encode(text)
+        self._vector_size = len(partial_embeddings)
+
+    def add(self, texts, distance_function='Cosine', metas=None):
         '''
         Add a collection to a Qdrant client, and add some strings (chunks) to that collection
 
@@ -99,11 +106,25 @@ class qdrant_collection:
             See the main docstring (or run `help(QdrantClient)`)
             https://github.com/qdrant/qdrant-client/blob/master/qdrant_client/qdrant_client.py#L12
         '''
-        metas = metas or []
+        if len(texts) == 0:
+            warnings.warn(f'Empty sequence of texts provided. No action will be taken.')
+            return
+
+        if metas is None:
+            metas = []
+        else:
+            if len(texts) > len(metas):
+                warnings.warn(f'More texts ({len(texts)} provided than metadata {len(metas)}). Extra metadata items will be ignored.')
+                metas = itertools.chain(metas, [{}]*(len(texts)-len(texts)))
+            elif len(metas) > len(texts):
+                warnings.warn(f'Fewer texts ({len(texts)} provided than metadata {len(metas)}). '
+                              'The extra text will be given empty metadata.')
+                metas = itertools.islice(metas, len(texts))
+
         # meta is a list of dicts
         # Find the size of the first chunk's embedding
-        partial_embeddings = self._embedding_model.encode(texts[0])
-        vector_size = len(partial_embeddings)
+        if self._vector_size == -1:
+            self._determine_vector_size(texts[0])
 
         # Set the default distance function, giving grace to capitalization
         distance_function = distance_function.lower().capitalize()
@@ -114,7 +135,7 @@ class qdrant_collection:
         self.db.recreate_collection(
             collection_name=self.name,
             vectors_config=models.VectorParams(
-                size=vector_size, 
+                size=self._vector_size, 
                 distance=distance_function
                 )
             )
@@ -122,8 +143,8 @@ class qdrant_collection:
         # Put the items in the collection
         self.upsert(texts=texts, metas=metas)
 
-        current_count = int(str(self.db.count(self.name)).partition('=')[-1])
-        print('COLLECTION COUNT:', current_count)
+        # current_count = int(str(self.db.count(self.name)).partition('=')[-1])
+        # print('COLLECTION COUNT:', current_count)
 
     def upsert(self, texts, metas=None):
         '''
@@ -136,9 +157,17 @@ class qdrant_collection:
             metas (List[dict]): Optional metadata per text, stored with the text and included whenever the text is
                                 retrieved via search/query
         '''
-        # This ugly declaration just gets the count as an integer
-        current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         metas = metas or []
+
+        if len(texts) > len(metas):
+            warnings.warn(f'More texts ({len(texts)} provided than metadata {len(metas)}). Extra metadata items will be ignored.')
+            metas = itertools.chain(metas, [{}]*(len(texts)-len(texts)))
+        elif len(metas) > len(texts):
+            warnings.warn(f'Fewer texts ({len(texts)} provided than metadata {len(metas)}). '
+                          'The extra text will be given empty metadata.')
+            metas = itertools.islice(metas, len(texts))
+
+        before_count = self.count()
 
         for ix, (text, meta) in enumerate(zip(texts, metas)):
             # Embeddings as float/vectors
@@ -152,7 +181,7 @@ class qdrant_collection:
                 collection_name=self.name,
                 points=[
                     models.PointStruct(
-                        id=ix + current_count,  # Sequential IDs
+                        id=ix + before_count,  # Insistenmtly sequential IDs
                         vector=embeddings,
                         payload=payload
                         )
@@ -171,3 +200,11 @@ class qdrant_collection:
         '''
         embedded_text = self._embedding_model.encode(text)
         return self.db.search(collection_name=self.name, query_vector=embedded_text, **kwargs)
+
+    def count(self):
+        '''
+        Return the count of items in this Qdrant collection
+        '''
+        # This ugly declaration just gets the count as an integer
+        current_count = int(str(self.db.count(self.name)).partition('=')[-1])
+        return current_count
