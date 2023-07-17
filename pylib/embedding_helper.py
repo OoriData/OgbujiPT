@@ -59,6 +59,15 @@ class qdrant_collection:
             See the main docstring (or run `help(QdrantClient)`)
             https://github.com/qdrant/qdrant-client/blob/master/qdrant_client/qdrant_client.py#L12
 
+        Example:
+        >>> from ogbujipt.text_helper import text_splitter
+        >>> from ogbujipt.embedding_helper import qdrant_collection
+        >>> text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.'
+        >>> collection = qdrant_collection('my-text', 'all-MiniLM-L6-v2')
+        >>> chunks = text_splitter(text, chunk_size=30, chunk_overlap=5, separator='\n')
+        >>> collection.add(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
+        >>> retval = collection.search('what does the fox say?', limit=1)
+        retval
         '''
         self.name = name
         self.db = db
