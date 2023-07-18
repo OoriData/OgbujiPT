@@ -126,11 +126,11 @@ class qdrant_collection:
             return
 
         if metas is None:
-            metas = []
+            metas = [{}]*(len(texts))
         else:
             if len(texts) > len(metas):
                 warnings.warn(f'More texts ({len(texts)} provided than metadata {len(metas)}). Extra metadata items will be ignored.')
-                metas = itertools.chain(metas, [{}]*(len(texts)-len(texts)))
+                metas = itertools.chain(metas, [{}]*(len(texts)-len(metas)))
             elif len(metas) > len(texts):
                 warnings.warn(f'Fewer texts ({len(texts)} provided than metadata {len(metas)}). '
                               'The extra text will be given empty metadata.')

@@ -79,6 +79,7 @@ async def read_site(url, collection):
     metas = [{'url': url}]*len(chunks)
     # Add the text to the collection. Blocks, so no reentrancy concern
     collection.update(texts=chunks, metas=metas)
+    print(f'{collection.count()} chunks added to collection')
 
 
 async def async_main(sites, api_params):
