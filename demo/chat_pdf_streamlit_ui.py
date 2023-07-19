@@ -172,7 +172,7 @@ def streamlit_loop(openai_api, model, LLM_TEMP):
     st.set_page_config(  # Set up Streamlit page
         page_title='Ask your PDF',
         page_icon=favicon,
-        layout='wide',
+        layout='centered',
         initial_sidebar_state='expanded',
         )
 
