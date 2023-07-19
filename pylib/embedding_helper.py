@@ -99,7 +99,7 @@ class qdrant_collection:
         self._vector_size = len(partial_embeddings)
 
         # Create a collection in the Qdrant client, and configure its vectors
-        # Using REcreate_collection ensures overwrite
+        # Using REcreate_collection ensures overwrite for a clean, fresh, new collection
         self.db.recreate_collection(
             collection_name=self.name,
             vectors_config=models.VectorParams(

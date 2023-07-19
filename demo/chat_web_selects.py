@@ -43,7 +43,7 @@ from ogbujipt.embedding_helper import qdrant_collection
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # default https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
-DOC_EMBEDDINGS_LLM = 'all-MiniLM-L6-v2'
+DOC_EMBEDDINGS_LLM = 'all-MiniLM-L12-v2'
 
 COLLECTION_NAME = 'chat-web-selects'
 USER_PROMPT = 'What do you want to know from the site(s)?\n'
