@@ -23,7 +23,7 @@ def CORRECT_STRING():
 
 def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
     # LLM will be downloaded from HuggingFace automatically
-    # FIXME: We want to mock this instead
+    # FIXME: We want to mock this instead, or rather just have a fixture with the results
     # Split the chunks
     chunks = text_splitter(
         COME_THUNDER_POEM, 
@@ -45,7 +45,7 @@ def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
 
     # client.count.side_effect = ['count=0']
     coll.db.count.side_effect = lambda collection_name: 'count=0'
-    coll.add(chunks, collection_name)
+    coll.update(chunks)
     coll.db.recreate_collection.assert_called_once_with(
         collection_name='test_collection',
         vectors_config=mock_vparam
@@ -58,7 +58,7 @@ def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
     embedding_helper.models.PointStruct.side_effect = lambda id=None, vector=None, payload=None: mock_pstruct
 
     coll.db.count.reset_mock()
-    coll.upsert(chunks)
+    coll.update(chunks)
 
     # XXX: Add test with metadata
     coll.db.upsert.assert_called_with(
