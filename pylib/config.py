@@ -64,7 +64,7 @@ def openai_live(
 
 def openai_emulation(
         host='http://127.0.0.1',
-        port='8000',  # llama-cpp-python; for Ooba, use '5001'
+        port='8000',
         rev='v1',
         model=HOST_DEFAULT,
         apikey='BOGUS',
@@ -72,6 +72,7 @@ def openai_emulation(
         debug=True):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
+    Port 8000 for llama-cpp-python, Port 5001 for Oobabooga
 
     Args:
         host (str, optional): Host address
