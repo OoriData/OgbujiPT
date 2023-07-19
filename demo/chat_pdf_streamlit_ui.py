@@ -41,7 +41,6 @@ from PyPDF2 import PdfReader
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
 from ogbujipt.prompting import format, CHATGPT_DELIMITERS
 from ogbujipt import oapi_choice1_text
-from ogbujipt.async_helper import schedule_openai_call, openai_api_surrogate
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
