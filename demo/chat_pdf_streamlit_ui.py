@@ -49,6 +49,9 @@ from sentence_transformers import SentenceTransformer
 
 import zlib  # for crc32 checksums
 
+# Avoid re-entrace complaints from huggingface/tokenizers
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
 # Load the main parameters from .env file
 load_dotenv()
 # User can set a variety of likely values to trigger use of OpenAI full-service
@@ -65,6 +68,8 @@ EMBED_CHUNK_SIZE = int(os.getenv('EMBED_CHUNK_SIZE', '500'))  # Character count 
 EMBED_CHUNK_OVERLAP = int(os.getenv('EMBED_CHUNK_OVERLAP', '100'))  # Character count overlap between chunks
 # LLM used for vector DB embeddings: https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2
 DOC_EMBEDDINGS_LLM = os.getenv('EMBED_CHUNK_OVERLAP', 'all-MiniLM-L12-v2')
+
+CONSOLE_WIDTH = 80
 
 PDF_USER_QUERY_PROMPT = 'Ask a question about your PDF:'
 
@@ -107,6 +112,52 @@ def prep_pdf(pdf, embedding_model, collection_name):
     return knowledge_base
 
 
+def query_llm(kb, openai_api, model):
+    user_query = st.session_state['user_query_str']
+
+    # Create placeholder st.empty() for throbber and LLM response
+    response_placeholder = st.empty()
+        
+    # Load throbber from cache
+    throbber = load_throbber()
+    response_placeholder.image(throbber)
+
+    docs = kb.search(user_query, limit=K)
+
+    # Collects "chunked_doc" into "gathered_chunks"
+    gathered_chunks = '\n\n'.join(
+        doc.payload['_text'] for doc in docs if doc.payload)
+
+    # Build prompt the doc chunks as context
+    prompt = format(
+        f'Given the context, {user_query}\n\n'
+        f'Context: """\n{gathered_chunks}\n"""\n',
+        preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
+        'questions directly and as briefly as possible. '
+        'If you cannot answer with the given context, just say so.',
+        delimiters=CHATGPT_DELIMITERS)
+
+    print('  PROMPT FOR LLM:  '.center(CONSOLE_WIDTH, '='))
+    print(prompt)
+
+    response = openai_api.Completion.create(
+        model=model,  # Model (Required)
+        prompt=prompt,  # Prompt (Required)
+        temperature=LLM_TEMP,  # Temp (Default 1)
+        max_tokens=1024,  # Max Token length of generated text (Default 16)
+        )
+
+    # Response is a json-like object; extract the text
+    print('\nFull response data from LLM:\n', response)
+
+    # response is a json-like object; 
+    # just get back the text of the response
+    response_text = oapi_choice1_text(response)
+    print('\nResponse text from LLM:\n', response_text)
+
+    response_placeholder.write(response_text)
+
+
 def streamlit_loop(openai_api, model, LLM_TEMP):
     # Streamlit treats function docstrings as magic strings for user display
     '''
@@ -142,71 +193,34 @@ def streamlit_loop(openai_api, model, LLM_TEMP):
             new_pdf = True  # Flag to know if the new pdf needs to be embedded
 
     if pdf:  # Only run once the program has a "pdf" loaded
-        # Show throbber, embed the PDF, and get ready for similarity search
-        embedding_placeholder = st.empty()
-        
-        # Load throbber from cache
-        throbber = load_throbber()
-        embedding_placeholder.image(throbber)
+        if st.session_state['embedding_model']:
+            # Show throbber, embed the PDF, and get ready for similarity search
+            embedding_placeholder = st.container()
 
-        # Get the embedding model
-        embedding_model = load_embedding_model(DOC_EMBEDDINGS_LLM)
+            embedding_placeholder.write('Embedding PDF...')
 
-        # Prepare a vector knowledgebase based on the pdf contents
-        # Use st.session_state to avoid unnecessary reprocessing/reloading
-        if new_pdf:
-            kb = prep_pdf(pdf, embedding_model, collection_name=pdf.name)
-            st.session_state['kb'] = kb
-        else:
-            kb = st.session_state['kb']
-
-        # Clear all elements in placeholder (in this case, just the throbber)
-        embedding_placeholder.empty()
-
-        # Get the user query
-        user_query = st.text_input(PDF_USER_QUERY_PROMPT)
-        if user_query:  # Only run once the program has a "user_query"
-            response_placeholder = st.empty()
-        
             # Load throbber from cache
             throbber = load_throbber()
-            response_placeholder.image(throbber)
+            embedding_placeholder.image(throbber)
 
-            docs = kb.search(user_query, limit=K)
+            # Get the embedding model
+            embedding_model = load_embedding_model(embedding_model_name=DOC_EMBEDDINGS_LLM)
 
-            # Collects "chunked_doc" into "gathered_chunks"
-            gathered_chunks = '\n\n'.join(
-                doc.payload['_text'] for doc in docs if doc.payload)
+            # Prepare a vector knowledgebase based on the pdf contents
+            # Use st.session_state to avoid unnecessary reprocessing/reloading
+            if new_pdf:
+                kb = prep_pdf(pdf, embedding_model, collection_name=pdf.name)
+                st.session_state['kb'] = kb
+            else:
+                kb = st.session_state['kb']
 
-            # Build prompt the doc chunks as context
-            prompt = format(
-                f'Given the context, {user_query}\n\n'
-                f'Context: """\n{gathered_chunks}\n"""\n',
-                preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
-                'questions directly and as briefly as possible. '
-                'If you cannot answer with the given context, just say so.',
-                delimiters=CHATGPT_DELIMITERS)
+            st.session_state['embedding_model'] = False
 
-            print(prompt)
+            # Rerun the app to hide the embedding throbber
+            st.experimental_rerun()
 
-            response = openai_api.Completion.create(
-                model=model,  # Model (Required)
-                prompt=prompt,  # Prompt (Required)
-                temperature=LLM_TEMP,  # Temp (Default 1)
-                max_tokens=1024,  # Max Token length of generated text (Default 16)
-                )
-
-            # Response is a json-like object; extract the text
-            print('\nFull response data from LLM:\n', response)
-
-            # response is a json-like object; 
-            # just get back the text of the response
-            response_text = oapi_choice1_text(response)
-            print('\nResponse text from LLM:\n', response_text)
-
-            response_placeholder.write(response_text)
-
-            user_query = None
+        # Get the user query
+        st.text_input(label=PDF_USER_QUERY_PROMPT, key='user_query_str', on_change=query_llm, args=(kb, openai_api, model))
 
 
 def main():
@@ -223,6 +237,8 @@ def main():
         model = LLM or HOST_DEFAULT
         openai_api = openai_emulation(
             host=LLM_HOST, port=LLM_PORT, model=LLM, debug=True)
+        
+    st.session_state['embedding_model'] = True
 
     streamlit_loop(openai_api, model, LLM_TEMP)
 
