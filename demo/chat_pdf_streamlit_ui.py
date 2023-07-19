@@ -39,7 +39,6 @@ Something about Streamlit's event loop is interacting with asyncio to cause the 
 coroutine to be invoked twice. We might need to perhaps bundle our coroutines and 
 `streamlit.bootstrap.run()` together in an `asyncio.gather()`,or something of the sort.
 '''
-import asyncio
 import os
 
 from dotenv import load_dotenv
@@ -50,6 +49,7 @@ from PyPDF2 import PdfReader
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
 from ogbujipt.prompting import format, CHATGPT_DELIMITERS
 from ogbujipt import oapi_choice1_text
+from ogbujipt.async_helper import schedule_openai_call, openai_api_surrogate
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -171,11 +171,11 @@ def streamlit_loop(openai_api, model, LLM_TEMP):
     
     if pdf:  # Only run once the program has a "pdf" loaded
         # Show throbber, embed the PDF, and get ready for similarity search
-        placeholder = st.empty()
+        embedding_placeholder = st.empty()
         
         # Load throbber from cache
         throbber = load_throbber()
-        placeholder.image(throbber)
+        embedding_placeholder.image(throbber)
 
         # Get the embedding model
         embedding_model = load_embedding_model(DOC_EMBEDDINGS_LLM)
@@ -189,14 +189,52 @@ def streamlit_loop(openai_api, model, LLM_TEMP):
             kb = st.session_state['kb']
 
         # Clear all elements in placeholder (in this case, just the throbber)
-        placeholder.empty()
+        embedding_placeholder.empty()
 
         # Get the user query
         user_query = st.text_input(PDF_USER_QUERY_PROMPT)
         if user_query:  # Only run once the program has a "user_query"
+            response_placeholder = st.empty()
+        
+            # Load throbber from cache
+            throbber = load_throbber()
+            response_placeholder.image(throbber)
+
             docs = kb.search(user_query, limit=K)
-            serg_rezulds = '\n\n'.join(doc.payload['_text'] for doc in docs if doc.payload)
-            st.code(serg_rezulds, language="python", line_numbers=True)
+
+            # Collects "chunked_doc" into "gathered_chunks"
+            gathered_chunks = '\n\n'.join(
+                doc.payload['_text'] for doc in docs if doc.payload)
+
+            # Build prompt the doc chunks as context
+            prompt = format(
+                f'Given the context, {user_query}\n\n'
+                f'Context: """\n{gathered_chunks}\n"""\n',
+                preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
+                'questions directly and as briefly as possible. '
+                'If you cannot answer with the given context, just say so.',
+                delimiters=CHATGPT_DELIMITERS)
+
+            print(prompt)
+
+            response = openai_api.Completion.create(
+                model=model,  # Model (Required)
+                prompt=prompt,  # Prompt (Required)
+                temperature=LLM_TEMP,  # Temp (Default 1)
+                max_tokens=1024,  # Max Token length of generated text (Default 16)
+                )
+
+            # Response is a json-like object; extract the text
+            print('\nFull response data from LLM:\n', response)
+
+            # response is a json-like object; 
+            # just get back the text of the response
+            response_text = oapi_choice1_text(response)
+            print('\nResponse text from LLM:\n', response_text)
+
+            response_placeholder.write(response_text)
+
+            user_query = None
 
 
 def main():
