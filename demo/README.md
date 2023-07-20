@@ -2,7 +2,7 @@
 
 ## alpaca_simple_fix_xml.py
 
-Quick demo, sending an Alpaca-compatible LLm some bad XML & asking it to make corrections.
+Quick demo, sending an Alpaca-compatible LLM some bad XML & asking it to make corrections.
 
 # Intermediate
 
@@ -30,12 +30,23 @@ Demonstrates:
 consideration until more sever-side LLM hosting frameworks reliablly
 support multiprocessing
 
+## chat_web_selects.py
+
+Simple, command-line "chat my web site" demo, but supporting self-hosted LLM.
+
+Definitely a good idea for you to understand demos/alpaca_multitask_fix_xml.py
+before swapping this in.
+
+Vector store: Qdrant - https://qdrant.tech/
+
+Supports multiple web URLs, specified on cmdline
+
 ## chat_pdf_streamlit_ui.py
 
 <img width="970" alt="image" src="https://github.com/uogbuji/OgbujiPT/assets/279982/57b479a9-2dbc-4d65-ac19-e954df2a21d0">
 
-"Chat my PDF" demo, but using self-hosted LLM. Definitely a good idea for you to understand
-demos/alpaca_multitask_fix_xml.py
+"Chat my PDF" demo, supporting self-hosted LLM. Definitely a good idea for you to understand
+alpaca_multitask_fix_xml.py & chat_web_selects.py
 before swapping this in.
 
 UI: Streamlit - streamlit.io
