@@ -162,7 +162,7 @@ class qdrant_collection:
                     ]
                 )
 
-    def search(self, text, **kwargs):
+    def search(self, query, **kwargs):
         '''
         Perform a search on this Qdrant collection
 
@@ -172,7 +172,7 @@ class qdrant_collection:
             kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
         '''
-        embedded_text = self._embedding_model.encode(text)
+        embedded_text = self._embedding_model.encode(query)
         return self.db.search(collection_name=self.name, query_vector=embedded_text, **kwargs)
 
     def count(self):
