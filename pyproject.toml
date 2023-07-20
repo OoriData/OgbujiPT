@@ -12,6 +12,8 @@ license = "Apache-2.0"
 keywords = []
 authors = [
   { name = "Uche Ogbuji", email = "uche@ogbuji.net" },
+  { name = "Osi Ogbuji", email = "osita@ogbuji.net" },
+  { name = "Aidan Reese", email = "aidanreese.professional@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
