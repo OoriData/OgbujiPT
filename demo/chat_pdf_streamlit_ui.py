@@ -72,11 +72,11 @@ CONSOLE_WIDTH = 80
 
 PDF_USER_QUERY_PROMPT = 'Ask a question about your PDF:'
 
-
-@st.cache_data  # Streamlit caching to save on repeat loads
-def load_favicon():
-    # oori_logo[32px].png as a data URL
-    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAx3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBbDsMwCPvPKXaEBMiD46RrK+0GO/6cQKu2mqU4gJFDCNv3s4fXACUJkmsrWkoEREWpI2jR0CenKJMnyCXkt3o4BUKJcbOlrXj/UU+ngV0dUb4YtbcLy11Qcf/2MPKHeEw0pljdSN2IyYTkBt2+FYu2ev3CssU7mp0waH+TjlpeTHvmUrG9NeMdJto4cQQziw3A43DgjqCCEysawbMi4MzHJFjIvz0dCD94G1pUNtnUqQAAAYNpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAHMVfU6VFKg4tKOKQoXayi4o41ioUoUKoFVp1MLl+QpOGJMXFUXAtOPixWHVwcdbVwVUQBD9AXF2cFF2kxP8lhRYxHhz34929x907QGjVmGr2JQBVs4xMKinm8qti4BUBhDGMGIIyM/U5SUrDc3zdw8fXuzjP8j735xgsFE0G+ETiBNMNi3iDeGbT0jnvE0dYRS4QnxNPGHRB4keuKy6/cS47LPDMiJHNzBNHiMVyDys9zCqGSjxNHC2oGuULOZcLnLc4q7UG69yTvzBU1FaWuU5zDCksYgkSRChooIoaLMRp1UgxkaH9pId/1PFL5FLIVQUjxwLqUCE7fvA/+N2tWZqadJNCSaD/xbY/xoHALtBu2vb3sW23TwD/M3Cldf31FjD7SXqzq0WPgKFt4OK6qyl7wOUOMPKky4bsSH6aQqkEvJ/RN+WB8C0wsOb21tnH6QOQpa7SN8DBIRArU/a6x7uDvb39e6bT3w+I2XKvBcxDUgAADXppVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+Cjx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDQuNC4wLUV4aXYyIj4KIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgIHhtbG5zOkdJTVA9Imh0dHA6Ly93d3cuZ2ltcC5vcmcveG1wLyIKICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIgogICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICB4bXBNTTpEb2N1bWVudElEPSJnaW1wOmRvY2lkOmdpbXA6MmVhNWM3OTUtMGJmNi00ODc1LWE5YzgtZWY1M2FjYWUwZDBkIgogICB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOmIxOTFhYWIxLWYxMzAtNDEwZC05M2U2LTgxNTI2MWNlMTA1NSIKICAgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjY0YjU3MjEwLTg4ZmUtNDRjZS1iODJlLTE2MTU3ODJjZWNmZSIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTWFjIE9TIgogICBHSU1QOlRpbWVTdGFtcD0iMTY4OTgxNTA5NTk2Nzk5NyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgdGlmZjpPcmllbnRhdGlvbj0iMSIKICAgeG1wOkNyZWF0b3JUb29sPSJHSU1QIDIuMTAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjM6MDc6MTlUMTk6MDQ6NTQtMDY6MDAiCiAgIHhtcDpNb2RpZnlEYXRlPSIyMDIzOjA3OjE5VDE5OjA0OjU0LTA2OjAwIj4KICAgPHhtcE1NOkhpc3Rvcnk+CiAgICA8cmRmOlNlcT4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZTY2MzFlOTctN2UyMC00ZWU2LTk0N2EtMDNhZDBkMGFhNmJiIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKE1hYyBPUykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjMtMDctMTlUMTk6MDQ6NTUtMDY6MDAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+2ofEMAAAAAZiS0dEADUAOQA+ellPPQAAASxJREFUWMPNlzFuwkAQAGeD4gL5HuCKB9C7s9JCkYYmPzCNn0NDPgJt5M4SJQ8gjR+A5cIUTnOREFKiaDcJe+X59mZ0tnf3wDCqLC2rLC0te0wscGALPOchaZtuOPybwBW8By7ASishRvgiTu+BKbDetN3rn53ALXzTdnXTDe95SGrgRXMSYoGfj8sZQJjvTlWWFpqTECP8LS550kqIET6Ly05aCTHCPzcvtRJigYf5bg1wPi63WgmxwMdxnAKISK+VECN8H8MWWgkxwosYWmslxAivY3ihlRAj/DoVqyTEAheRHuCrZz+ReODO4/6vwMVH6OI3dJGIXKRiF8XIRTl20ZC4aMlcNKXfScR5FdzFxUQ0BeRGAi1cfTdsuuGQh6QFVsCjFm4ev3E9/wD9cjGz2siT7AAAAABJRU5ErkJggg=='  # noqa E501
+st.set_page_config(  # Set up Streamlit page
+    page_title='Ask your PDF',
+    layout='centered',
+    initial_sidebar_state='expanded',
+    )
 
 
 @st.cache_data
@@ -92,27 +92,59 @@ def load_embedding_model(embedding_model_name):
     return SentenceTransformer(embedding_model_name)
 
 
-def prep_pdf(pdf, embedding_model, collection_name):
-    # Streamlit treats function docstrings as magic strings for user display. Use comments instead
-    # Converts pdf content into chunks according to chunk size & overlap
-    # Vectorizes chunks for sLLM lookup
-    kb = qdrant_collection(collection_name, embedding_model)  # in-memory vector DB instance
+def prep_pdf():
+    'Convert pdf content into chunks according to chunk size & overlap'
+    placeholder = st.empty()
 
     # Load PDF & collect its text & split it into chunks
-    pdf_reader = PdfReader(pdf)
-    text = ''.join((page.extract_text() for page in pdf_reader.pages))
-    chunks = text_splitter(
-        text, 
-        chunk_size=EMBED_CHUNK_SIZE,
-        chunk_overlap=EMBED_CHUNK_OVERLAP,
-        separator='\n')
+    pdf = st.session_state['pdf']
+    if not pdf:
+        return
 
-    # Update vector DB collection, insert the text chunks & update app state
-    kb.update(texts=chunks)
-    st.session_state['kb'] = kb  # Update state
+    with placeholder.container():
+        # Get the embedding model
+        if not st.session_state['embedding_model']:
+            st.session_state['embedding_model'] = load_embedding_model(embedding_model_name=DOC_EMBEDDINGS_LLM)
+        emb_model = st.session_state['embedding_model']
+
+        # Vectorizes chunks for sLLM lookup
+        # XXX: Look up rules around uploaded object names
+        kb = qdrant_collection(pdf.name, emb_model)  # in-memory vector DB instance
+
+        # Show throbber, embed the PDF, and get ready for similarity search
+        embedding_placeholder = st.container()
+        embedding_placeholder.write('Embedding PDF...')
+
+        # Load throbber from cache
+        throbber = load_throbber()
+        embedding_placeholder.image(throbber)
+
+        # Prepare a vector knowledgebase based on the pdf contents
+        # Use st.session_state to avoid unnecessary reprocessing/reloading
+        pdf_reader = PdfReader(pdf)
+        text = ''.join((page.extract_text() for page in pdf_reader.pages))
+        chunks = text_splitter(
+            text, 
+            chunk_size=EMBED_CHUNK_SIZE,
+            chunk_overlap=EMBED_CHUNK_OVERLAP,
+            separator='\n')
+
+        # Update vector DB collection, insert the text chunks & update app state
+        kb.update(texts=chunks)
+        st.session_state['kb'] = kb  # Update state
+    placeholder.empty()
+
+    # Get the user query
+    st.text_input(
+        label=PDF_USER_QUERY_PROMPT,
+        key='user_query_str',
+        on_change=query_llm,
+        args=(st.session_state['openai_api'], st.session_state['model']))
 
 
-def query_llm(kb, openai_api, model):
+
+def query_llm(openai_api, model):
+    kb = st.session_state['kb']
     user_query = st.session_state['user_query_str']
 
     # Placeholder for throbber & LLM response
@@ -149,73 +181,10 @@ def query_llm(kb, openai_api, model):
     response_placeholder.write(response_text)
 
 
-def streamlit_loop(openai_api, model, LLM_TEMP):
+def main():
     '''
     Oori — Ask your PDF 📄💬
     '''
-    favicon = load_favicon()
-    st.set_page_config(  # Set up Streamlit page
-        page_title='Ask your PDF',
-        page_icon=favicon,
-        layout='centered',
-        initial_sidebar_state='expanded',
-        )
-
-    # Create file upload box on Streamlit, set from the user's upload
-    # Use st.session_state to avoid unnessisary reprocessing/reloading
-    if 'pdf' not in st.session_state:  # First use and need to init the PDF
-        pdf = st.file_uploader('Upload a PDF', type=['pdf'], accept_multiple_files=False)
-        st.session_state['pdf'] = pdf
-
-        new_pdf = True  # Are embeddings needed for the pdf?
-
-    else:  # No PDF has yet been uploaded
-        temp_pdf = st.file_uploader('Upload a PDF', type=['pdf'], accept_multiple_files=False)
-
-        # Encode PDF content and compare CRCs to see if it's changed
-        pdf_new_checksum = zlib.adler32(str(temp_pdf).encode('utf-8'))
-        # FIXME: Store the old checksum in state, so it needn't be recomputed each time
-        pdf_old_checksum = zlib.adler32(str(st.session_state['pdf']).encode('utf-8'))
-
-        if pdf_new_checksum == pdf_old_checksum:  # PDF is the same
-            pdf = st.session_state['pdf']
-            new_pdf = False  # Flag to know if the new pdf needs to be embedded
-        else:  # PDF is now different and needs to swap out session_state
-            pdf, st.session_state['pdf'] = temp_pdf, temp_pdf
-            new_pdf = True  # Flag to know if the new pdf needs to be embedded
-
-    if pdf:  # Only run once the program has a "pdf" loaded
-        if st.session_state['embedding_model']:
-            # Show throbber, embed the PDF, and get ready for similarity search
-            embedding_placeholder = st.container()
-
-            embedding_placeholder.write('Embedding PDF...')
-
-            # Load throbber from cache
-            throbber = load_throbber()
-            embedding_placeholder.image(throbber)
-
-            # Get the embedding model
-            embedding_model = load_embedding_model(embedding_model_name=DOC_EMBEDDINGS_LLM)
-
-            # Prepare a vector knowledgebase based on the pdf contents
-            # Use st.session_state to avoid unnecessary reprocessing/reloading
-            if new_pdf:
-                kb = prep_pdf(pdf, embedding_model, collection_name=pdf.name)
-                st.session_state['kb'] = kb
-            else:
-                kb = st.session_state['kb']
-
-            st.session_state['embedding_model'] = False
-
-            # Rerun the app to hide the embedding throbber
-            st.experimental_rerun()
-
-        # Get the user query
-        st.text_input(label=PDF_USER_QUERY_PROMPT, key='user_query_str', on_change=query_llm, args=(kb, openai_api, model))
-
-
-def main():
     # Streamlit treats function docstrings as magic strings for user display. Use comments instead
     # Set up LLM host connection & launch the main loop
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc. for self-hosted LLM
@@ -229,10 +198,15 @@ def main():
         model = LLM or HOST_DEFAULT
         openai_api = openai_emulation(
             host=LLM_HOST, port=LLM_PORT, model=LLM, debug=True)
-        
-    st.session_state['embedding_model'] = True
 
-    streamlit_loop(openai_api, model, LLM_TEMP)
+    st.session_state['embedding_model'] = None
+    st.session_state['openai_api'] = openai_api
+    st.session_state['model'] = model
+
+    # Create file upload box on Streamlit, set from the user's upload
+    # Use st.session_state to avoid unnessisary reprocessing/reloading
+    st.file_uploader('Upload a PDF', type=['pdf'], accept_multiple_files=False,
+                     on_change=prep_pdf, key='pdf')
 
 
 main()  # Code to execute
