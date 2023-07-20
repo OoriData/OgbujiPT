@@ -21,7 +21,7 @@ running. Assume for the following it's at my-llm-host:8000
 Prerequisites. From OgbujiPT cloned dir:.
 
 ```sh
-pip install --upgrade .
+pip install --upgrade https://github.com/uogbuji/OgbujiPT.git@16-better-vector-db
 pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-client tiktoken
 ```
 
@@ -45,8 +45,6 @@ from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
 from sentence_transformers import SentenceTransformer
-
-import zlib  # for crc32 checksums
 
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
