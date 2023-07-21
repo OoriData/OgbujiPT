@@ -45,6 +45,7 @@ from dotenv import load_dotenv
 
 from ogbujipt.config import openai_emulation
 from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
+from ogbujipt import oapi_choice1_text
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
@@ -79,7 +80,7 @@ async def send_llm_msg(msg):
 
     # Response is a json-like object; 
     # just get back the text of the response
-    response_text = response.choices[0].text.strip()
+    response_text = oapi_choice1_text(response)
     print('\nResponse text from LLM:\n', response_text)
 
     return response_text
