@@ -19,6 +19,7 @@ import asyncio
 
 import click
 
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
 from ogbujipt import config
 from ogbujipt.prompting.basic import context_build
@@ -89,7 +90,7 @@ async def async_main(openai_params):
 
     # response is a json-like object; 
     # just get back the text of the response
-    response_text = retval.choices[0].text.strip()
+    response_text = oapi_first_choice_text(retval)
     print('\nResponse text from LLM:\n\n', response_text)
 
 
