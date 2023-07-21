@@ -40,6 +40,7 @@ try:
 except ImportError:
     QDRANT_AVAILABLE = False
     QdrantClient = object()  # Set up a dummy to satisfy the type hints
+    models = None
 
 # Option for running a Qdrant DB locally in memory
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
