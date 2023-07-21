@@ -6,7 +6,7 @@
 from .__about__ import __version__
 
 
-def oapi_choice1_text(response):
+def oapi_first_choice_text(response):
     '''
     Given an OpenAI-compatible API response, return the first choice response text
     '''

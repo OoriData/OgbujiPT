@@ -40,7 +40,7 @@ from PyPDF2 import PdfReader
 
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
 from ogbujipt.prompting import format, CHATGPT_DELIMITERS
-from ogbujipt import oapi_choice1_text
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -182,7 +182,7 @@ def query_llm(openai_api, model):
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; extract the text
-    response_text = oapi_choice1_text(response)
+    response_text = oapi_first_choice_text(response)
     print('\nResponse text from LLM:\n', response_text)
 
     response_placeholder.write(response_text)

@@ -35,7 +35,7 @@ import html2text
 from ogbujipt import config
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 from ogbujipt.async_helper import schedule_openai_call, openai_api_surrogate
-from ogbujipt import oapi_choice1_text
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -147,7 +147,7 @@ async def async_main(sites, api_params):
 
             # response is a json-like object; 
             # just get back the text of the response
-            response_text = oapi_choice1_text(retval)
+            response_text = oapi_first_choice_text(retval)
             print('\nResponse text from LLM:\n\n', response_text)
 
 

@@ -12,6 +12,7 @@ You can also use OpenAI by using the --openai param
 
 import click
 
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.config import openai_live, openai_emulation
 from ogbujipt.prompting.basic import context_build
 from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_INPUT_DELIMITERS
@@ -69,7 +70,7 @@ def main(host, port, llmtemp, openai, model):
 
     # Response is a json-like object; 
     # just get back the text of the response
-    response_text = response.choices[0].text.strip()
+    response_text = oapi_first_choice_text(response)
     print('\nResponse text from LLM:\n\n', response_text)
 
 
