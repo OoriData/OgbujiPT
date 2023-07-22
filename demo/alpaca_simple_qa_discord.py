@@ -29,7 +29,7 @@ Then to launch the bot:
 python demo/alpaca_simple_qa_discord.py
 ```
 
-For hints on how t modify this to use OpenAI's actual services,
+For hints on how to modify this to use OpenAI's actual services,
 see demo/alpaca_simple_fix_xml.py
 '''
 
@@ -117,12 +117,13 @@ def main():
 
     load_dotenv()  # From .env file
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-    LLM_HOST = os.getenv('LLM_HOST')
-    LLM_PORT = os.getenv('LLM_PORT')
+    assert DISCORD_TOKEN
+    LLM_HOST = os.getenv('LLM_HOST', 'http://localhost')
+    LLM_PORT = os.getenv('LLM_PORT', 8000)
 
     # Set up API connector & update temperature from environment
     llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)
-    llmtemp = os.getenv('LLM_TEMP')
+    llmtemp = float(os.getenv('LLM_TEMP', '0.9'))
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)
