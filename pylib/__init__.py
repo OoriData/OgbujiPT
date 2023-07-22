@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt
 
+# ruff: noqa: F401,F403
+
 from .__about__ import __version__
 
 
