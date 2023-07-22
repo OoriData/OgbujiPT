@@ -1,19 +1,18 @@
+For all these demos you need access to an OpenAI-like service. Default assumption is that you have a self-hosted framework such as llama-cpp-python or text-generation-webui running
+
 # Simplest
 
-## alpaca_simple_fix_xml.py
+## simple_fix_xml.py
 
-Quick demo, sending an Alpaca-compatible LLM some bad XML & asking it to make corrections.
+Quick demo, sending a Llama or Alpaca-compatible LLM some bad XML & asking it to make corrections.
 
 # Intermediate
 
-## alpaca_multitask_fix_xml.py
+## multiprocess.py
 
-Intermediate demo using an LLM to repair data (XML), like
-alpaca_simple_fix_xml.py
-but running a separate, progress indicator task in the background
-while the LLm works, using asyncio. This should work even
-if the LLM framework we're using doesn't suport asyncio,
-thanks to ogbujipt.async_helper 
+Intermediate demo asking an LLM multiple simultaneous riddles on various topics,
+running a separate, progress indicator task in the background, using asyncio.
+Works even if the LLM framework suport asyncio, thanks to ogbujipt.async_helper 
 
 # Advanced
 

@@ -14,7 +14,7 @@ Configuration & globally-relevant values
 # Really just a bogus name for cases when OpenAPI is being emulated
 # OpenAI API requires the model be specified, but many compaitble APIs
 # have a model predetermined by the host
-HOST_DEFAULT = 'HOST-DEFAULT'
+HOST_DEFAULT_MODEL = HOST_DEFAULT = 'HOST-DEFAULT'
 
 
 class attr_dict(dict):
@@ -25,18 +25,13 @@ class attr_dict(dict):
     __delattr__ = dict.__delitem__
 
 
-def openai_live(
-        rev='v1',
-        model='',
-        apikey=None,
-        debug=True
-        ):
+def openai_live(apikey=None, debug=True, model=''):
     '''
     Set up to use OpenAI proper. If you don't pass in an API key, the
     environment variable OPENAI_API_KEY will be checked
 
     Side note: a lot of OpenAI tutorials suggest that you embed your
-    OpenAI private key into the code, which is a horrible, terrible idea
+    OpenAI private key into the code, which is a horrible, no-good idea
 
     Extra reminder: If you set up your environment via .env file, make sure
     it's in .gitignore or equivalent so it never gets accidentally committed!
@@ -49,27 +44,21 @@ def openai_live(
     Returns:
         openai_api (openai): Prepared OpenAI API
     '''
+    import os
     import openai as openai_api
 
     # openai_api.api_version
     openai_api.debug = debug
-    openai_api.params = attr_dict(
-        rev=rev,
-        api_key=apikey,
-        model=model,
-        debug=debug)
-
+    openai_api.api_key = apikey or os.getenv('OPENAI_API_KEY')
+    openai_api.model = model
     return openai_api
 
 
 def openai_emulation(
         host='http://127.0.0.1',
         port='8000',
-        rev='v1',
-        model=HOST_DEFAULT,
         apikey='BOGUS',
-        oaitype='open_ai',
-        debug=True):
+        debug=True, model=''):
     '''
     Set up emulation, to use a alternative, OpenAI API compatible service
     Port 8000 for llama-cpp-python, Port 5001 for Oobabooga
@@ -79,11 +68,7 @@ def openai_emulation(
 
         port (str, optional): Port to use at "host"
 
-        rev (str, optional): OpenAI revision to use
-
-        apikey (str, optional): API key to use for authentication
-
-        oaitype (str, optional): OpenAI type to use
+        apikey (str, optional): Unused standin for OpenAI API key
 
         debug (bool, optional): Debug flag
 
@@ -92,17 +77,9 @@ def openai_emulation(
     '''
     import openai as openai_api
 
+    rev = 'v1'
     openai_api.api_key = apikey
-    openai_api.api_type = oaitype
     openai_api.api_base = f'{host}:{port}/{rev}'
     openai_api.debug = debug
-
-    openai_api.params = attr_dict(
-        api_key=apikey,
-        api_type=oaitype,
-        api_base=openai_api.api_base,
-        model=model,
-        debug=debug
-        )
-
+    openai_api.model = model
     return openai_api
