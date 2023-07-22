@@ -1,3 +1,5 @@
+For all these demos you need access to an OpenAI-like service. Default assumption is that you have a self-hosted framework such as llama-cpp-python or text-generation-webui running
+
 # Simplest
 
 ## alpaca_simple_fix_xml.py

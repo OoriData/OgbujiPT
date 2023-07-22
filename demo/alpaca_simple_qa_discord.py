@@ -8,10 +8,6 @@ Note: This is a simple demo, which doesn't do any client-side job management,
 so for example if a request is sent, and a second comes in before it has completed,
 only the latter will complete.
 
-You need access to an OpenAI-like service. Default assumption is that you
-have a self-hosted framework such as llama-cpp-python or text-generation-webui
-running. Say it's at my-llm-host:8000, you can do:
-
 Prerequisites: python-dotenv discord.py
 
 You also need to make sure Python has root SSL certificates installed

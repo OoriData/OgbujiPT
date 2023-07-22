@@ -14,10 +14,6 @@ Text to vector (embedding) model:
 Single-PDF support, for now, to keep the demo code simple. Can easily extend to
 e.g. work with multiple docs dropped in a directory
 
-You need access to an OpenAI-like service. Default assumption is that you
-have a self-hosted framework such as llama-cpp-python or text-generation-webui
-running. Assume for the following it's at my-llm-host:8000
-
 Prerequisites. From OgbujiPT cloned dir:.
 
 ```sh
