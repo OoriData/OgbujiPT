@@ -62,7 +62,7 @@ def openai_api_surrogate(prompt, api_func=None, **kwargs):
 
     trimmed_kwargs = {}
     for k in kwargs:
-        if k in OPENAI_GLOALS:
+        if k in OPENAI_GLOBALS:
             setattr(openai, k, kwargs[k])
         else:
             trimmed_kwargs[k] = kwargs[k]
