@@ -34,7 +34,7 @@ import html2text
 
 from ogbujipt import config
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
-from ogbujipt.async_helper import schedule_openai_call, openai_api_surrogate
+from ogbujipt.async_helper import schedule_callable, openai_api_surrogate, save_openai_api_params
 from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
@@ -82,7 +82,7 @@ async def read_site(url, collection):
     print(f'{collection.count()} chunks added to collection')
 
 
-async def async_main(sites, api_params):
+async def async_main(sites):
     # Automatic download from HuggingFace
     # Seem to be reentrancy issues with HuggingFace; defer import
     from sentence_transformers import SentenceTransformer
@@ -134,7 +134,7 @@ async def async_main(sites, api_params):
 
             indicator_task = asyncio.create_task(indicate_progress())
             llm_task = asyncio.create_task(
-                schedule_openai_call(openai_api_surrogate, prompt, **model_params))
+                schedule_callable(openai_api_surrogate, prompt, **model_params, **save_openai_api_params()))
             tasks = [indicator_task, llm_task]
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -164,17 +164,14 @@ async def async_main(sites, api_params):
 def main(host, port, openai_key, model, sites):
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
     if openai_key:
-        assert not (host or port), 'Don\'t use --host or --port with --openai'
         model = model or 'text-davinci-003'
-        openai_api = config.openai_live(
-            model=model, debug=True)
+        config.openai_live(apikey=openai_key, model=model, debug=True)
     else:
-        # For now the model param is most useful in conjunction with --openai
+        # Generally not really useful except in conjunction with --openai
         model = model or config.HOST_DEFAULT
-        openai_api = config.openai_emulation(
-            host=host, port=port, model=model, debug=True)
+        config.openai_emulation(host=host, port=port, model=model, debug=True)
 
-    asyncio.run(async_main(sites, openai_api.params))
+    asyncio.run(async_main(sites))
 
 
 if __name__ == '__main__':

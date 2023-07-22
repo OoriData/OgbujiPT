@@ -6,7 +6,7 @@ Users can make an LLM request by @mentioning the bot by its user ID
 
 Note: This is a simple demo, which doesn't do any client-side job management,
 so for example if a request is sent, and a second comes in before it has completed,
-only the latter will complete.
+the LLM back end is relied on to cope.
 
 Prerequisites: python-dotenv discord.py
 
@@ -40,7 +40,7 @@ import discord
 from dotenv import load_dotenv
 
 from ogbujipt.config import openai_emulation
-from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
+from ogbujipt.async_helper import schedule_callable, openai_api_surrogate, save_openai_api_params
 from ogbujipt import oapi_first_choice_text
 from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
@@ -62,12 +62,12 @@ async def send_llm_msg(msg):
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
     llm_task = asyncio.create_task(
-        schedule_callable(openai_api_surrogate, prompt, **llm.params))
+        schedule_callable(openai_api_surrogate, prompt, temperature=llmtemp, max_tokens=512,
+                          **save_openai_api_params()))
 
     tasks = [llm_task]
     done, _ = await asyncio.wait(
-        tasks, return_when=asyncio.FIRST_COMPLETED
-        )
+        tasks, return_when=asyncio.FIRST_COMPLETED)
 
     response = next(iter(done)).result()
 
@@ -113,7 +113,7 @@ async def on_ready():
 
 def main():
     # A real app would probably use a discord.py cog w/ these as data members
-    global llm, llm_temp
+    global llm, llmtemp
 
     load_dotenv()  # From .env file
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -122,8 +122,7 @@ def main():
 
     # Set up API connector & update temperature from environment
     llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)
-    llm.params.llmtemp = os.getenv('LLM_TEMP')
-    llm.params.max_tokens = 512
+    llmtemp = os.getenv('LLM_TEMP')
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)
