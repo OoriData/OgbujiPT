@@ -49,8 +49,8 @@ def format(query, preamble='', contexts=None, delimiters=None):
     zero or more context items (either simple text or tuples of text/metadata
     dict), and optional delimiters
 
-    >>> from ogbujipt.prompting.basic import context_build
-    >>> context_build('How are you?', preamble='You are a friendly AI who loves conversation') 
+    >>> from ogbujipt.prompting.basic import format
+    >>> format('How are you?', preamble='You are a friendly AI who loves conversation') 
     'You are a friendly AI who loves conversation\n\nHow are you?\n'
     '''
     contexts = contexts or []

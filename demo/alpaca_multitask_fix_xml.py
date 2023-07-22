@@ -22,7 +22,7 @@ import click
 from ogbujipt import oapi_first_choice_text
 from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
 from ogbujipt import config
-from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_DELIMITERS
 
 DOTS_SPACING = 0.5  # Number of seconds between each dot printed to console
@@ -49,7 +49,7 @@ async def async_main(openai_params):
 <capital>Moscow</capital>
 </Earth>'''
 
-    prompt = context_build(
+    prompt = format(
         'Correct the following XML to make it well-formed',
         contexts=BAD_XML_CODE,
         delimiters=ALPACA_INSTRUCT_DELIMITERS)

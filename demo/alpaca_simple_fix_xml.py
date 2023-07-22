@@ -14,7 +14,7 @@ import click
 
 from ogbujipt import oapi_first_choice_text
 from ogbujipt.config import openai_live, openai_emulation
-from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_INPUT_DELIMITERS
 
 
@@ -44,7 +44,7 @@ def main(host, port, llmtemp, openai, model):
 <capital>Moscow</capital>
 </Earth>'''
 
-    prompt = context_build(
+    prompt = format(
         'Correct the given XML to make it well-formed',
         contexts= BAD_XML_CODE,
         preamble='You are a helpful assistant, '

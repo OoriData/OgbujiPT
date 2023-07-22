@@ -46,7 +46,7 @@ from dotenv import load_dotenv
 from ogbujipt.config import openai_emulation
 from ogbujipt.async_helper import schedule_callable, openai_api_surrogate
 from ogbujipt import oapi_first_choice_text
-from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
 # Enable all standard intents, plus message content
@@ -61,7 +61,7 @@ async def send_llm_msg(msg):
     '''
     Schedule the LLM request
     '''
-    prompt = context_build(msg, delimiters=ALPACA_DELIMITERS)
+    prompt = format(msg, delimiters=ALPACA_DELIMITERS)
     print(prompt, '\n')
 
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here

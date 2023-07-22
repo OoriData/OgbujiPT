@@ -6,7 +6,7 @@ or
 pytest test/test_airoboros_obedient_prompting.py
 '''
 
-from ogbujipt.prompting.basic import context_build
+from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import concat_input_prompts, AIROBOROS_OBEDIENT_DELIMITERS
 
 
@@ -42,7 +42,7 @@ url: culinarychronicles.com/the-history-of-bread-making''',
 
     given_inputs = concat_input_prompts(ctx_texts)
 
-    prompt = context_build(
+    prompt = format(
         'How do I make sourdough bread? What is its cultural significance?\n\n[citations]',  # noqa
         contexts=given_inputs,
         delimiters=AIROBOROS_OBEDIENT_DELIMITERS
