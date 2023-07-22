@@ -71,7 +71,7 @@ def openai_api_surrogate(prompt, api_func=None, **kwargs):
 
 
 # Extracted from https://github.com/openai/openai-python/blob/main/openai/__init__.py
-OPENAI_GLOALS = ['api_key', 'api_key_path', 'api_base', 'organization', 'api_type', 'api_version',
+OPENAI_GLOBALS = ['api_key', 'api_key_path', 'api_base', 'organization', 'api_type', 'api_version',
                  'proxy', 'app_info', 'debug', 'log']
 
 
@@ -84,7 +84,7 @@ def save_openai_api_params():
 
     params = {}
     # model also carried as a user convenience
-    for k in OPENAI_GLOALS + ['model']:
+    for k in OPENAI_GLOBALS + ['model']:
         if hasattr(openai, k):
             params[k] = getattr(openai, k)
     return params
