@@ -60,7 +60,7 @@ K = int(os.getenv('K', '3'))  # how many chunks to return for query context
 EMBED_CHUNK_SIZE = int(os.getenv('EMBED_CHUNK_SIZE', '500'))  # Character count used in slicing up the document
 EMBED_CHUNK_OVERLAP = int(os.getenv('EMBED_CHUNK_OVERLAP', '100'))  # Character count overlap between chunks
 # LLM for vector DB embeddings; will be d/led: https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2
-DOC_EMBEDDINGS_LLM = os.getenv('EMBED_CHUNK_OVERLAP', 'all-MiniLM-L12-v2')
+DOC_EMBEDDINGS_LLM = os.getenv('DOC_EMBEDDINGS_LLM', 'all-MiniLM-L12-v2')
 
 CONSOLE_WIDTH = 80
 
