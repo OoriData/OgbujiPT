@@ -78,7 +78,7 @@ OPENAI_GLOALS = ['api_key', 'api_key_path', 'api_base', 'organization', 'api_typ
 def save_openai_api_params():
     '''
     openai package uses globals for a lot of its parameters, including the mandatory api_key.
-    In some circumstances, such as when multiprocessing, these should be saved in order to be re-set when the module is re-imported.
+    In some circs, e.g. multiprocessing, these should be saved for re-set when the module is re-imported.
     '''
     import openai
 
