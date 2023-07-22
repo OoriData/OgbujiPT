@@ -173,8 +173,8 @@ class qdrant_collection:
             kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
         '''
-        embedded_text = self._embedding_model.encode(query)
-        return self.db.search(collection_name=self.name, query_vector=embedded_text, **kwargs)
+        embedded_query = self._embedding_model.encode(query)
+        return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
 
     def count(self):
         '''
