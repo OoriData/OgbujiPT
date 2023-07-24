@@ -1,15 +1,12 @@
 '''
-Advanced, "Chat my PDF" demo
+Advanced. Retrieval Augmented Generation (RAG) AKA "Chat my PDF" demo
 
 Use a PDF document as a knowledge base to provide context for natural language Q&A
 
 UI: Streamlit - streamlit.io
-Vector store: Qdrant - https://qdrant.tech/
-    Alternatives: pgvector, Chroma, Faiss, Weaviate, etc.
+Vector store: Qdrant
 PDF to text: PyPDF2
-    Alternatives: pdfplumber
-Text to vector (embedding) model: 
-    Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
+Text to vector (embedding) model: HuggingFace all-MiniLM-L12-v2
 
 Single-PDF support, for now, to keep the demo code simple. Can easily extend to
 e.g. work with multiple docs dropped in a directory
@@ -17,7 +14,7 @@ e.g. work with multiple docs dropped in a directory
 Prerequisites. From OgbujiPT cloned dir:.
 
 ```sh
-pip install --upgrade https://github.com/uogbuji/OgbujiPT.git@16-better-vector-db
+pip install --upgrade https://github.com/uogbuji/OgbujiPT.git
 pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-client tiktoken
 ```
 

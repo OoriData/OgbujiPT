@@ -1,8 +1,8 @@
 # OgbujiPT
 
-Toolkit for using self-hosted large language models, but also with support for e.g. ChatGPT.
+Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as ChatGPT.
 
-Includes demos with chat-your-documents and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
+Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
 There are some helper functions for common LLM tasks, such as those provided by
 projects such as langchain, but not yet as extensive. The OgbujiPT versions,
@@ -10,11 +10,14 @@ however, emphasize simplicity and transparency.
 
 Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba). In our own practice we use both of these with Nvidia GPU and Apple M1/M2. We've also tested with OpenAI's full service ChatGPT (and use it in our practice).
 
-<!--
-Not yet in PyPI
+<table><tr>
+  <td><a href="https://oori.dev/"><img src="https://oori.dev/assets/images/image02.png" width="64" /></a></td>
+  <td>OgbujiPT is primarily developed by the crew at <a href="https://oori.dev/">Oori Data</a>. We offer software engineering services around LLM applications.</td>
+</tr></table>
+
 [![PyPI - Version](https://img.shields.io/pypi/v/ogbujipt.svg)](https://pypi.org/project/ogbujipt)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ogbujipt.svg)](https://pypi.org/project/ogbujipt)
--->
+
 ## Quick links
 
 - [Getting started]([#installation](getting-started))
@@ -25,21 +28,14 @@ Not yet in PyPI
 ## Getting started
 
 ```console
-pip install --upgrade .
-```
-
-<!--
-Not yet in PyPI
-```console
 pip install ogbujipt
 ```
--->
 
 ### Just show me some code, dammit!
 
 ```py
 from ogbujipt.config import openai_emulation
-from ogbujipt import oapi_choice1_text
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 
 llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with your LLM host
@@ -50,10 +46,10 @@ prompt = format('Write a short birthday greeting for my star employee',
 # Just using pyopenai directly, for simplicity, setting params as needed
 response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, max_tokens=100)
 # Extract just the response text, but the entire structure is available
-print(oapi_choice1_text(response))
+print(oapi_first_choice_text(response))
 ```
 
-The Nous-Hermes 13B LLM offered the following response:
+The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:
 
 > Dear [Employee's Name],
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
