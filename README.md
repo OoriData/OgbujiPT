@@ -10,11 +10,14 @@ however, emphasize simplicity and transparency.
 
 Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba). In our own practice we use both of these with Nvidia GPU and Apple M1/M2. We've also tested with OpenAI's full service ChatGPT (and use it in our practice).
 
-<!--
-Not yet in PyPI
+<table><tr>
+  <td><a href="https://oori.dev/"><img src="https://oori.dev/assets/images/image02.png" width="64" /></a></td>
+  <td>OgbujiPT is primarily developed by the crew at <a href="https://oori.dev/">Oori Data</a>. We offer software engineering services around LLM applications.</td>
+</tr></table>
+
 [![PyPI - Version](https://img.shields.io/pypi/v/ogbujipt.svg)](https://pypi.org/project/ogbujipt)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ogbujipt.svg)](https://pypi.org/project/ogbujipt)
--->
+
 ## Quick links
 
 - [Getting started]([#installation](getting-started))
