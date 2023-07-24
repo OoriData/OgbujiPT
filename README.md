@@ -46,7 +46,7 @@ response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, m
 print(oapi_first_choice_text(response))
 ```
 
-The Nous-Hermes 13B LLM offered the following response:
+The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:
 
 > Dear [Employee's Name],
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
