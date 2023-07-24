@@ -1,8 +1,8 @@
 # OgbujiPT
 
-Toolkit for using self-hosted large language models, but also with support for e.g. ChatGPT.
+Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as ChatGPT.
 
-Includes demos with chat-your-documents and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
+Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
 There are some helper functions for common LLM tasks, such as those provided by
 projects such as langchain, but not yet as extensive. The OgbujiPT versions,
@@ -25,21 +25,14 @@ Not yet in PyPI
 ## Getting started
 
 ```console
-pip install --upgrade .
-```
-
-<!--
-Not yet in PyPI
-```console
 pip install ogbujipt
 ```
--->
 
 ### Just show me some code, dammit!
 
 ```py
 from ogbujipt.config import openai_emulation
-from ogbujipt import oapi_choice1_text
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 
 llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with your LLM host
@@ -50,7 +43,7 @@ prompt = format('Write a short birthday greeting for my star employee',
 # Just using pyopenai directly, for simplicity, setting params as needed
 response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, max_tokens=100)
 # Extract just the response text, but the entire structure is available
-print(oapi_choice1_text(response))
+print(oapi_first_choice_text(response))
 ```
 
 The Nous-Hermes 13B LLM offered the following response:
