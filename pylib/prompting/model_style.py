@@ -64,8 +64,8 @@ ENDCONTEXT
 {text}
 '''
 
-# Define delimeters in ChatGPT style
-CHATGPT_DELIMITERS = {
+# Define delimeters in OpenAI GPT style
+OPENAIGPT_DELIMITERS = {
     pdelim.PREQUERY: '### USER:',
     pdelim.POSTQUERY: '### ASSISTANT:',
 }
