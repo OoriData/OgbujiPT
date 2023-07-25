@@ -65,7 +65,7 @@ ENDCONTEXT
 '''
 
 # Define delimeters in OpenAI GPT style
-OPENAIGPT_DELIMITERS = {
+OPENAI_GPT_DELIMITERS = {
     pdelim.PREQUERY: '### USER:',
     pdelim.POSTQUERY: '### ASSISTANT:',
 }
