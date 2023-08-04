@@ -20,7 +20,7 @@ Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-pyt
 
 ## Quick links
 
-- [Getting started]([#installation](getting-started))
+- [Getting started](#getting-started)
 - [License](#license)
 
 -----
