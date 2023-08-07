@@ -32,7 +32,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 
 from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
-from ogbujipt.prompting import format, CHATGPT_DELIMITERS
+from ogbujipt.prompting import format, OPENAI_GPT_DELIMITERS
 from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
@@ -165,7 +165,7 @@ def query_llm(openai_api, model):
         preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
         'questions directly and as briefly as possible. '
         'If you cannot answer with the given context, just say so.',
-        delimiters=CHATGPT_DELIMITERS)
+        delimiters=OPENAI_GPT_DELIMITERS)
 
     print('  PROMPT FOR LLM:  '.center(CONSOLE_WIDTH, '='), '\n', prompt)
 
