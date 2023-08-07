@@ -119,7 +119,7 @@ def main():
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
     assert DISCORD_TOKEN
     LLM_HOST = os.getenv('LLM_HOST', 'http://localhost')
-    LLM_PORT = os.getenv('LLM_PORT', 8000)
+    LLM_PORT = os.getenv('LLM_PORT', '8000')
 
     # Set up API connector & update temperature from environment
     llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)

@@ -117,10 +117,10 @@ class qdrant_collection:
 
         Args:
             texts (List[str]): Strings to be stored and indexed. For best results these should be of similar length.
-                                They'll be converted to embeddings fo refficient lookup
+            They'll be converted to embeddings for efficient lookup
 
             metas (List[dict]): Optional metadata per text, stored with the text and included whenever the text is
-                                retrieved via search/query
+            retrieved via search/query
         '''
         if len(texts) == 0:
             warnings.warn('Empty sequence of texts provided. No action will be taken.')
