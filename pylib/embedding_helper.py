@@ -82,7 +82,12 @@ class qdrant_collection:
         '''
         self.name = name
         self.db = db
-        self._embedding_model = embedding_model
+        # Check if the provided embedding model is a SentenceTransformer
+        if embedding_model.__class__.__name__ == 'SentenceTransformer':
+            self.embedding_model = embedding_model
+        else:
+            raise ValueError('embedding_model must be a SentenceTransformer object')
+            
         if not self.db:
             if not QDRANT_AVAILABLE: 
                 raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
