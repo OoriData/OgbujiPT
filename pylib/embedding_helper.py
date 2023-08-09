@@ -84,7 +84,7 @@ class qdrant_collection:
         self.db = db
         # Check if the provided embedding model is a SentenceTransformer
         if embedding_model.__class__.__name__ == 'SentenceTransformer':
-            self.embedding_model = embedding_model
+            self._embedding_model = embedding_model
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
             
