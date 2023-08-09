@@ -43,10 +43,6 @@ class SentenceTransformer:
                device= None,
                normalize_embeddings: bool = False):
         pass
-        """
-        Property to set the maximal input sequence length for the model. Longer inputs will be truncated.
-        """
-        self._first_module().max_seq_length = value
 
 
 def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
