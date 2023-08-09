@@ -100,6 +100,9 @@ class qdrant_collection:
         self._db_initialized = False
 
     def _first_update_prep(self, text):
+        if text.__class__.__name__ != 'str':
+            raise ValueError('text must be a string')
+
         # Make sure we have a vector size set; use a sample embedding if need be
         partial_embeddings = self._embedding_model.encode(text)
         self._vector_size = len(partial_embeddings)
@@ -178,6 +181,8 @@ class qdrant_collection:
             kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
         '''
+        if query.__class__.__name__ != 'str':
+            raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
         return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
 
