@@ -70,6 +70,15 @@ OPENAI_GPT_DELIMITERS = {
     pdelim.POSTQUERY: '### ASSISTANT:',
 }
 
+# LLAMA_DELIMITERS?, see https://www.reddit.com/r/LocalLLaMA/comments/155po2p/get_llama_2_prompt_format_right/
+# or https://huggingface.co/blog/llama2#how-to-prompt-llama-2
+'''
+<s>[INST] <<SYS>>
+{{ system_prompt }}
+<</SYS>>
+
+{{ user_message }} [/INST]
+'''
 
 def concat_input_prompts(context_content_pairs):
     '''
