@@ -25,7 +25,8 @@ classifiers = [
 ]
 dependencies = [
   "openai",
-  "python-dotenv"
+  "python-dotenv",
+  "tomli"
 ]
 
 [project.urls]
