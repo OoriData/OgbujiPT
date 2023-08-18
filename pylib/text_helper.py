@@ -44,7 +44,7 @@ def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
 
     if not (isinstance(chunk_size, int) and chunk_overlap > 0):
         raise ValueError(f'''\
-chunk_size must be an integer greater than 0. Got {chunk_overlap}''')
+chunk_size and chunk_overlap must be an integer greater than 0. Got {chunk_overlap} chunk_size and {chunk_overlap} chunk_overlap.''')
 
     if not (isinstance(chunk_overlap, int)
             and chunk_overlap > 0 and chunk_overlap < chunk_size):
