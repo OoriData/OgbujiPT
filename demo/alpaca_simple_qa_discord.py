@@ -93,7 +93,7 @@ async def on_message(message):
         return
 
     # Send throbber placeholder message to discord:
-    return_msg = await message.channel.send('<a:oori_throbber:1119445227732742265>')
+    return_msg = await message.channel.send('<a:oori_throbber:1142173241499197520>')
 
     # Assumes a single mention, for simplicity. If there are multiple,
     # All but the first will just be bundled over to the LLM
