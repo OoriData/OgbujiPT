@@ -9,13 +9,27 @@ https://github.com/OoriData/OgbujiPT/wiki/Word-Loom:-A-format-for-managing-langu
 
 import tomli
 
-def read(fp):
+# XXX Defaulting to en leaves a bit too imperialist a flavor, really
+def load(fp, lang='en'):
     '''
     Read a word loom and return the tables as top-level result mapping
-    Just a shallow wrapper around tomli.load(), for now. Might do more processing later.
+    Loads the TOML, then selects text by given language
 
-    >>> with open("myprompts.toml", mode="rb") as fp:
-    >>>     loom = tomli.load(fp)
+    >>> from ogbujipt import word_loom
+    >>> with open('myprompts.toml', mode='rb') as fp:
+    >>>     loom = word_loom.load(fp)
     '''
-    loom = tomli.load(fp)
-    return loom
+    loom_raw = tomli.load(fp)
+    # Select text by language
+    # FIXME: Only top level, for now. Presumably we'll want to support scoping
+    texts = {}
+    default_lang = loom_raw.get('lang', None)
+    for k, v in loom_raw.items():
+        if not isinstance(v, dict):
+            # Skip top-level items
+            continue
+        val = v.get(lang)
+        if not v and lang == default_lang:
+            val = v.get('text')
+        texts[k] = val
+    return texts
