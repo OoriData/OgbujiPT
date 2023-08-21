@@ -7,13 +7,19 @@ Routines to help with text processing
 '''
 import re
 import warnings
-from typing import List
 
 
-def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
-                  len_func=len) -> List[str]:
+def text_splitter(text: str,
+        chunk_size: int,
+        chunk_overlap: int=0,
+        separator: str='\n\n',
+        len_func=len
+    ) -> list[str]:
     '''
-    Split text into a set of chunks
+    Split string into a set of chunks
+
+    Note that this function is "fuzzy"; it will not necessarily split the text into perfectly chunk_size length chunks, 
+    and will preserve items between the given separators. this results in slightly larger chunks than requested.
 
     Much like langchain's CharTextSplitter.py
 
@@ -28,7 +34,7 @@ def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
 
         chunk_size (int): Number of characters to include per chunk
 
-        chunk_overlap (int): Number of characters to overlap at the edges of chunks
+        chunk_overlap (int, optional): Number of characters to overlap at the edges of chunks
 
         seperator (str, optional): String that already splits "text" into sections
 
@@ -37,20 +43,23 @@ def text_splitter(text, chunk_size, chunk_overlap, separator='\n\n',
     Returns:
         chunks (List[str]): List of chunks of the text provided
     '''
-    assert separator  # FIXME: Clean up error handling
-    if chunk_overlap is None:
-        # 10% overlap by default
-        chunk_overlap = chunk_size // 10
-
-    if not (isinstance(chunk_size, int) and chunk_overlap > 0):
-        raise ValueError(f'''\
-chunk_size and chunk_overlap must be an integer greater than 0. Got {chunk_overlap} chunk_size and {chunk_overlap} chunk_overlap.''')
-
-    if not (isinstance(chunk_overlap, int)
-            and chunk_overlap > 0 and chunk_overlap < chunk_size):
-        raise ValueError(f'''\
-chunk_overlap must be an integer greater than 0 and smaller than chunk_size. \
-Got {chunk_overlap}''')
+    assert separator, 'Separator must be non-empty'
+    
+    if ((not isinstance(text, str))
+        or (not isinstance(separator, str))):
+        raise ValueError(f'text and separator must be strings.\n'
+                         f'Got {text.__class__} for text and {separator.__class__} for separator')
+    
+    if ((not isinstance(chunk_size, int))
+        or (not isinstance(chunk_overlap, int))
+        or (chunk_size <= 0)
+        or (chunk_overlap < 0)
+        or (chunk_size < chunk_overlap)):
+        raise ValueError(f'chunk_size must be a positive integer, '
+                         f'chunk_overlap must be a non-negative integer, and'
+                         f'chunk_size must be greater than chunk_overlap.\n'
+                         f'Got {chunk_size} chunk_size and {chunk_overlap} chunk_overlap.')
+    
     # Split up the text by the separator
     # FIXME: Need a step for escaping regex
     sep_pat = re.compile(separator)
@@ -58,8 +67,7 @@ Got {chunk_overlap}''')
     separator_len = len_func(separator)
 
     if len(fine_split) <= 1:
-        warnings.warn(
-            f'No splits detected. Problem with separator ({repr(separator)})?')
+        warnings.warn(f'No splits detected. Problem with separator ({repr(separator)})?')
 
     # Combine the small pieces into medium size chunks to send to LLM
     # Initialize accumulators; chunks will be the target list of the chunks so far

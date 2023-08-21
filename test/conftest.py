@@ -42,3 +42,16 @@ def BASIC_EVEN_BLOCK():
 abcdefghij
 ABCDEFGHIJ
 klmnopqrst'''
+
+@pytest.fixture
+def LOREM_IPSUM():
+    # Lorem ipsum text
+    return ('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada, '
+            'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius '
+            'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis, '
+            'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget '
+            'elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id '
+            'dignissim risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat '
+            'malesuada finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere '
+            'eleifend, libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum '
+            'euismod, felis libero blandit lorem, nec ullamcorper quam justo at elit.')
