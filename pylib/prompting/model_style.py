@@ -50,17 +50,17 @@ VICUNA_DELIMITERS = {
 }
 
 ALPACA_DELIMITERS = {
-    pdelim.POSTQUERY: '### Response:',
+    pdelim.POSTQUERY: '### Response:\n',
 }
 
 ALPACA_INSTRUCT_DELIMITERS = {
     pdelim.PREQUERY: '### Instruction:',
-    pdelim.POSTQUERY: '### Response:',
+    pdelim.POSTQUERY: '### Response:\n',
 }
 
 ALPACA_INSTRUCT_INPUT_DELIMITERS = {
     pdelim.PREQUERY: '### Instruction:',
-    pdelim.POSTQUERY: '### Response:',
+    pdelim.POSTQUERY: '### Response:\n',
     # Expect a single context item, to treat as the input:
     pdelim.PRE_ALL_CONTEXT: '### Input:',
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
@@ -101,6 +101,8 @@ ENDCONTEXT
 # Define delimeters in OpenAI GPT style
 OPENAI_GPT_DELIMITERS = {
     pdelim.PREQUERY: '### USER:',
+    pdelim.PRECONTEXT: '"""\n',
+    pdelim.POSTCONTEXT: '\n"""',
     pdelim.POSTQUERY: '### ASSISTANT:',
 }
 

@@ -25,9 +25,9 @@ class pdelim(Enum):
     PRE_PREAMBLE = 2  # Set as prefix to a preamble (e.g. ### System:)
     POST_PREAMBLE = 3  # Set as prefix to a preamble (e.g. ### System:)
     INTERCONTEXT = 4  # Between multiple context sections
-    PREQUERY = 5  # e.g. '### Instruction:\n\n' in Alpaca
-    POSTQUERY = 6  # e.g. '### Response:\n\n' in Alpaca
-    PRECONTEXT = 7  # e.g. '### Input:\n\n' in Alpaca instruct variation
+    PREQUERY = 5  # e.g. '### Instruction:\n' in Alpaca
+    POSTQUERY = 6  # e.g. '### Response:\n' in Alpaca
+    PRECONTEXT = 7  # e.g. '### Input:\n' in Alpaca instruct variation
     POSTCONTEXT = 8
     PRE_ALL_CONTEXT = 9
     POST_ALL_CONTEXT = 10
