@@ -56,7 +56,7 @@ def test_separator_chunk_size_too_large(BASIC_EVEN_BLOCK):
     assert len(chunks) == 1
     assert len(chunks[0]) == len(BASIC_EVEN_BLOCK)
 
-def test_zero_chunk_overlap(LOREM_IPSUM):
+def test_zero_overlap(LOREM_IPSUM):
     chunks = text_splitter(LOREM_IPSUM, chunk_size=100, chunk_overlap=0, separator=' ')
     assert len(chunks) == 9
     # chunks should end on the word that takes it over the chunk size
