@@ -9,11 +9,10 @@ pytest test/test_text_splitter.py
 
 import os
 import sys
-import pkgutil
+# import pkgutil
 
 import pytest
 
-import ogbujipt
 from ogbujipt import word_loom
 
 # Following only works to get the content as octets
