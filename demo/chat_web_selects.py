@@ -60,7 +60,7 @@ async def indicate_progress(pause=DOTS_SPACING):
         await asyncio.sleep(pause)
 
 
-async def read_site(url, collection):
+async def read_site(url, collection, chunk_size, chunk_overlap):
     # Crude check; good enough for demo
     if not url.startswith('http'): url = 'https://' + url  # noqa E701
     print('Downloading & processing', url)
@@ -71,8 +71,7 @@ async def read_site(url, collection):
     text = html2text.html2text(html)
 
     # Split text into chunks
-    chunks = text_splitter(text, chunk_size=EMBED_CHUNK_SIZE,
-                           chunk_overlap=EMBED_CHUNK_OVERLAP, separator='\n')
+    chunks = text_splitter(text, chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator='\n')
 
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL
@@ -82,7 +81,7 @@ async def read_site(url, collection):
     print(f'{collection.count()} chunks added to collection')
 
 
-async def async_main(sites):
+async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question):
     # Automatic download from HuggingFace
     # Seem to be reentrancy issues with HuggingFace; defer import
     from sentence_transformers import SentenceTransformer
@@ -91,7 +90,7 @@ async def async_main(sites):
     collection = qdrant_collection(COLLECTION_NAME, embedding_model)
 
     url_task_group = asyncio.gather(*[
-        asyncio.create_task(read_site(site, collection)) for site in sites.split('|')])
+        asyncio.create_task(read_site(site, collection, chunk_size, chunk_overlap)) for site in sites.split('|')])
     indicator_task = asyncio.create_task(indicate_progress())
     tasks = [indicator_task, url_task_group]
     done, _ = await asyncio.wait(
@@ -100,13 +99,16 @@ async def async_main(sites):
     done = False
     while not done:
         print()
-        user_question = input(USER_PROMPT)
+        if question:
+            user_question = question
+        else:
+            user_question = input(USER_PROMPT)
         if user_question.strip() == 'done':
             break
 
-        docs = collection.search(user_question, limit=4)
-
-        print(docs)
+        docs = collection.search(user_question, limit=limit)
+        if verbose:
+            print(docs)
         if docs:
             # Collects "chunked_doc" into "gathered_chunks"
             gathered_chunks = '\n\n'.join(
@@ -120,8 +122,8 @@ async def async_main(sites):
                 'questions directly and as briefly as possible. '
                 'If you cannot answer with the given context, just say so.\n',
                 delimiters=ALPACA_INSTRUCT_DELIMITERS)
-
-            print(prompt)
+            if verbose:
+                print(prompt)
 
             # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
@@ -141,9 +143,11 @@ async def async_main(sites):
 
             # Instance of openai.openai_object.OpenAIObject, with lots of useful info
             retval = next(iter(done)).result()
-            print(type(retval))
+            if verbose:
+                print(type(retval))
             # Response is a json-like object; extract the text
-            print('\nFull response data from LLM:\n', retval)
+            if verbose:
+                print('\nFull response data from LLM:\n', retval)
 
             # response is a json-like object; 
             # just get back the text of the response
@@ -153,15 +157,22 @@ async def async_main(sites):
 
 # Command line arguments defined in click decorators
 @click.command()
+@click.option('--verbose/--no-verbose', default=False)
+@click.option('--chunk-size', default=EMBED_CHUNK_SIZE, type=int, help='Number of characters to include per chunk')
+@click.option('--chunk-overlap', default=EMBED_CHUNK_OVERLAP, type=int,
+              help='Number of characters to overlap at the edges of chunks')
 @click.option('--host', default='http://127.0.0.1', help='OpenAI API host')
 @click.option('--port', default='8000', help='OpenAI API port')
+@click.option('--limit', default=4, type=int,
+              help='Maximum number of chunks matched against the posed question to use as context for the LLM')
 @click.option('--openai-key',
               help='OpenAI API key. Leave blank to specify self-hosted model via --host & --port')
 @click.option('--model', default='', type=str, 
               help='OpenAI model to use (see https://platform.openai.com/docs/models).'
               'Use only with --openai-key')
+@click.option('--question', default=None, help='The question to ask (or prompt for one)')
 @click.argument('sites')
-def main(host, port, openai_key, model, sites):
+def main(verbose, chunk_size, chunk_overlap, host, port, limit, openai_key, model, question, sites):
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
     if openai_key:
         model = model or 'text-davinci-003'
@@ -171,7 +182,7 @@ def main(host, port, openai_key, model, sites):
         model = model or config.HOST_DEFAULT
         config.openai_emulation(host=host, port=port, model=model, debug=True)
 
-    asyncio.run(async_main(sites))
+    asyncio.run(async_main(sites, verbose, limit, chunk_size, chunk_overlap, question))
 
 
 if __name__ == '__main__':
