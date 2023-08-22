@@ -1,0 +1,37 @@
+# Sample word loom file (toml format): https://github.com/OoriData/OgbujiPT/wiki/Word-Loom:-A-format-for-managing-language-for-AI-LLMs-(including-prompts)
+# Warning: there is a difference between single & double quotes in TOML. Former is not escaped.
+# Since in the root table, all prompts in this file will default to English
+# Can use more precise values, such as "en_UK"
+lang = "en"
+
+[davinci3_instruct_system]
+text = """
+Obey the instruction below, based on the provided context. If you cannot obey the instruction
+based on the provided context, respond: "I don't have enough information to comply".
+"""
+
+[i18n_context]
+text = """
+Internationalization is a corporate strategy that involves making products and services as adaptable as possible, so they can easily enter different national markets. This often requires the assistance of subject matter experts. Internationalization is sometimes shortened to "i18n", where 18 represents the number of characters in the word.
+"""
+source = "https://www.lionbridge.com/blog/translation-localization/localization-globalization-internationalization-whats-the-difference/"
+
+[write_i18n_advocacy]
+text = """
+{davinci3_instruct_system}
+
+CONTEXT: {i18n_context}
+
+INSTRUCTION: Write a corporate memo encouraging our company to take i18n seriously
+"""
+# Declare template vars, for introspection in code. Presence of markers signals that this is a template.
+markers = ["davinci3_instruct_system", "i18n_context"]
+
+[translate_request]
+text = "Comment dit-on en anglais: {hardcoded_food}?"
+lang = "fr"
+markers = ["hardcoded_food"]
+
+[hardcoded_food]
+text = "pomme de terre"
+lang = "fr"
