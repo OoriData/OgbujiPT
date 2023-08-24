@@ -2,8 +2,6 @@ from ogbujipt.prompting import model_style
 from unittest.mock import patch, Mock
 
 import unittest
-import openai
-import httpx
 
 # def test_hosted_model_openai():
 #     try:

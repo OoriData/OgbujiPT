@@ -1,5 +1,4 @@
 from ogbujipt import config
-import unittest
 
 
 host = 'http://127.0.0.1'
