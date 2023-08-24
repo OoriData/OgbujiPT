@@ -26,7 +26,6 @@ classifiers = [
 dependencies = [
   "openai",
   "python-dotenv",
-  "httpx",
 ]
 
 [project.urls]
