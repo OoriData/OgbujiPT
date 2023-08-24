@@ -7,7 +7,7 @@ pytest test/test_ogbujipt.py
 '''
 # ruff: noqa: E501
 
-import pytest
+# import pytest
 
 from ogbujipt import oapi_first_choice_text
 
