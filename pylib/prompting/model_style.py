@@ -45,36 +45,35 @@ class style(Enum):
 
 
 VICUNA_DELIMITERS = {
-    pdelim.PREQUERY: '### USER:',
-    pdelim.POSTQUERY: '### ASSISTANT:',
+    pdelim.PREQUERY: '### USER:\n',
+    pdelim.POSTQUERY: '\n\n### ASSISTANT:\n',
 }
 
 ALPACA_DELIMITERS = {
-    pdelim.POSTQUERY: '### Response:\n',
+    pdelim.POSTQUERY: '\n\n### Response:\n',
 }
 
-ALPACA_INSTRUCT_DELIMITERS = {
-    pdelim.PREQUERY: '### Instruction:',
-    pdelim.POSTQUERY: '### Response:\n',
+ALPACA_INSTRUCT_DELIMITERS = {  # remove? seems redundant with ALPACA_INSTRUCT_INPUT_DELIMITERS
+    pdelim.PREQUERY: '### Instruction:\n',
+    pdelim.POSTQUERY: '\n### Response:\n',
 }
 
 ALPACA_INSTRUCT_INPUT_DELIMITERS = {
-    pdelim.PREQUERY: '### Instruction:',
-    pdelim.POSTQUERY: '### Response:\n',
+    pdelim.PREQUERY: '### Instruction:\n',
+    pdelim.POSTQUERY: '\n\n### Response:\n',
     # Expect a single context item, to treat as the input:
-    pdelim.PRE_ALL_CONTEXT: '### Input:',
+    pdelim.PRE_ALL_CONTEXT: '\n\n### Input:\n',
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
 
 ORCA_DELIMITERS = {
     pdelim.FIXED_PREAMBLE: '### System:\nYou are an AI assistant that follows instruction extremely well. Help as much as you can.',  # noqa E501
-    pdelim.PREQUERY: '### User:',
-    pdelim.POSTQUERY: '### Response:',
+    pdelim.PREQUERY: '\n\n### User:\n',
+    pdelim.POSTQUERY: '\n\n### Response:\n',
     # Expect a single context item, to treat as the input:
-    pdelim.PRE_ALL_CONTEXT: '### Input:',
+    pdelim.PRE_ALL_CONTEXT: '\n\n### Input:\n',
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
-
 
 # Closed-context prompting
 AIROBOROS_OBEDIENT_DELIMITERS = {
@@ -100,10 +99,11 @@ ENDCONTEXT
 
 # Define delimeters in OpenAI GPT style
 OPENAI_GPT_DELIMITERS = {
-    pdelim.PREQUERY: '### USER:',
-    pdelim.PRECONTEXT: '"""\n',
+    pdelim.PREQUERY: '### USER:\n',
+    pdelim.PRECONTEXT: '\n"""\n',
     pdelim.POSTCONTEXT: '\n"""',
-    pdelim.POSTQUERY: '### ASSISTANT:',
+    pdelim.POSTQUERY: '\n\n### ASSISTANT:\n',
+    pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
 
 # LLAMA_DELIMITERS?, see https://www.reddit.com/r/LocalLLaMA/comments/155po2p/get_llama_2_prompt_format_right/

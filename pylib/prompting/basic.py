@@ -89,6 +89,7 @@ def format(query, preamble='', contexts=None, delimiters=None):
         parts.append(delimiters.get(pdelim.PREQUERY, ''))
         parts.append(query)
 
+    # 
     if delimiters.get(pdelim.META_ORDERING, ordering.CONTEXT_QUERY) \
             == ordering.CONTEXT_QUERY:
         add_context()
@@ -98,9 +99,9 @@ def format(query, preamble='', contexts=None, delimiters=None):
         add_context()
 
     # XXX: Feels a bit weird that the post-query bit must be outside the query
-    # clusure. Maybe needs a rename?
-    parts.append(delimiters.get(pdelim.POSTQUERY, ''))
-    full_context = '\n'.join(parts)
+    # closure. Maybe needs a rename?
+    parts.append(delimiters.get(pdelim.POSTQUERY, '\n'))
+    full_context = ''.join(parts)
     return full_context
 
 
