@@ -14,6 +14,39 @@ def PROMPTING_USER_QUERY():
 def PROMPTING_CONTEXT():
     return 'The entirety of "Principia Mathematica" by Isaac Newton'
 
+@pytest.fixture
+def PROMPTING_CONTEXT_LIST():
+    return [
+        (
+            'author: Isaac Newton\n'
+            'title: Principia Mathematica Volume 1\n'
+            'date: 1910\n'
+            'ISBN-13: 978-0521626063',
+            'All mathematical propositions\' are of the form S is P\'; S\' is the subject, P\' the predicate.'  # noqa E501
+        ),
+        (
+            'author: Isaac Newton\n'
+            'title: Principia Mathematica Volume 2\n'
+            'date: 1912\n'
+            'ISBN-13: 978-0521626070',
+            'It is desirable to find some convenient phrase which shall denote the whole collection of values of a function, or the whole collection of entities of a given type.'  # noqa E501
+        ),
+        (
+            'author: Isaac Newton\n'
+            'title: Principia Mathematica Volume 3\n'
+            'date: 1913\n'
+            'ISBN-13: 978-0521626087',
+            'In this volume we shall define the arithmetical relations between finite cardinal numbers and also their addition and multiplication.'  # noqa E501
+        ),
+        (
+            'author: Isaac Newton\n'
+            'title: Principia Mathematica Volume 4\n'
+            'date: 1915\n'
+            'ISBN-13: 978-6969696969',
+            'Finally, we can get onto the real purpose of this work; to explain why 9 + 10 = 21'  # noqa E501
+        ),
+    ]
+
 
 @pytest.fixture
 def BAD_XML_CODE():

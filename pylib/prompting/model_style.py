@@ -77,11 +77,10 @@ ORCA_DELIMITERS = {
 
 # Closed-context prompting
 AIROBOROS_OBEDIENT_DELIMITERS = {
-    pdelim.PREQUERY: 'BEGININSTRUCTION',
-    pdelim.POSTQUERY: 'ENDINSTRUCTION\nASSISTANT:',
-    pdelim.PRECONTEXT: 'BEGININPUT',
-    pdelim.POSTCONTEXT: 'ENDINPUT',
-    pdelim.PRE_ALL_CONTEXT: 'USER:',
+    pdelim.PRE_ALL_CONTEXT: 'BEGININPUT',
+    pdelim.POST_ALL_CONTEXT: '\nENDINPUT',
+    pdelim.PREQUERY: '\nBEGININSTRUCTION\n',
+    pdelim.POSTQUERY: '\nENDINSTRUCTION\n'
 }
 
 # If not using the closed-context/obedient prompting, it's just Vicuña style
@@ -90,12 +89,7 @@ AIROBOROS_DELIMITERS = VICUNA_DELIMITERS
 # XXX: Should this just be a FIXED_PREAMBLE?
 AIROBOROS_SUGGESTED_PREAMBLE = 'A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user\'s questions, and doesn\'t make up answers if it doesn\'t know.'  # noqa E501
 
-AIR_CONOB_INPUT_PRETMPL = '''\
-BEGINCONTEXT
-{context}
-ENDCONTEXT
-{text}
-'''
+AIR_CONOB_INPUT_PRETMPL = '\nBEGINCONTEXT\n{metadata}\nENDCONTEXT\n{context}'
 
 # Define delimeters in OpenAI GPT style
 OPENAI_GPT_DELIMITERS = {
@@ -124,12 +118,9 @@ def concat_input_prompts(context_content_pairs):
     Context is just the key, value pairs in a text string
     '''
     parts = [
-        (AIR_CONOB_INPUT_PRETMPL.format(context=ctx, text=text))
-        for ctx, text in context_content_pairs
-        # for ix, (ctx, text) in enumerate(context_content_pairs)
-    ]
-    # pre_tmpl = ''.join(parts)
-    # return PromptTemplate.from_template(''.join(parts))
+        (AIR_CONOB_INPUT_PRETMPL.format(metadata=metas, context=context))
+        for metas, context in context_content_pairs
+        ]
     return ''.join(parts)
 
 
