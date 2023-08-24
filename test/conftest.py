@@ -6,6 +6,25 @@ import pytest
 
 
 @pytest.fixture
+def PROMPTING_USER_QUERY():
+    return 'what\'s nine plus ten?'
+
+
+@pytest.fixture
+def PROMPTING_CONTEXT():
+    return 'The entirety of "Principia Mathematica" by Isaac Newton'
+
+
+@pytest.fixture
+def BAD_XML_CODE():
+    return '''\
+<earth>
+<country><b>Russia</country></b>
+<capital>Moscow</capital>
+</Earth>'''
+
+
+@pytest.fixture
 def COME_THUNDER_POEM():
     # One of Christopher Okigbo's greatest poems
     return '''\

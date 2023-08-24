@@ -3,26 +3,19 @@ pytest test
 
 or
 
-pytest test/test_alvic_prompting.py
+pytest test/test_alpaca_prompting.py
 '''
 # import pytest
 
 from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import (
-   ALPACA_DELIMITERS,
-   ALPACA_INSTRUCT_DELIMITERS,
-   ALPACA_INSTRUCT_INPUT_DELIMITERS,
-   VICUNA_DELIMITERS
-)
+    ALPACA_DELIMITERS,
+    ALPACA_INSTRUCT_DELIMITERS,
+    ALPACA_INSTRUCT_INPUT_DELIMITERS
+    )
 
 
-def test_basic_prompt_substyles():
-    BAD_XML_CODE = '''\
-<earth>
-<country><b>Russia</country></b>
-<capital>Moscow</capital>
-</Earth>'''
-
+def test_basic_prompt_substyles(BAD_XML_CODE):
     # EXPECTED_PROMPT = 'Correct the following XML to make it well-formed\n\n\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### Response:'  # noqa
     EXPECTED_PROMPT = '\nCorrect the following XML to make it well-formed\n\n\n\n\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### Response:\n'  # noqa
 
@@ -59,12 +52,3 @@ def test_basic_prompt_substyles():
     # print(prompt)
     assert prompt == EXPECTED_PROMPT
 
-    EXPECTED_PROMPT = '### USER:\nCorrect the following XML to make it well-formed\n<earth>\n<country><b>Russia</country></b>\n<capital>Moscow</capital>\n</Earth>\n### ASSISTANT:'  # noqa
-
-    prompt = format(
-        'Correct the following XML to make it well-formed\n' + BAD_XML_CODE,
-        delimiters=VICUNA_DELIMITERS
-    )
-    # 'You are a friendly AI who loves conversation\n\nHow are you?\n'
-
-    assert prompt == EXPECTED_PROMPT
