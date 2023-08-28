@@ -99,6 +99,7 @@ class qdrant_collection:
         self._distance_function = distance_function or models.Distance.COSINE
         self._db_initialized = False
 
+
     def _first_update_prep(self, text):
         if text.__class__.__name__ != 'str':
             raise ValueError('text must be a string')
@@ -118,6 +119,7 @@ class qdrant_collection:
             )
 
         self._db_initialized = True
+
 
     def update(self, texts, metas=None):
         '''
@@ -164,12 +166,24 @@ class qdrant_collection:
                 collection_name=self.name,
                 points=[
                     models.PointStruct(
-                        id=ix + before_count,  # Insistenmtly sequential IDs
+                        id=ix + before_count,  # sequential IDs
                         vector=embeddings,
                         payload=payload
                         )
                     ]
                 )
+
+    
+    def reset(self):
+        '''
+        Reset the Qdrant collection, deleting the collection and all its contents
+        '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before deleting its contents.')
+        
+        self.db.delete_collection(collection_name=self.name)
+        self._db_initialized = False
+        
 
     def search(self, query, **kwargs):
         '''
@@ -181,15 +195,21 @@ class qdrant_collection:
             kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
         '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before searching its contents.')
+        
         if query.__class__.__name__ != 'str':
             raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
         return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
 
+
     def count(self):
         '''
         Return the count of items in this Qdrant collection
         '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before counting its contents.')
         # This ugly declaration just gets the count as an integer
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         return current_count

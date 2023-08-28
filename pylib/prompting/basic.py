@@ -25,9 +25,9 @@ class pdelim(Enum):
     PRE_PREAMBLE = 2  # Set as prefix to a preamble (e.g. ### System:)
     POST_PREAMBLE = 3  # Set as prefix to a preamble (e.g. ### System:)
     INTERCONTEXT = 4  # Between multiple context sections
-    PREQUERY = 5  # e.g. '### Instruction:\n\n' in Alpaca
-    POSTQUERY = 6  # e.g. '### Response:\n\n' in Alpaca
-    PRECONTEXT = 7  # e.g. '### Input:\n\n' in Alpaca instruct variation
+    PREQUERY = 5  # e.g. '### Instruction:\n' in Alpaca
+    POSTQUERY = 6  # e.g. '### Response:\n' in Alpaca
+    PRECONTEXT = 7  # e.g. '### Input:\n' in Alpaca instruct variation
     POSTCONTEXT = 8
     PRE_ALL_CONTEXT = 9
     POST_ALL_CONTEXT = 10
@@ -89,6 +89,7 @@ def format(query, preamble='', contexts=None, delimiters=None):
         parts.append(delimiters.get(pdelim.PREQUERY, ''))
         parts.append(query)
 
+    # 
     if delimiters.get(pdelim.META_ORDERING, ordering.CONTEXT_QUERY) \
             == ordering.CONTEXT_QUERY:
         add_context()
@@ -98,9 +99,9 @@ def format(query, preamble='', contexts=None, delimiters=None):
         add_context()
 
     # XXX: Feels a bit weird that the post-query bit must be outside the query
-    # clusure. Maybe needs a rename?
-    parts.append(delimiters.get(pdelim.POSTQUERY, ''))
-    full_context = '\n'.join(parts)
+    # closure. Maybe needs a rename?
+    parts.append(delimiters.get(pdelim.POSTQUERY, '\n'))
+    full_context = ''.join(parts)
     return full_context
 
 
