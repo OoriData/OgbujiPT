@@ -14,6 +14,7 @@ authors = [
   { name = "Uche Ogbuji", email = "uche@ogbuji.net" },
   { name = "Osi Ogbuji", email = "osita@ogbuji.net" },
   { name = "Aidan Reese", email = "aidanreese.professional@gmail.com" },
+  { name = "Kai Schuyler Gonzalez", email = "kai.schuyler@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
