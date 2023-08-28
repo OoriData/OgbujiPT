@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
   "openai",
   "python-dotenv",
+  "tomli"
 ]
 
 [project.urls]
@@ -39,8 +40,16 @@ path = "pylib/__about__.py"
 # Rewriting path in distribution
 [tool.hatch.build.sources]
 "pylib" = "ogbujipt"
+"resources" = "ogbujipt/resources"
 
-# Hatch environemnts aren't working. For example, from `hatch run test` I get 
+[tool.hatch.build.targets.wheel]
+only-include = ["pylib", "resources"]
+
+[tool.hatch.build.targets.wheel.sources]
+"pylib" = "ogbujipt"
+"resources" = "ogbujipt/resources"
+
+# Hatch environemnts are too fiddly. For example, from `hatch run test` I get 
 # ModuleNotFoundError: No module named 'ogbujipt'
 # This may well have to do with my rewriting path in distribution,
 # But I'm not compromising on that, so I guess just install & use

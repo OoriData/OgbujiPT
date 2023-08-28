@@ -6,19 +6,19 @@ to work even when the LLM framework in use doesn't suport asyncio.
 Luckily `ogbujipt.async_helper` comes in handy.
 
 ```sh
-python demo/alpaca_multitask_fix_xml.py --host=http://my-llm-host --port=8000
+python demo/multiprocess.py --host=http://my-llm-host --port=8000
 ```
 
 Also allows you to use the actual OpenAI ChatGPT service, by specifying --openai
 '''
 import asyncio
-
-# import openai
+from pathlib import Path
 
 import click
 
-from ogbujipt import oapi_first_choice_text
 from ogbujipt import config
+from ogbujipt import word_loom
+from ogbujipt import oapi_first_choice_text
 from ogbujipt.async_helper import (
     schedule_callable,
     openai_api_surrogate,
@@ -28,11 +28,26 @@ from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
 
+def file_path_here():
+    '''Cross-platform Python trick to get the path to this very file'''
+    from inspect import getsourcefile
+    from os.path import abspath
+
+    return abspath(getsourcefile(lambda: 0))
+
+
+# Load language material, such as prompt templates, from an external file, word loom format
+HERE = Path(file_path_here()).parent
+with open(HERE / Path('language.toml'), mode='rb') as fp:
+    TEXTS = word_loom.load(fp)
+
+
 class llm_request:
     '''
     Encapsulates each LLM service request via OpenAI API (even for self-hosted LLM)
     '''
     tasks = {}
+    request_tpl = TEXTS['test_prompt_joke']
 
     def __init__(self, topic, llmtemp, **model_params):
         '''
@@ -49,7 +64,7 @@ class llm_request:
         self.model_params = model_params
 
     def wrap(self):
-        prompt = format(f'Tell me a funny joke about {self.topic}', delimiters=ALPACA_DELIMITERS)
+        prompt = format(self.request_tpl.format(topic=self.topic), delimiters=ALPACA_DELIMITERS)
 
         # Pattern of passing in the callable iself, then the params—required for multiprocess execution
         self.task = asyncio.create_task(
