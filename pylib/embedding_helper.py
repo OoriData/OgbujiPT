@@ -32,6 +32,10 @@ responses to similar questions without having to use the most powerful LLM
 
 import warnings
 import itertools
+import asyncio
+import asyncpg
+import os
+from dotenv import load_dotenv
 
 try:
     from qdrant_client import QdrantClient
@@ -45,7 +49,54 @@ except ImportError:
 # Option for running a Qdrant DB locally in memory
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
+load_dotenv()
 
+
+class pgvector_connection:
+    def __init__(self, embedding_model, **conn_params):
+        '''
+        Initialize a pgvector connection
+
+        Args:
+            embedding (SentenceTransformer): SentenceTransformer object of your choice
+            https://huggingface.co/sentence-transformers
+
+            conn_params (mapping): keyword parameters for setting up a pgvector connection
+            See the main docstring (or run `help(pgvector_connection)`)
+        '''
+        # Check if the provided embedding model is a SentenceTransformer
+        if embedding_model.__class__.__name__ == 'SentenceTransformer':
+            self._embedding_model = embedding_model
+        else:
+            raise ValueError('embedding_model must be a SentenceTransformer object')
+
+        asyncio.run(self._set_up())
+        
+    
+    async def _set_up(self):
+        # FIXME: probably do this from a function, in __init__
+        try:
+            print("TEST1")
+            conn = await asyncpg.connect(
+                user = os.getenv('DB_USER'),
+                password = os.getenv('DB_PASSWORD'),
+                database = os.getenv('DB_NAME'),
+                host = os.getenv('DB_HOST'),
+                port=os.getenv('DB_PORT'),
+            )
+            print("TEST2")
+
+            values = await conn.fetch('''SELECT version();''')
+
+
+            for v in values:
+                print(v)
+
+            await conn.close()
+            return None
+        except Exception as e:
+            print(f"ERROR: {e}")
+            return e
 class qdrant_collection:
     def __init__(self, name, embedding_model, db=None,
                  distance_function=None, **conn_params):
@@ -58,6 +109,7 @@ class qdrant_collection:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
             https://huggingface.co/sentence-transformers
 
+            
             db (optional QdrantClient): existing DB/client to use
 
             distance_function (str): Distance function by which vectors will be compared
