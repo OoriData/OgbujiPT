@@ -76,13 +76,15 @@ class pgvector_connection:
     async def _set_up(self):
         try:
             print("TEST1")
+            print("HOST :", os.getenv('DB_HOST'))
             conn = await asyncpg.connect(
-                user = os.getenv('DB_USER'),
-                password = os.getenv('DB_PASSWORD'),
-                database = os.getenv('DB_NAME'),
-                host = os.getenv('DB_HOST'),
-                port=os.getenv('DB_PORT'),
-            )
+                user=os.getenv('DB_USER'),  # TODO: this should be a passed in configurable
+                password=os.getenv('DB_PASSWORD'),  # TODO: this should be a passed in configurable
+                database=os.getenv('DB_NAME'),  # TODO: this should be a passed in configurable
+                host=os.getenv('DB_HOST'),  # TODO: this should be a passed in configurable
+                port=os.getenv('DB_PORT'),  # TODO: this should be a passed in configurable
+                ssl='prefer'  # TODO: this should be a passed in configurable
+                )
             print("TEST2")
 
             values = await conn.fetch('''SELECT version();''')
