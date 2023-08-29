@@ -88,7 +88,6 @@ class pgvector_connection:
 
             values = await conn.fetch('''SELECT version();''')
 
-
             for v in values:
                 print(v)
 
@@ -97,6 +96,8 @@ class pgvector_connection:
         except Exception as e:
             print(f"ERROR: {e}")
             return e
+        
+
 class qdrant_collection:
     def __init__(self, name, embedding_model, db=None,
                  distance_function=None, **conn_params):
