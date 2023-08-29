@@ -74,7 +74,6 @@ class pgvector_connection:
         
     
     async def _set_up(self):
-        # FIXME: probably do this from a function, in __init__
         try:
             print("TEST1")
             conn = await asyncpg.connect(
