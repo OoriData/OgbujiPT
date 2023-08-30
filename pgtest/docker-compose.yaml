@@ -5,13 +5,15 @@ services:
 
   db:
     image: postgres
-    restart: always
+    # restart: always
     environment:
       POSTGRES_USER: oori
       POSTGRES_PASSWORD: example
       POSTGRES_DB: PGv
     ports:
       - 5432:5432
+    volumes:
+      - ./pg_hba.conf:/var/lib/postgresql/pg_hba.conf
 
   adminer:
     image: adminer
