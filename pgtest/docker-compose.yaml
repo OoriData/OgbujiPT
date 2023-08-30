@@ -14,7 +14,7 @@ services:
       - 5432:5432
     volumes:
       - ./pg_hba.conf:/var/lib/postgresql/pg_hba.conf
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/var/lib/postgresql/init.sql
 
   adminer:
     image: adminer
