@@ -14,9 +14,12 @@ services:
       - 5432:5432
     volumes:
       - ./pg_hba.conf:/var/lib/postgresql/pg_hba.conf
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+    env_file:
+      - .env

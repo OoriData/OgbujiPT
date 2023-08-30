@@ -87,7 +87,6 @@ class pgvector_connection:
                 ssl='prefer'  # TODO: this should be a passed in configurable
                 )
 
-            values = await conn.fetch('''CREATE EXTENSION vector;''')
 
             for v in values:
                 print(v)
