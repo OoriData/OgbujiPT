@@ -16,29 +16,31 @@ e_lorem_ipsum = e_model.encode(lorem_ipsum, show_progress_bar=True)
 
 async def main():
     print('Connecting to database...')
-    # vDB = pgvector_connection(
-    #     e_model, 
-    #     os.getenv('DB_USER'), 
-    #     os.getenv('DB_PASSWORD'), 
-    #     os.getenv('DB_NAME'), 
-    #     os.getenv('DB_HOST'), 
-    #     int(os.getenv('DB_PORT'))
-    #     )
-    
-    vDB = await pgvector_connection.create(e_model, os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), os.getenv('DB_NAME'), os.getenv('DB_HOST'), int(os.getenv('DB_PORT')))
+    vDB = await pgvector_connection.create(
+        e_model, 
+        os.getenv('DB_USER'), 
+        os.getenv('DB_PASSWORD'), 
+        os.getenv('DB_NAME'), 
+        os.getenv('DB_HOST'), 
+        int(os.getenv('DB_PORT'))
+        )
     print('Connected to database')
+
+    print('Ensuring that the vector extension is installed...')
+    await vDB.raw_sql(f'''CREATE EXTENSION IF NOT EXISTS vector;''')
+    print('Ensured that the vector extension is installed')
 
     print('Creating table...')
     await vDB.raw_sql(f'''\
-        CREATE TABLE IF NOT EXISTS CREATE TABLE embeddings (
+        CREATE TABLE IF NOT EXISTS embeddings (
             id bigserial primary key, 
-            embedding vector({len(e_lorem_ipsum)}) -- embedding vector field size
+            embedding vector({len(e_lorem_ipsum)}), -- embedding vector field size
             content text NOT NULL, -- text content of the chunk
             permission text, -- permission of the chunk
             tokens integer, -- number of tokens in the chunk
             title text, -- title of file
             page_numbers integer[], -- page number of the document that the chunk is found in
-            tags text[], -- tags associated with the chunk
+            tags text[] -- tags associated with the chunk
             );''')
     print('Created table')
 
