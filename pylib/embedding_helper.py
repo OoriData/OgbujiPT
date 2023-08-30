@@ -33,10 +33,12 @@ responses to similar questions without having to use the most powerful LLM
 import warnings
 import itertools
 import asyncio
-import asyncpg
 import os
 from dotenv import load_dotenv
 
+import asyncpg
+
+# Qdrant is optional, so we'll only import it if it's available
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
@@ -73,10 +75,9 @@ class pgvector_connection:
         asyncio.run(self._set_up())
         
     
-    async def _set_up(self):
+    async def _set_up(self, ):
         try:
-            print("TEST1")
-            print("HOST :", os.getenv('DB_HOST'))
+            # Create a connection to the database
             conn = await asyncpg.connect(
                 user=os.getenv('DB_USER'),  # TODO: this should be a passed in configurable
                 password=os.getenv('DB_PASSWORD'),  # TODO: this should be a passed in configurable
@@ -85,9 +86,8 @@ class pgvector_connection:
                 port=os.getenv('DB_PORT'),  # TODO: this should be a passed in configurable
                 ssl='prefer'  # TODO: this should be a passed in configurable
                 )
-            print("TEST2")
 
-            values = await conn.fetch('''SELECT version();''')
+            values = await conn.fetch('''CREATE EXTENSION vector;''')
 
             for v in values:
                 print(v)
@@ -95,7 +95,7 @@ class pgvector_connection:
             await conn.close()
             return None
         except Exception as e:
-            print(f"ERROR: {e}")
+            warnings.warn(f"ERROR: {e}")
             return e
         
 
