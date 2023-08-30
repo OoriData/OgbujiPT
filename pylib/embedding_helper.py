@@ -53,6 +53,20 @@ MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 load_dotenv()
 
+# Generic SQL for creating a table to hold embedded documents
+CREATE_DEFAULT_TABLE = '''\
+CREATE TABLE IF NOT EXISTS CREATE TABLE embeddings (
+    id bigserial primary key, 
+    embedding vector({embed_dimension}) -- embedding vector field size
+    content text, -- text content of the chunk
+    permission text, -- permission of the chunk
+    tokens integer, -- number of tokens in the chunk
+    title text, -- title of file
+    page_numbers integer[], -- page number of the document that the chunk is found in
+    tags text[], -- tags associated with the chunk
+    );\
+'''
+
 
 class pgvector_connection:
     def __init__(self, embedding_model, **conn_params):
@@ -86,16 +100,19 @@ class pgvector_connection:
                 port=os.getenv('DB_PORT'),  # TODO: this should be a passed in configurable
                 ssl='prefer'  # TODO: this should be a passed in configurable
                 )
-
-
-            for v in values:
-                print(v)
-
+            
+            
+    
             await conn.close()
             return None
         except Exception as e:
             warnings.warn(f"ERROR: {e}")
             return e
+        
+
+        
+    async def trying_my_hardest(self):
+        
         
 
 class qdrant_collection:
