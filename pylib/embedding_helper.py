@@ -86,9 +86,13 @@ class pgvector_connection:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
 
-        self.conn = asyncio.run(self._set_up(user, password, db_name, host, port, **conn_params))
+        # Create a task to run the _set_up method asynchronously
+        self._set_up_task = asyncio.create_task(self._set_up(user, password, db_name, host, port, **conn_params))
+
+        # Get the event loop and run it until the _set_up method completes
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._set_up_task)
         
-    
     async def _set_up(self, user, password, db_name, host, port, **conn_params):
         try:
             # Create a connection to the database
@@ -105,6 +109,18 @@ class pgvector_connection:
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
         
+    async def raw_sql(self, sql):
+        '''
+        Run a raw SQL command on the connection
+
+        Args:
+            sql (str): SQL command to run
+        '''
+        try:
+            return await self.conn.execute(sql)
+        except Exception as e:
+            raise ConnectionError(f"ERROR: {e}")
+            
 
 class qdrant_collection:
     def __init__(self, name, embedding_model, db=None,
@@ -160,7 +176,6 @@ class qdrant_collection:
         self._distance_function = distance_function or models.Distance.COSINE
         self._db_initialized = False
 
-
     def _first_update_prep(self, text):
         if text.__class__.__name__ != 'str':
             raise ValueError('text must be a string')
@@ -180,7 +195,6 @@ class qdrant_collection:
             )
 
         self._db_initialized = True
-
 
     def update(self, texts, metas=None):
         '''
@@ -233,7 +247,6 @@ class qdrant_collection:
                         )
                     ]
                 )
-
     
     def reset(self):
         '''
@@ -244,7 +257,6 @@ class qdrant_collection:
         
         self.db.delete_collection(collection_name=self.name)
         self._db_initialized = False
-        
 
     def search(self, query, **kwargs):
         '''
@@ -263,7 +275,6 @@ class qdrant_collection:
             raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
         return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
-
 
     def count(self):
         '''
