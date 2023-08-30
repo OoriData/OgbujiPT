@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS CREATE TABLE embeddings (
 
 
 class pgvector_connection:
-    def __init__(self, embedding_model, user, password, db_name, host, port, **conn_params):
+    def __init__(self, embedding_model, conn):
         '''
         Initialize a pgvector connection
 
@@ -86,14 +86,15 @@ class pgvector_connection:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
 
-        # Create a task to run the _set_up method asynchronously
-        self._set_up_task = asyncio.create_task(self._set_up(user, password, db_name, host, port, **conn_params))
+        self.conn = conn
 
-        # Get the event loop and run it until the _set_up method completes
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._set_up_task)
-        
-    async def _set_up(self, user, password, db_name, host, port, **conn_params):
+    @classmethod
+    async def create(cls, embedding_model, user, password, db_name, host, port, **conn_params):
+        conn = await cls._set_up(user, password, db_name, host, port, **conn_params)
+        return cls(embedding_model, conn)
+
+    @staticmethod
+    async def _set_up(user, password, db_name, host, port, **conn_params):
         try:
             # Create a connection to the database
             conn = await asyncpg.connect(
@@ -103,8 +104,7 @@ class pgvector_connection:
                 host=host,
                 port=port,
                 **conn_params
-                )
-
+            )
             return conn
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
