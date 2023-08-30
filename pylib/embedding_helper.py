@@ -55,7 +55,7 @@ load_dotenv()
 
 
 class pgvector_connection:
-    def __init__(self, embedding_model, **conn_params):
+    def __init__(self, embedding_model, user, password, db_name, host, port, **conn_params):
         '''
         Initialize a pgvector connection
 
@@ -72,30 +72,24 @@ class pgvector_connection:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
 
-        asyncio.run(self._set_up())
+        self.conn = asyncio.run(self._set_up(user, password, db_name, host, port, **conn_params))
         
     
-    async def _set_up(self, ):
+    async def _set_up(self, user, password, db_name, host, port, **conn_params):
         try:
             # Create a connection to the database
             conn = await asyncpg.connect(
-                user=os.getenv('DB_USER'),  # TODO: this should be a passed in configurable
-                password=os.getenv('DB_PASSWORD'),  # TODO: this should be a passed in configurable
-                database=os.getenv('DB_NAME'),  # TODO: this should be a passed in configurable
-                host=os.getenv('DB_HOST'),  # TODO: this should be a passed in configurable
-                port=os.getenv('DB_PORT'),  # TODO: this should be a passed in configurable
-                ssl='prefer'  # TODO: this should be a passed in configurable
+                user=user,
+                password=password,
+                database=db_name,
+                host=host,
+                port=port,
+                **conn_params
                 )
 
-
-            for v in values:
-                print(v)
-
-            await conn.close()
-            return None
+            return conn
         except Exception as e:
-            warnings.warn(f"ERROR: {e}")
-            return e
+            raise ConnectionError(f"ERROR: {e}")
         
 
 class qdrant_collection:
