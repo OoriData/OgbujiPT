@@ -46,7 +46,7 @@ async def main():
             title text, -- title of file
             page_numbers integer[], -- page number of the document that the chunk is found in
             tags text[] -- tags associated with the chunk
-            );''')
+        );''')
     print('Created new table')
 
     print('Inserting data...')
@@ -58,11 +58,12 @@ async def main():
         VALUES (
             {e_lorem_ipsum},
             {lorem_ipsum},
-            lorem_ipsum);''')
+            lorem_ipsum
+        );''')
     print('Inserted data')
 
     print('Querying data...')
-    qanon = await vDB.conn.fetch('''SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
+    qanon = await vDB.conn.fetch(''' SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
     print(qanon)
 
 
