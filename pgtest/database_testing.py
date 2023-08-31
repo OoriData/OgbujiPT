@@ -56,8 +56,6 @@ async def main():
     print('Querying data...')
     qanon = await vDB.conn.fetch('''SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
     print(qanon)
-    for row in qanon:
-        print('GOT:', row)
 
 
 if __name__ == '__main__':
