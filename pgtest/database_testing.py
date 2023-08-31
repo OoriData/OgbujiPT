@@ -16,16 +16,13 @@ e_lorem_ipsum = e_model.encode(lorem_ipsum, show_progress_bar=True)
 
 async def main():
     print('Connecting to database...')
-    # vDB = pgvector_connection(
-    #     e_model, 
-    #     os.getenv('DB_USER'), 
-    #     os.getenv('DB_PASSWORD'), 
-    #     os.getenv('DB_NAME'), 
-    #     os.getenv('DB_HOST'), 
-    #     int(os.getenv('DB_PORT'))
-    #     )
-    
-    vDB = await pgvector_connection.create(e_model, os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), os.getenv('DB_NAME'), os.getenv('DB_HOST'), int(os.getenv('DB_PORT')))
+    vDB = await pgvector_connection.create(
+        e_model,
+        os.getenv('DB_USER'),
+        os.getenv('DB_PASSWORD'),
+        os.getenv('DB_NAME'),
+        os.getenv('DB_HOST'),
+        int(os.getenv('DB_PORT')))
     print('Connected to database')
 
     print('Creating table...')
@@ -43,7 +40,15 @@ async def main():
     print('Created table')
 
     print('Inserting data...')
-    await vDB.raw_sql(f''' INSERT INTO TABLE embeddings (embedding, content, title) VALUES ({e_lorem_ipsum}, {lorem_ipsum}, lorem_ipsum); ''')
+    await vDB.raw_sql(f'''\
+        INSERT INTO TABLE embeddings (
+            embedding,
+            content,
+            title)
+        VALUES (
+            {e_lorem_ipsum},
+            {lorem_ipsum},
+            lorem_ipsum);''')
     print('Inserted data')
 
     print('Querying data...')
