@@ -73,6 +73,7 @@ class pgvector_connection:
     def __init__(self, embedding_model, conn):
         '''
         Initialize a pgvector connection
+        This has limited protections against SQL injection, so be careful!
 
         Args:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
@@ -110,17 +111,24 @@ class pgvector_connection:
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
         
-    async def raw_sql(self, sql):
+    async def execute(self, sql):
         '''
-        Run a raw SQL command on the connection
+        Run a SQL command on the connection
+        This has limited protections against SQL injection, so be careful!
 
         Args:
             sql (str): SQL command to run
         '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
         try:
-            return await self.conn.execute(sql)
+            await self.conn.execute(sql)
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
+        
+    async def fetch(self, sql):
             
 
 class qdrant_collection:
