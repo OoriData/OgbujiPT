@@ -30,15 +30,15 @@ async def main():
     print('Connected to database')
 
     print('Ensuring that the vector extension is installed...')
-    await vDB.execute('''CREATE EXTENSION IF NOT EXISTS vector;''')
+    await vDB.conn.execute('''CREATE EXTENSION IF NOT EXISTS vector;''')
     print('Ensured that the vector extension is installed')
 
     print('Dropping old table...')
-    await vDB.execute('''DROP TABLE IF EXISTS embeddings;''')
+    await vDB.conn.execute('''DROP TABLE IF EXISTS embeddings;''')
     print('Dropped old table')
 
     print('Creating new table...')
-    await vDB.execute(f'''\
+    await vDB.conn.execute(f'''\
         CREATE TABLE embeddings (
             id bigserial primary key, 
             embedding vector({len(e_pacer_copypasta[0])}), -- embedding vector field size
@@ -53,16 +53,17 @@ async def main():
 
     print('Inserting data...')
     for index, (embedding, text) in enumerate(zip(e_pacer_copypasta, pacer_copypasta)):
-        await vDB.conn.fetch(f'''\
-            INSERT INTO embeddings (
-                embedding,
-                content,
-                title
-            ) VALUES (
-                '{list(embedding)}',
-                '{text}',
-                'Pacer Copypasta line {index}'
-            );''')
+        # await vDB.conn.fetch(f'''\
+        #     INSERT INTO embeddings (
+        #         embedding,
+        #         content,
+        #         title
+        #     ) VALUES (
+        #         '{list(embedding)}',
+        #         '{text}',
+        #         'Pacer Copypasta line {index}'
+        #     );''')
+        await vDB.insert_doc_table(table_name='embeddings', content=text, title=f'Pacer Copypasta line {index}')
     print('Inserted data')
 
     # Just a basic SQL query
@@ -85,7 +86,7 @@ async def main():
     k = 3
 
     print('Semantic Searching data...')
-    ss = await vDB.fetch(f'''\
+    ss = await vDB.conn.fetch(f'''\
         SELECT 
             1 - (embedding <=> '{list(search_embedding)}') AS cosine_similarity,
             title,

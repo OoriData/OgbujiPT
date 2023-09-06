@@ -54,18 +54,50 @@ MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 load_dotenv()
 # ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ========================================
 # Generic SQL for creating a table to hold embedded documents
-CREATE_DEFAULT_TABLE = '''\
-CREATE TABLE IF NOT EXISTS embeddings (
+CREATE_DOC_TABLE = '''\
+CREATE TABLE IF NOT EXISTS {table_name} (
     id bigserial primary key, 
     embedding vector({embed_dimension}), -- embedding vector field size
     content text NOT NULL, -- text content of the chunk
     permission text, -- permission of the chunk
-    tokens integer, -- number of tokens in the chunk
     title text, -- title of file
     page_numbers integer[], -- page number of the document that the chunk is found in
     tags text[] -- tags associated with the chunk
     );\
 '''
+
+INSERT_DOC_TABLE = '''\
+INSERT INTO {table_name} (
+    embedding,
+    content,
+    permission,
+    title,
+    page_numbers,
+    tags
+) VALUES (
+    {embedding},
+    {content},
+    {permission},
+    {title},
+    {page_numbers},
+    {tags}
+    );\
+'''
+# UPDATE_DOC_TABLE = '''\
+# UPDATE
+#     $1
+# SET 
+#     embedding = $2,
+#     content = $3,
+#     permission = $4,
+#     tokens = $5,
+#     title = $6,
+#     page_numbers = $7,
+#     tags = $8
+# WHERE
+#     id = $9
+# ;\
+# '''
 # ======================================================================================================================
 
 
@@ -90,6 +122,8 @@ class pgvector_connection:
 
         self.conn = conn
 
+        self._embed_dimension = len(self._embedding_model.encode(''))
+
     @classmethod
     async def create(cls, embedding_model, user, password, db_name, host, port, **conn_params):
         conn = await cls._set_up(user, password, db_name, host, port, **conn_params)
@@ -110,43 +144,65 @@ class pgvector_connection:
             return conn
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
-        
-    # async def execute(self, sql) -> None:
-    #     '''
-    #     Execute an SQL command
-    #     This has limited protections against SQL injection, so be careful!
 
-    #     Args:
-    #         sql (str): SQL command to run
-    #     '''
-    #     # Check that the connection is still alive
-    #     if self.conn.is_closed():
-    #         raise ConnectionError('Connection to database is closed')
+    async def create_doc_table(self, table_name: str) -> None:
+        '''
+        Create a table to hold embedded documents
 
-    #     try:
-    #         await self.conn.execute(sql)
-    #     except Exception as e:
-    #         raise ConnectionError(f"ERROR: {e}")
-        
-    # async def fetch(self, sql_query) -> list[asyncpg.Record]:
-    #     '''
-    #     Fetch the results of an SQL query
-    #     This has limited protections against SQL injection, so be careful!
+        Args:
+            table_name (str): name of the table to create
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
 
-    #     Args:
-    #         sql_query (str): SQL query to run
-    #     '''
-    #     # Check that the connection is still alive
-    #     if self.conn.is_closed():
-    #         raise ConnectionError('Connection to database is closed')
+        # Create the table
+        await self.conn.execute(CREATE_DOC_TABLE.format(table_name=table_name, embed_dimension=self._embed_dimension))
+    
+    async def insert_doc_table(
+            self, 
+            table_name: str, 
+            content: str, 
+            permission: str = "NULL", 
+            title: str = "NULL", 
+            page_numbers: list = ["NULL"], 
+            tags: list = ["NULL"]
+        ) -> None:
+        '''
+        Update a table to hold embedded documents
+
+        Args:
+            table_name (str): name of the table to update
+
+            content (str): text content of the document
+
+            permission (str): permission of the document
+
+            title (str): title of the document
+
+            page_numbers (list): page number of the document that the chunk is found in
+
+            tags (list): tags associated with the document
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        content_embedding = self._embedding_model.encode(content)
+
+        # Create the table
+        await self.conn.execute(
+            INSERT_DOC_TABLE.format(
+                table_name = table_name,
+                embedding = content_embedding,
+                content = content,
+                permission = permission,
+                title = title,
+                page_numbers = page_numbers,
+                tags = tags
+                )
+            )
         
-    #     try:
-    #         result = await self.conn.fetch(sql_query)
-    #     except Exception as e:
-    #         raise ConnectionError(f"ERROR: {e}")
-        
-    #     return result
-            
 
 class qdrant_collection:
     def __init__(self, name, embedding_model, db=None,
