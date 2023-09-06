@@ -2,7 +2,7 @@ import asyncio
 
 from sentence_transformers import SentenceTransformer
 
-from ogbujipt.embedding_helper import pgvector_connection
+from ogbujipt.embedding_helper import PGvectorConnection
 
 # Loading the embedding model
 e_model = SentenceTransformer('all-mpnet-base-v2')
@@ -21,7 +21,7 @@ pacer_copypasta = [
 
 async def main():
     # Connecting to the database
-    vDB = await pgvector_connection.create(
+    vDB = await PGvectorConnection.create(
         e_model, 
         'oori', 
         'example', 

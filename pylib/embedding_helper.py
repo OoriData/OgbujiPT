@@ -32,8 +32,6 @@ responses to similar questions without having to use the most powerful LLM
 
 import warnings
 import itertools
-import asyncio
-import os
 from dotenv import load_dotenv
 
 import asyncpg
@@ -98,7 +96,7 @@ LIMIT {k}
 '''
 # ====================================================================================================================== #
 
-class pgvector_connection:
+class PGvectorConnection:
     def __init__(self, embedding_model, conn):
         '''
         Initialize a pgvector connection
@@ -122,7 +120,16 @@ class pgvector_connection:
         self._embed_dimension = len(self._embedding_model.encode(''))
 
     @classmethod
-    async def create(cls, embedding_model, user, password, db_name, host, port, **conn_params):
+    async def create(
+            cls,
+            embedding_model,
+            user: str,
+            password: str,
+            db_name: str,
+            host: str, 
+            port: int,
+            **conn_params
+            ) -> 'PGvectorConnection':
         conn = await cls._set_up(user, password, db_name, host, port, **conn_params)
         return cls(embedding_model, conn)
 
