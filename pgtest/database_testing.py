@@ -53,7 +53,7 @@ async def main():
 
     print('Inserting data...')
     for index, (embedding, text) in enumerate(zip(e_pacer_copypasta, pacer_copypasta)):
-        await vDB.execute(f'''\
+        await vDB.conn.fetch(f'''\
             INSERT INTO embeddings (
                 embedding,
                 content,

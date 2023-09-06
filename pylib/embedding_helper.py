@@ -111,41 +111,41 @@ class pgvector_connection:
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
         
-    async def execute(self, sql):
-        '''
-        Execute an SQL command
-        This has limited protections against SQL injection, so be careful!
+    # async def execute(self, sql) -> None:
+    #     '''
+    #     Execute an SQL command
+    #     This has limited protections against SQL injection, so be careful!
 
-        Args:
-            sql (str): SQL command to run
-        '''
-        # Check that the connection is still alive
-        if self.conn.is_closed():
-            raise ConnectionError('Connection to database is closed')
+    #     Args:
+    #         sql (str): SQL command to run
+    #     '''
+    #     # Check that the connection is still alive
+    #     if self.conn.is_closed():
+    #         raise ConnectionError('Connection to database is closed')
 
-        try:
-            await self.conn.execute(sql)
-        except Exception as e:
-            raise ConnectionError(f"ERROR: {e}")
+    #     try:
+    #         await self.conn.execute(sql)
+    #     except Exception as e:
+    #         raise ConnectionError(f"ERROR: {e}")
         
-    async def fetch(self, sql_query) -> list[asyncpg.Record]:
-        '''
-        Fetch the results of an SQL query
-        This has limited protections against SQL injection, so be careful!
+    # async def fetch(self, sql_query) -> list[asyncpg.Record]:
+    #     '''
+    #     Fetch the results of an SQL query
+    #     This has limited protections against SQL injection, so be careful!
 
-        Args:
-            sql_query (str): SQL query to run
-        '''
-        # Check that the connection is still alive
-        if self.conn.is_closed():
-            raise ConnectionError('Connection to database is closed')
+    #     Args:
+    #         sql_query (str): SQL query to run
+    #     '''
+    #     # Check that the connection is still alive
+    #     if self.conn.is_closed():
+    #         raise ConnectionError('Connection to database is closed')
         
-        try:
-            result = await self.conn.fetch(sql_query)
-        except Exception as e:
-            raise ConnectionError(f"ERROR: {e}")
+    #     try:
+    #         result = await self.conn.fetch(sql_query)
+    #     except Exception as e:
+    #         raise ConnectionError(f"ERROR: {e}")
         
-        return result
+    #     return result
             
 
 class qdrant_collection:
