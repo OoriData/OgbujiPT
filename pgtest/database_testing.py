@@ -65,19 +65,20 @@ async def main():
             );''')
     print('Inserted data')
 
-    print('Querying data...')
-    qanon = await vDB.fetch('''\
-        SELECT 
-            title, 
-            content, 
-            embedding 
-        FROM 
-            embeddings 
-        WHERE 
-            title = 'Pacer Copypasta line 4'
-        ;''')
-    print('Fetched Title:', qanon[0]['title'])
-    print('Fetched Content:', qanon[0]['content'])
+    # Just a basic SQL query
+    # print('Querying data...')
+    # qanon = await vDB.fetch('''\
+    #     SELECT 
+    #         title, 
+    #         content, 
+    #         embedding 
+    #     FROM 
+    #         embeddings 
+    #     WHERE 
+    #         title = 'Pacer Copypasta line 4'
+    #     ;''')
+    # print('Fetched Title:', qanon[0]['title'])
+    # print('Fetched Content:', qanon[0]['content'])
 
     # search_embedding = e_model.encode('[beep] A single lap should be completed each time you hear this sound.')
     search_embedding = e_model.encode('Straight')
