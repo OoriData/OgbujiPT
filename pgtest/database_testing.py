@@ -2,11 +2,19 @@ from ogbujipt.embedding_helper import pgvector_connection
 import asyncio
 from sentence_transformers import SentenceTransformer
 
-e_model = SentenceTransformer("all-mpnet-base-v2")
+e_model = SentenceTransformer('all-mpnet-base-v2')
 
-lorem_ipsum = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada, quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis, at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id dignissim risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat malesuada finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere eleifend, libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum euismod, felis libero blandit lorem, nec ullamcorper quam justo at elit.'
+pacer_copypasta = [
+    'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues.', 
+    'The 20 meter pacer test will begin in 30 seconds. Line up at the start.', 
+    'The running speed starts slowly, but gets faster each minute after you hear this signal.', 
+    '[beep] A single lap should be completed each time you hear this sound.', 
+    '[ding] Remember to run in a straight line, and run as long as possible.', 
+    'The second time you fail to complete a lap before the sound, your test is over.', 
+    'The test will begin on the word start. On your mark, get ready, start.'
+]
 
-e_lorem_ipsum = e_model.encode(lorem_ipsum)
+e_pacer_copypasta = [e_model.encode(t) for t in pacer_copypasta]
 
 
 async def main():
@@ -31,9 +39,9 @@ async def main():
 
     print('Creating new table...')
     await vDB.execute(f'''\
-        CREATE TABLE IF NOT EXISTS embeddings (
+        CREATE TABLE embeddings (
             id bigserial primary key, 
-            embedding vector({len(e_lorem_ipsum)}), -- embedding vector field size
+            embedding vector({len(e_pacer_copypasta[0])}), -- embedding vector field size
             content text NOT NULL, -- text content of the chunk
             permission text, -- permission of the chunk
             tokens integer, -- number of tokens in the chunk
@@ -44,21 +52,52 @@ async def main():
     print('Created new table')
 
     print('Inserting data...')
-    await vDB.execute(f'''\
-        INSERT INTO embeddings (
-            embedding,
-            content,
-            title
-        ) VALUES (
-            '{list(e_lorem_ipsum)}',
-            '{lorem_ipsum}',
-            'Lorem Ipsum example text'
-        );''')
+    for index, (embedding, text) in enumerate(zip(e_pacer_copypasta, pacer_copypasta)):
+        await vDB.execute(f'''\
+            INSERT INTO embeddings (
+                embedding,
+                content,
+                title
+            ) VALUES (
+                '{list(embedding)}',
+                '{text}',
+                'Pacer Copypasta line {index}'
+            );''')
     print('Inserted data')
 
     print('Querying data...')
-    qanon = await vDB.fetch(''' SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
-    print(qanon)  # print the result list of the fetch
+    qanon = await vDB.fetch('''\
+        SELECT 
+            title, 
+            content, 
+            embedding 
+        FROM 
+            embeddings 
+        WHERE 
+            title = 'Pacer Copypasta line 4'
+        ;''')
+    print('Fetched Title:', qanon[0]['title'])
+    print('Fetched Content:', qanon[0]['content'])
+
+    # search_embedding = e_model.encode('[beep] A single lap should be completed each time you hear this sound.')
+    search_embedding = e_model.encode('Straight')
+    k = 3
+
+    print('Semantic Searching data...')
+    ss = await vDB.fetch(f'''\
+        SELECT 
+            1 - (embedding <=> '{list(search_embedding)}') AS cosine_similarity,
+            title,
+            content
+        FROM 
+            embeddings
+        ORDER BY
+            cosine_similarity DESC
+        LIMIT {k}
+        ;''')
+    print('Returned Title:', ss[0]['title'])
+    print('Returned Content:', ss[0]['content'])
+    print('Returned Cosine Similarity:', f'{ss[0]["cosine_similarity"]:.2f}')
 
 
 if __name__ == '__main__':
