@@ -96,9 +96,9 @@ async def main():
             cosine_similarity DESC
         LIMIT {k}
         ;''')
-    print('Returned Title:', ss[0]['title'])
-    print('Returned Content:', ss[0]['content'])
-    print('Returned Cosine Similarity:', f'{ss[0]["cosine_similarity"]:.2f}')
+    print('RETURNED Title:', ss[0]['title'])
+    print('RETURNED Content:', ss[0]['content'])
+    print('RETURNED Cosine Similarity:', f'{ss[0]["cosine_similarity"]:.2f}')
 
 
 if __name__ == '__main__':
