@@ -1,9 +1,13 @@
-from ogbujipt.embedding_helper import pgvector_connection
 import asyncio
+
 from sentence_transformers import SentenceTransformer
 
+from ogbujipt.embedding_helper import pgvector_connection
+
+# Loading the embedding model
 e_model = SentenceTransformer('all-mpnet-base-v2')
 
+# Demo data
 pacer_copypasta = [
     'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues.', 
     'The 20 meter pacer test will begin in 30 seconds. Line up at the start.', 
@@ -14,11 +18,9 @@ pacer_copypasta = [
     'The test will begin on the word start. On your mark, get ready, start.'
 ]
 
-e_pacer_copypasta = [e_model.encode(t) for t in pacer_copypasta]
-
 
 async def main():
-    print('Connecting to database...')
+    # Connecting to the database
     vDB = await pgvector_connection.create(
         e_model, 
         'oori', 
@@ -27,80 +29,52 @@ async def main():
         'sofola', 
         int('5432')
         )
-    print('Connected to database')
 
-    print('Ensuring that the vector extension is installed...')
+    # Ensuring that the vector extension is installed
     await vDB.conn.execute('''CREATE EXTENSION IF NOT EXISTS vector;''')
-    print('Ensured that the vector extension is installed')
 
-    print('Dropping old table...')
+    # Dropping the table if it exists
     await vDB.conn.execute('''DROP TABLE IF EXISTS embeddings;''')
-    print('Dropped old table')
 
-    print('Creating new table...')
-    await vDB.conn.execute(f'''\
-        CREATE TABLE embeddings (
-            id bigserial primary key, 
-            embedding vector({len(e_pacer_copypasta[0])}), -- embedding vector field size
-            content text NOT NULL, -- text content of the chunk
-            permission text, -- permission of the chunk
-            tokens integer, -- number of tokens in the chunk
-            title text, -- title of file
-            page_numbers integer[], -- page number of the document that the chunk is found in
-            tags text[] -- tags associated with the chunk
-        );''')
-    print('Created new table')
+    # Creating a new table
+    await vDB.create_doc_table(table_name='embeddings')
 
-    print('Inserting data...')
-    for index, (embedding, text) in enumerate(zip(e_pacer_copypasta, pacer_copypasta)):
-        # await vDB.conn.fetch(f'''\
-        #     INSERT INTO embeddings (
-        #         embedding,
-        #         content,
-        #         title
-        #     ) VALUES (
-        #         '{list(embedding)}',
-        #         '{text}',
-        #         'Pacer Copypasta line {index}'
-        #     );''')
-        await vDB.insert_doc_table(table_name='embeddings', content=text, title=f'Pacer Copypasta line {index}')
-    print('Inserted data')
+    # Inserting data into the table
+    for index, text in enumerate(pacer_copypasta):
+        await vDB.insert_doc_table(
+            table_name='embeddings',
+            content=text,
+            permission='public',
+            title=f'Pacer Copypasta line {index}',
+            page_numbers=[1, 2, 3],
+            tags=['fitness', 'pacer', 'copypasta'],
+            )
 
-    # Just a basic SQL query
-    # print('Querying data...')
-    # qanon = await vDB.fetch('''\
-    #     SELECT 
-    #         title, 
-    #         content, 
-    #         embedding 
-    #     FROM 
-    #         embeddings 
-    #     WHERE 
-    #         title = 'Pacer Copypasta line 4'
-    #     ;''')
-    # print('Fetched Title:', qanon[0]['title'])
-    # print('Fetched Content:', qanon[0]['content'])
-
-    # search_embedding = e_model.encode('[beep] A single lap should be completed each time you hear this sound.')
-    search_embedding = e_model.encode('Straight')
+    # Setting K for the search
     k = 3
 
+    # Searching the table with a perfect match
+    print()
+    search_string = '[beep] A single lap should be completed each time you hear this sound.'
     print('Semantic Searching data...')
-    ss = await vDB.conn.fetch(f'''\
-        SELECT 
-            1 - (embedding <=> '{list(search_embedding)}') AS cosine_similarity,
-            title,
-            content
-        FROM 
-            embeddings
-        ORDER BY
-            cosine_similarity DESC
-        LIMIT {k}
-        ;''')
-    print('RETURNED Title:', ss[0]['title'])
-    print('RETURNED Content:', ss[0]['content'])
-    print('RETURNED Cosine Similarity:', f'{ss[0]["cosine_similarity"]:.2f}')
+    print('using search string:', search_string)
+    sim_search = await vDB.search_doc_table(table_name='embeddings', query_string=search_string, k=k)
+    print('RETURNED Title:', sim_search[0]['title'])
+    print('RETURNED Content:', sim_search[0]['content'])
+    print('RETURNED Cosine Similarity:', f'{sim_search[0]["cosine_similarity"]:.2f}')
+    print('RAW RETURN:', sim_search)
+
+    # Searching the table with a partial match
+    print()
+    search_string = 'Straight'
+    print('Semantic Searching data...')
+    print('using search string:', search_string)
+    sim_search = await vDB.search_doc_table(table_name='embeddings', query_string=search_string, k=k)
+    print('RETURNED Title:', sim_search[0]['title'])
+    print('RETURNED Content:', sim_search[0]['content'])
+    print('RETURNED Cosine Similarity:', f'{sim_search[0]["cosine_similarity"]:.2f}')
+    print('RAW RETURN:', sim_search)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(main())  # Running the main function asynchronously

@@ -52,7 +52,7 @@ except ImportError:
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 load_dotenv()
-# ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ========================================
+# ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ======================================== #
 # Generic SQL for creating a table to hold embedded documents
 CREATE_DOC_TABLE = '''\
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -75,31 +75,28 @@ INSERT INTO {table_name} (
     page_numbers,
     tags
 ) VALUES (
-    {embedding},
-    {content},
-    {permission},
-    {title},
-    {page_numbers},
-    {tags}
+    '{embedding}',
+    '{content}',
+    '{permission}',
+    '{title}',
+    '{page_numbers}',
+    '{tags}'
     );\
 '''
-# UPDATE_DOC_TABLE = '''\
-# UPDATE
-#     $1
-# SET 
-#     embedding = $2,
-#     content = $3,
-#     permission = $4,
-#     tokens = $5,
-#     title = $6,
-#     page_numbers = $7,
-#     tags = $8
-# WHERE
-#     id = $9
-# ;\
-# '''
-# ======================================================================================================================
 
+SEARCH_DOC_TABLE = '''\
+SELECT 
+    1 - (embedding <=> '{search_embedding}') AS cosine_similarity,
+    title,
+    content
+FROM 
+    embeddings
+ORDER BY
+    cosine_similarity DESC
+LIMIT {k}
+;\
+'''
+# ====================================================================================================================== #
 
 class pgvector_connection:
     def __init__(self, embedding_model, conn):
@@ -157,7 +154,11 @@ class pgvector_connection:
             raise ConnectionError('Connection to database is closed')
 
         # Create the table
-        await self.conn.execute(CREATE_DOC_TABLE.format(table_name=table_name, embed_dimension=self._embed_dimension))
+        await self.conn.execute(
+            CREATE_DOC_TABLE.format(
+                table_name=table_name,
+                embed_dimension=self._embed_dimension)
+            )
     
     async def insert_doc_table(
             self, 
@@ -165,8 +166,8 @@ class pgvector_connection:
             content: str, 
             permission: str = "NULL", 
             title: str = "NULL", 
-            page_numbers: list = ["NULL"], 
-            tags: list = ["NULL"]
+            page_numbers: list[int] = [], 
+            tags: list[str] = []
         ) -> None:
         '''
         Update a table to hold embedded documents
@@ -188,9 +189,13 @@ class pgvector_connection:
         if self.conn.is_closed():
             raise ConnectionError('Connection to database is closed')
 
-        content_embedding = self._embedding_model.encode(content)
+        # Get the embedding of the content as a PGvector compatible list
+        content_embedding = list(self._embedding_model.encode(content))
+        
+        # Get the page numbers and tags as SQL arrays
+        SQL_page_numbers = "{{{}}}".format(", ".join(map(str, page_numbers)))
+        SQL_tags = "{{{}}}".format(", ".join(map(str, tags)))
 
-        # Create the table
         await self.conn.execute(
             INSERT_DOC_TABLE.format(
                 table_name = table_name,
@@ -198,10 +203,47 @@ class pgvector_connection:
                 content = content,
                 permission = permission,
                 title = title,
-                page_numbers = page_numbers,
-                tags = tags
+                page_numbers = SQL_page_numbers,
+                tags = SQL_tags 
                 )
             )
+        
+    async def search_doc_table(
+            self,
+            table_name: str,
+            query_string: str,
+            k: int = 1
+            ) -> list[asyncpg.Record]:
+        '''
+        Similarity search documents using a query string
+
+        Args:
+            table_name (str): name of the table to search
+
+            query_string (str): string to compare against items in the table
+
+            k (int): maximum number of results to return (useful for top-k query)
+        Returns:
+            list[asyncpg.Record]: list of search results
+            asyncpg.Record objects are similar to dicts, but allow for attribute-style access as well as item-style access.
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        # Get the embedding of the query string as a PGvector compatible list
+        query_embedding = list(self._embedding_model.encode(query_string))
+
+        # Search the table
+        search_results = await self.conn.fetch(
+            SEARCH_DOC_TABLE.format(
+                table_name = table_name,
+                search_embedding = query_embedding,
+                k = k
+                )
+            )
+        
+        return search_results
         
 
 class qdrant_collection:
