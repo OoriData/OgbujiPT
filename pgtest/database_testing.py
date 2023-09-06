@@ -1,11 +1,6 @@
 from ogbujipt.embedding_helper import pgvector_connection
 import asyncio
-import os
 from sentence_transformers import SentenceTransformer
-from dotenv import load_dotenv
-
-load_dotenv()
-print('USER:', os.getenv('DB_USER'))
 
 e_model = SentenceTransformer("all-mpnet-base-v2")
 
@@ -18,24 +13,24 @@ async def main():
     print('Connecting to database...')
     vDB = await pgvector_connection.create(
         e_model, 
-        os.getenv('DB_USER'), 
-        os.getenv('DB_PASSWORD'), 
-        os.getenv('DB_NAME'), 
-        os.getenv('DB_HOST'), 
-        int(os.getenv('DB_PORT'))
+        'oori', 
+        'example', 
+        'PGv', 
+        'sofola', 
+        int('5432')
         )
     print('Connected to database')
 
     print('Ensuring that the vector extension is installed...')
-    await vDB.raw_sql('''CREATE EXTENSION IF NOT EXISTS vector;''')
+    await vDB.execute('''CREATE EXTENSION IF NOT EXISTS vector;''')
     print('Ensured that the vector extension is installed')
 
     print('Dropping old table...')
-    await vDB.raw_sql('''DROP TABLE IF EXISTS embeddings;''')
+    await vDB.execute('''DROP TABLE IF EXISTS embeddings;''')
     print('Dropped old table')
 
     print('Creating new table...')
-    await vDB.raw_sql(f'''\
+    await vDB.execute(f'''\
         CREATE TABLE IF NOT EXISTS embeddings (
             id bigserial primary key, 
             embedding vector({len(e_lorem_ipsum)}), -- embedding vector field size
@@ -49,21 +44,21 @@ async def main():
     print('Created new table')
 
     print('Inserting data...')
-    await vDB.raw_sql(f'''\
-        INSERT INTO TABLE embeddings (
+    await vDB.execute(f'''\
+        INSERT INTO embeddings (
             embedding,
             content,
-            title)
-        VALUES (
-            {e_lorem_ipsum},
-            {lorem_ipsum},
-            lorem_ipsum
+            title
+        ) VALUES (
+            '{list(e_lorem_ipsum)}',
+            '{lorem_ipsum}',
+            'Lorem Ipsum example text'
         );''')
     print('Inserted data')
 
     print('Querying data...')
-    qanon = await vDB.conn.fetch(''' SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
-    print(qanon)
+    qanon = await vDB.fetch(''' SELECT title, content FROM embeddings WHERE title = 'Lorem Ipsum example text'; ''')
+    print(qanon)  # print the result list of the fetch
 
 
 if __name__ == '__main__':

@@ -100,11 +100,11 @@ class pgvector_connection:
         try:
             # Create a connection to the database
             conn = await asyncpg.connect(
+                host=host,
+                port=port,
                 user=user,
                 password=password,
                 database=db_name,
-                host=host,
-                port=port,
                 **conn_params
             )
             return conn
@@ -113,7 +113,7 @@ class pgvector_connection:
         
     async def execute(self, sql):
         '''
-        Run a SQL command on the connection
+        Execute an SQL command
         This has limited protections against SQL injection, so be careful!
 
         Args:
@@ -128,7 +128,24 @@ class pgvector_connection:
         except Exception as e:
             raise ConnectionError(f"ERROR: {e}")
         
-    async def fetch(self, sql):
+    async def fetch(self, sql_query) -> list[asyncpg.Record]:
+        '''
+        Fetch the results of an SQL query
+        This has limited protections against SQL injection, so be careful!
+
+        Args:
+            sql_query (str): SQL query to run
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+        
+        try:
+            result = await self.conn.fetch(sql_query)
+        except Exception as e:
+            raise ConnectionError(f"ERROR: {e}")
+        
+        return result
             
 
 class qdrant_collection:
