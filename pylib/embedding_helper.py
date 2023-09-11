@@ -91,7 +91,7 @@ FROM
     embeddings
 ORDER BY
     cosine_similarity DESC
-LIMIT {k}
+LIMIT {limit}
 ;\
 '''
 # ====================================================================================================================== #
@@ -219,7 +219,7 @@ class PGvectorConnection:
             self,
             table_name: str,
             query_string: str,
-            k: int = 1
+            limit: int = 1
             ) -> list[asyncpg.Record]:
         '''
         Similarity search documents using a query string
@@ -246,7 +246,7 @@ class PGvectorConnection:
             SEARCH_DOC_TABLE.format(
                 table_name = table_name,
                 search_embedding = query_embedding,
-                k = k
+                limit = limit
                 )
             )
         
