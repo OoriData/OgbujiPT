@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.embedding_helper
 
