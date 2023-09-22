@@ -6,6 +6,12 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
+## [Unreleased]
+
+### Added
+
+- GGUF support in download-model.py
+
 ## [0.4.0] - 20230728
 
 ### Added
