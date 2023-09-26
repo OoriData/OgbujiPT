@@ -20,13 +20,8 @@ from ogbujipt import config
 from ogbujipt import word_loom
 from ogbujipt import oapi_chat_first_choice_message
 from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat
-from ogbujipt.async_helper import (
-    schedule_callable,
-    openai_api_surrogate,
-    console_progress_indicator,
-    save_openai_api_params)
+from ogbujipt.async_helper import console_progress_indicator
 from ogbujipt.prompting.basic import format
-from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
 
 
 def file_path_here():
@@ -43,41 +38,6 @@ with open(HERE / Path('language.toml'), mode='rb') as fp:
     TEXTS = word_loom.load(fp)
 
 
-# XXX: Probably doesn't require another class layer, now that we have llm_wrapper
-class llm_request:
-    '''
-    Encapsulates each LLM service request via OpenAI API (including for self-hosted LLM)
-    '''
-    tasks = {}
-    request_tpl = TEXTS['test_prompt_joke']
-
-    def __init__(self, llm_wrapped, topic, llmtemp, **model_params):
-        '''
-        topic - a particular topic about which we'll ask the LLM
-        model_params - mapping of custom parameters for model behavior, e.g.:
-            llm_wrapped: LLM wrapper to use (e.g. ogbujipt.llm_wrapper.openai_api)
-            max_tokens: limit number of generated tokens (default 16)
-            top_p: AKA nucleus sampling; can increase generated text diversity
-            frequency_penalty: Favor more or less frequent tokens
-            presence_penalty: Prefer new, previously unused tokens
-            More info: https://platform.openai.com/docs/api-reference/completions
-        '''
-        self.topic = topic
-        self.llmtemp = llmtemp
-        self.model_params = model_params
-        self.llm_wrapped = llm_wrapped
-
-    def wrap(self):
-        prompt = format(self.request_tpl.format(topic=self.topic), delimiters=ALPACA_DELIMITERS)
-
-        # Pattern: schedule the callable, passing in params separately—for non-blocking multiprocess execution
-        self.task = asyncio.create_task(
-            schedule_callable(self.llm_wrapped, prompt_to_chat(prompt), temperature=self.llmtemp,
-                              **self.model_params))
-        llm_request.tasks[self.task] = self
-        return self.task
-
-
 async def async_main(requests_info):
     '''
     Main entry point for asyncio
@@ -89,21 +49,23 @@ async def async_main(requests_info):
     # is often a better alternative, but waits for all tasks to complete whereas we're done once
     # the LLM generation tasks are complete
     indicator_task = asyncio.create_task(console_progress_indicator())
-    llm_requests = [llm_request(w, topic, temp, max_tokens=1024) for (w, topic, temp) in requests_info]
-    llm_tasks = [req.wrap() for req in llm_requests]
+    llm_tasks = [llm.wrap_for_multiproc(prompt_to_chat(msg), temperature=temp, max_tokens=1024)
+                 for (llm, msg, temp) in requests_info]
+    llm_messages = [msg for (llm, msg, temp) in requests_info]
     # Need to gather to make sure all LLM tasks are completed
     gathered_llm_tasks = asyncio.gather(*llm_tasks)
     done, _ = await asyncio.wait((indicator_task, gathered_llm_tasks), return_when=asyncio.FIRST_COMPLETED)
 
     # Completed task will from gather() of llm_tasks; results in original task arg order
-    results = zip(llm_requests, next(iter(done)).result())
-    for req, resp in results:
-        print(f'Result re {req.topic}')
+    results = zip(llm_messages, next(iter(done)).result())
+    for msg, resp in results:
+        print(f'Result re {msg}')
         # resp is an instance of openai.openai_object.OpenAIObject, with lots of useful info
         print('\nFull response data from LLM:\n', resp)
         # Just the response text
         response_text = oapi_chat_first_choice_message(resp)
         print('\nResponse text from LLM:\n\n', response_text)
+        print('-'*80)
 
 
 # Command line arguments defined in click decorators
@@ -125,7 +87,9 @@ def main(apibase, llmtemp, openai, model):
         oapi = openai_chat_api(model=model, api_base=apibase)
 
     # Separate models or params—e.g. temp—for each LLM request is left as an exercise 😊
-    requests_info = [(oapi, t, llmtemp) for t in ('wild animals', 'vehicles', 'space aliens')]
+    requests_info = [
+        (oapi, TEXTS['test_prompt_joke'].format(topic=t), llmtemp)
+        for t in ('wild animals', 'vehicles', 'space aliens')]
 
     asyncio.run(async_main(requests_info))
 

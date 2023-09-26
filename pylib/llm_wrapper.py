@@ -13,6 +13,9 @@ it's in .gitignore or equivalent so it never gets accidentally committed!
 '''
 
 import os
+import asyncio
+import concurrent.futures
+from functools import partial
 
 try:
     import openai as openai_api_global
@@ -120,18 +123,17 @@ class openai_api(llm_wrapper):
         self._claim_global_context()
         return api_func(model=self.model, prompt=prompt, **self.kwargs, **kwargs)
 
-    # Probably to be incorporated into the class generally, maybe _claim_global_context
-    # def _save_openai_api_params(self):
-    #     '''
-    #     openai package uses globals for a lot of its parameters, including the api_key (bogus, in local LLM usage).
-    #     In some circs, e.g. multiprocessing, these should be saved for re-set when the module is re-imported.
-    #     '''
-    #     self.stored_params = {}
-    #     # model also carried as a user convenience
-    #     for k in OPENAI_GLOBALS + ['model']:
-    #         if hasattr(self.api, k):
-    #             self.stored_params[k] = getattr(self.api, k)
-    #     return self.stored_params
+    def wrap_for_multiproc(self, prompt, **kwargs):
+        '''
+        Wrap the LLM invocation in an asyncio task
+
+        Returns:
+            asyncio.Task: Task for the LLM invocation
+        '''
+        merged_kwargs = {**self.kwargs, **kwargs}
+        return asyncio.create_task(
+            schedule_callable(self, prompt, **merged_kwargs))
+
 
 class openai_chat_api(openai_api):
     '''
@@ -170,3 +172,32 @@ def prompt_to_chat(prompt):
     '''
     # return [{'role': 'user', 'content': m} for m in prompt.split('\n')]
     return [{'role': 'user', 'content': prompt}]
+
+
+async def schedule_callable(callable, *args, **kwargs):
+    '''
+    Schedule long-running/blocking function call in a separate process,
+    wrapped to work well in an asyncio event loop
+
+    Basically hides away a bunch of the multiprocessing webbing
+
+    e.g. `llm_task = asyncio.create_task(schedule_callable(llm, prompt))`
+
+    Can then use asyncio.wait(), asyncio.gather(), etc. with `llm_task`
+
+    Args:
+        callable (callable): Callable to be scheduled
+
+    Returns:
+        response: Response object
+    '''
+    # Link up the current async event loop for multiprocess execution
+    loop = asyncio.get_running_loop()
+    executor = concurrent.futures.ProcessPoolExecutor()
+    # Need to partial execute to get in any kwargs for the target callable
+    prepped_callable = partial(callable, **kwargs)
+    # Spawn a separate process for the LLM call
+    response = await loop.run_in_executor(executor, prepped_callable, *args)
+    return response
+
+
