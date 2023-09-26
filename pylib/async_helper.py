@@ -12,6 +12,8 @@ import asyncio
 import concurrent.futures
 from functools import partial
 
+from ogbujipt.llm_wrapper import OPENAI_GLOBALS
+
 
 async def schedule_callable(callable, *args, **kwargs):
     '''
@@ -70,14 +72,9 @@ def openai_api_surrogate(prompt, api_func=None, **kwargs):
     return api_func(prompt=prompt, **trimmed_kwargs)
 
 
-# Extracted from https://github.com/openai/openai-python/blob/main/openai/__init__.py
-OPENAI_GLOBALS = ['api_key', 'api_key_path', 'api_base', 'organization', 'api_type', 'api_version',
-                 'proxy', 'app_info', 'debug', 'log']
-
-
 def save_openai_api_params():
     '''
-    openai package uses globals for a lot of its parameters, including the mandatory api_key.
+    openai package uses globals for a lot of its parameters, including the api_key (bogus, in local LLM usage).
     In some circs, e.g. multiprocessing, these should be saved for re-set when the module is re-imported.
     '''
     import openai

@@ -15,6 +15,7 @@ Configuration & globally-relevant values
 # OpenAI API requires the model be specified, but many compaitble APIs
 # have a model predetermined by the host
 HOST_DEFAULT_MODEL = HOST_DEFAULT = 'HOST-DEFAULT'
+OPENAI_KEY_DUMMY = 'OPENAI_DUMMY'
 
 
 class attr_dict(dict):

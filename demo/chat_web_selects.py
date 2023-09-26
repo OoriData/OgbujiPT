@@ -77,7 +77,7 @@ async def read_site(url, collection):
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL
     metas = [{'url': url}]*len(chunks)
-    # Add the text to the collection. Blocks, so no reentrancy concern
+    # Add the text to the collection
     collection.update(texts=chunks, metas=metas)
     print(f'{collection.count()} chunks added to collection')
 
