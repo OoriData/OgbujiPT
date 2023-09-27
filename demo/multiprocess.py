@@ -78,7 +78,7 @@ async def async_main(requests_info):
 @click.option('--model', default='', type=str, 
               help='OpenAI model to use (see https://platform.openai.com/docs/models)')
 def main(apibase, llmtemp, openai, model):
-    # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
+    # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai:
         model = model or 'gpt-3.5-turbo'
         oapi = openai_chat_api(model=model)
