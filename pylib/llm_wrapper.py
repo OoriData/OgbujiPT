@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.llm_wrapper
-
 '''
 Wrapper for LLMs, including via OpenAI API and locally hosted models
 
@@ -38,7 +37,7 @@ class llm_wrapper:
             kwargs (dict, optional): Extra parameters for the API, the model, etc.
         '''
         self.model = model
-        self.kwargs = kwargs
+        self.parameters = kwargs
 
 
 # Extracted from https://github.com/openai/openai-python/blob/main/openai/__init__.py
@@ -89,7 +88,7 @@ class openai_api(llm_wrapper):
 
         self.api_key = api_key
         self.model = model
-        self.kwargs = kwargs
+        self.parameters = kwargs
         self.api_base = api_base
         self.full_api_base = api_base + kwargs.get('api_version', '/v1')
         self._claim_global_context()
@@ -100,8 +99,8 @@ class openai_api(llm_wrapper):
         Set global context of the OpenAI API according to this class's settings
         '''
         for k in OPENAI_GLOBALS:
-            if hasattr(self.kwargs, k):
-                setattr(openai_api_global, k, getattr(self.kwargs, k))
+            if hasattr(self.parameters, k):
+                setattr(openai_api_global, k, getattr(self.parameters, k))
         openai_api_global.model = self.model
         openai_api_global.api_key = self.api_key
         openai_api_global.api_base = self.full_api_base
@@ -121,7 +120,8 @@ class openai_api(llm_wrapper):
         api_func = api_func or openai_api_global.Completion.create
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
         self._claim_global_context()
-        return api_func(model=self.model, prompt=prompt, **self.kwargs, **kwargs)
+        merged_kwargs = {**self.parameters, **kwargs}
+        return api_func(model=self.model, prompt=prompt, **merged_kwargs)
 
     def wrap_for_multiproc(self, prompt, **kwargs):
         '''
@@ -130,7 +130,8 @@ class openai_api(llm_wrapper):
         Returns:
             asyncio.Task: Task for the LLM invocation
         '''
-        merged_kwargs = {**self.kwargs, **kwargs}
+        merged_kwargs = {**self.parameters, **kwargs}
+        # print(f'wrap_for_multiproc: merged_kwargs={merged_kwargs}')
         return asyncio.create_task(
             schedule_callable(self, prompt, **merged_kwargs))
 
@@ -156,7 +157,7 @@ class openai_chat_api(openai_api):
         api_func = api_func or openai_api_global.ChatCompletion.create
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
         self._claim_global_context()
-        return api_func(model=self.model, messages=messages, **self.kwargs, **kwargs)
+        return api_func(model=self.model, messages=messages, **self.parameters, **kwargs)
 
 
 def prompt_to_chat(prompt):
@@ -191,6 +192,7 @@ async def schedule_callable(callable, *args, **kwargs):
     Returns:
         response: Response object
     '''
+    # print(f'schedule_callable: kwargs={kwargs}')
     # Link up the current async event loop for multiprocess execution
     loop = asyncio.get_running_loop()
     executor = concurrent.futures.ProcessPoolExecutor()
@@ -199,5 +201,3 @@ async def schedule_callable(callable, *args, **kwargs):
     # Spawn a separate process for the LLM call
     response = await loop.run_in_executor(executor, prepped_callable, *args)
     return response
-
-

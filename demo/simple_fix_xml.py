@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/alpaca_simple_fix_xml.py
 '''
 Quick demo—Send an Alpaca-compatible LLM bad XML & ask it to correct
 

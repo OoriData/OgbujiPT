@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/multiprocess.py
 '''
 Advanced demo showing quick chat with LLMs, with 3 simultaneous requests.
 It can be configured to chat with 3 separate LLMs, or 3 instances of the same LLM.

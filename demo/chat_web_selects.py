@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/chat_web_selects.py
 '''
 Advanced, "Chat my docs" demo, using docs from the web
 
