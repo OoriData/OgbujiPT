@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/chat_pdf_streamlit_ui.py
 '''
 Advanced. Retrieval Augmented Generation (RAG) AKA "Chat my PDF" demo
 
@@ -14,11 +17,13 @@ e.g. work with multiple docs dropped in a directory
 Prerequisites. From OgbujiPT cloned dir:.
 
 ```sh
-pip install --upgrade https://github.com/uogbuji/OgbujiPT.git
 pip install streamlit watchdog PyPDF2 PyCryptodome sentence_transformers qdrant-client tiktoken
 ```
 
-You'll probably need a .env file. See demo/.env for an example to copy. Run the demo:
+You'll need environment variables. See demo/.env for example settings. Load them in your environment as you see fit:
+https://github.com/OoriData/OgbujiPT/discussions/36
+
+Run the demo:
 
 ```sh
 streamlit run demo/chat_pdf_streamlit_ui.py
@@ -26,14 +31,12 @@ streamlit run demo/chat_pdf_streamlit_ui.py
 '''
 import os
 
-from dotenv import load_dotenv
-
 import streamlit as st
 from PyPDF2 import PdfReader
 
-from ogbujipt.config import openai_emulation, openai_live, HOST_DEFAULT
+from ogbujipt import config, oapi_chat_first_choice_message
+from ogbujipt.llm_wrapper import openai_chat_api
 from ogbujipt.prompting import format, OPENAI_GPT_DELIMITERS
-from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -42,15 +45,12 @@ from sentence_transformers import SentenceTransformer
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-# Load the main parameters from .env file
-load_dotenv()
 # User can set a variety of likely values to trigger use of OpenAI full-service
 OPENAI = os.getenv('OPENAI', 'False') in \
     ['True', 'true', 'TRUE', 'Yes', 'yes', 'YES']
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 LLM = os.getenv('LLM', 'LLM')  # TODO: get this from non-openai openai api hosts
-LLM_HOST = os.getenv('LLM_HOST', 'my-llm-host')
-LLM_PORT = os.getenv('LLM_PORT', '8000')
+LLM_BASE = os.getenv('LLM_BASE', 'my-llm-host')
 LLM_TEMP = float(os.getenv('LLM_TEMP', '1'))  # LLM temperature (randomness)
 N_CTX = int(os.getenv('N_CTX', '2048'))  # LLM max context size
 K = int(os.getenv('K', '3'))  # how many chunks to return for query context
@@ -139,7 +139,6 @@ def prep_pdf():
         args=(st.session_state['openai_api'], st.session_state['model']))
 
 
-
 def query_llm(openai_api, model):
     '''
     Oori — Ask your PDF 📄💬
@@ -170,15 +169,19 @@ def query_llm(openai_api, model):
     print('  PROMPT FOR LLM:  '.center(CONSOLE_WIDTH, '='), '\n', prompt)
 
     # Remember max Token length default is 16)
-    response = openai_api.Completion.create(model=model, prompt=prompt, temperature=LLM_TEMP, max_tokens=1024)
+    oapi = st.session_state['openai_api']
+    st.session_state['messages'].append({'role': 'user', 'content': prompt})
+    response = oapi(st.session_state['messages'], temperature=LLM_TEMP, max_tokens=1024)
 
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; extract the text
-    response_text = oapi_first_choice_text(response)
+    response_text = oapi_chat_first_choice_message(response)
     print('\nResponse text from LLM:\n', response_text)
 
+    st.session_state['messages'].append({'role': 'assistant', 'content': response})
     response_placeholder.write(response_text)
+    print(st.session_state['messages'])
 
 
 def main():
@@ -188,20 +191,20 @@ def main():
     # Streamlit treats function docstrings as magic strings for user display. Use comments instead
     # Set up LLM host connection & launch the main loop
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc. for self-hosted LLM
+    # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if OPENAI:
-        assert not (LLM_HOST or LLM_PORT), 'Don\'t use --host or --port with --openai'
-        model = LLM
-        openai_api = openai_live(
-            model=LLM, debug=True)
+        assert not (LLM_BASE), 'Don\'t use LLM_BASE with the OPENAI variable'
+        model = LLM or 'gpt-3.5-turbo'
+        oapi = openai_chat_api(api_key=OPENAI_API_KEY, model=model)
     else:
-        # For now the model param is most useful when OPENAI is True
-        model = LLM or HOST_DEFAULT
-        openai_api = openai_emulation(
-            host=LLM_HOST, port=LLM_PORT, model=LLM, debug=True)
+        model = LLM or config.HOST_DEFAULT
+        oapi = openai_chat_api(model=model, api_base=LLM_BASE)
 
     st.session_state['embedding_model'] = None
-    st.session_state['openai_api'] = openai_api
+    st.session_state['openai_api'] = oapi
     st.session_state['model'] = model
+    # Chat message history in memory
+    st.session_state['messages'] = []
 
     # Create file upload box on Streamlit, set from the user's upload
     # Use st.session_state to avoid unnessisary reprocessing/reloading

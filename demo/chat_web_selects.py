@@ -35,10 +35,9 @@ import click
 import httpx
 import html2text
 
-from ogbujipt import config
+from ogbujipt import config, oapi_chat_first_choice_message
 from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
-from ogbujipt import oapi_chat_first_choice_message
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
