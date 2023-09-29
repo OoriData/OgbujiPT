@@ -88,9 +88,9 @@ class openai_api(llm_wrapper):
 
         self.api_key = api_key
         self.model = model
-        self.parameters = kwargs
+        self.parameters = config.attr_dict(kwargs)
         self.api_base = api_base
-        self.full_api_base = api_base + kwargs.get('api_version', '/v1')
+        self.full_api_base = api_base + kwargs.get('api_version', '/v1') if api_base else None
         self._claim_global_context()
 
     # Nature of openai library requires that we babysit their globals
@@ -99,8 +99,10 @@ class openai_api(llm_wrapper):
         Set global context of the OpenAI API according to this class's settings
         '''
         for k in OPENAI_GLOBALS:
-            if hasattr(self.parameters, k):
-                setattr(openai_api_global, k, getattr(self.parameters, k))
+            if k in self.parameters:
+                setattr(openai_api_global, k, self.parameters[k])
+            # if hasattr(self.parameters, k):
+            #     setattr(openai_api_global, k, getattr(self.parameters, k))
         openai_api_global.model = self.model
         openai_api_global.api_key = self.api_key
         openai_api_global.api_base = self.full_api_base

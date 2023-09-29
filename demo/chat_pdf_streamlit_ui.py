@@ -181,7 +181,7 @@ def query_llm(openai_api, model):
 
     st.session_state['messages'].append({'role': 'assistant', 'content': response})
     response_placeholder.write(response_text)
-    print(st.session_state['messages'])
+    # print(st.session_state['messages'], '\n', '-'*10)
 
 
 def main():
