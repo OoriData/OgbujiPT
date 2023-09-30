@@ -16,12 +16,18 @@ import asyncio
 import concurrent.futures
 from functools import partial
 
+from ogbujipt import config
+
+# Imports of model hosting facilities
 try:
     import openai as openai_api_global
 except ImportError:
     openai_api_global = None
 
-from ogbujipt import config
+# try:
+#     from ctransformers import AutoModelForCausalLM
+# except ImportError:
+#     AutoModelForCausalLM = None
 
 
 # FIXME: Should be an ABC
@@ -203,3 +209,44 @@ async def schedule_callable(callable, *args, **kwargs):
     # Spawn a separate process for the LLM call
     response = await loop.run_in_executor(executor, prepped_callable, *args)
     return response
+
+
+class ctrans_wrapper:
+    '''
+    ctransformers wrapper for LLMs
+    '''
+    def __init__(self, model=None, **kwargs):
+        '''
+        Args:
+            model (XYZ): Name of the model being wrapped
+
+            kwargs (dict, optional): Extra parameters for the API, the model, etc.
+
+        # Set gpu_layers to the number of layers to offload to GPU. Set to 0 if no GPU acceleration is available on your system.
+        llm = AutoModelForCausalLM.from_pretrained("TheBloke/LlongOrca-13B-16K-GGUF", model_file="llongorca-13b-16k.q4_K_M.gguf", model_type="llama", gpu_layers=50)
+
+        ctrans_wrapper = ctrans_wrapper(model=llm)
+        '''
+        # if AutoModelForCausalLM is None:
+        #     raise ImportError('ctransformers module not available; Perhaps try again after: `pip install ctransformers`')
+        if model is None:
+            raise ValueError('Must supply a model')
+        self.model = model
+        self.parameters = kwargs
+
+    def __call__(self, prompt, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API
+
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        # return self.model.generate(prompt, **kwargs)
+        # yield from self.model.generate(prompt, **kwargs)
+        return self.model(prompt, **kwargs)
+
