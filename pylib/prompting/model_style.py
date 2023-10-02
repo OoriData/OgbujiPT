@@ -100,6 +100,8 @@ OPENAI_GPT_DELIMITERS = {
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
 
+GORILLA_DELIMITERS = {}  # Gorilla doesn't use delimiters, just natural language prompts
+
 # LLAMA_DELIMITERS?, see https://www.reddit.com/r/LocalLLaMA/comments/155po2p/get_llama_2_prompt_format_right/
 # or https://huggingface.co/blog/llama2#how-to-prompt-llama-2
 '''
