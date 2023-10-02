@@ -39,7 +39,6 @@ see demo/alpaca_simple_fix_xml.py
 '''
 
 import os
-import asyncio
 
 import discord
 

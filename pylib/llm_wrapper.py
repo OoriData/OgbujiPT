@@ -88,7 +88,7 @@ class openai_api(llm_wrapper):
             kwargs (dict, optional): Extra parameters for the API, the model, etc.
         '''
         if openai_api_global is None:
-            raise ImportError('openai module not available; Perhaps try again after: `pip install openai`')
+            raise ImportError('openai module not available; Perhaps try: `pip install openai`')
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
@@ -168,6 +168,68 @@ class openai_chat_api(openai_api):
         return api_func(model=self.model, messages=messages, **self.parameters, **kwargs)
 
 
+class ctransformer:
+    '''
+    ctransformers wrapper for LLMs
+    '''
+    def __init__(self, model=None, **kwargs):
+        '''
+        Args:
+            model (XYZ): Name of the model being wrapped
+
+            kwargs (dict, optional): Extra parameters for the API, the model, etc.
+
+        # gpu_layers - # of layers to offload to GPU. Set to 0 if no GPU acceleration is available on your system
+        llm = AutoModelForCausalLM.from_pretrained(
+            'TheBloke/LlongOrca-13B-16K-GGUF', model_file='llongorca-13b-16k.q4_K_M.gguf',
+            model_type='llama', gpu_layers=50)
+
+        ctrans_wrapper = ctrans_wrapper(model=llm)
+
+        Defined model params from https://github.com/marella/ctransformers/blob/main/ctransformers/llm.py
+
+        top_k="The top-k value to use for sampling.",
+        top_p="The top-p value to use for sampling.",
+        temperature="The temperature to use for sampling.",
+        repetition_penalty="The repetition penalty to use for sampling.",
+        last_n_tokens="The number of last tokens to use for repetition penalty.",
+        seed="The seed value to use for sampling tokens.",
+        max_new_tokens="The maximum number of new tokens to generate.",
+        stop="A list of sequences to stop generation when encountered.",
+
+        Operational params:
+
+        stream="Whether to stream the generated text.",
+        reset="Whether to reset the model state before generating text.",
+        batch_size="The batch size to use for evaluating tokens in a single prompt.",
+        threads="The number of threads to use for evaluating tokens.",
+        context_length="The maximum context length to use.",
+        gpu_layers="The number of layers to run on GPU.",
+        '''
+        # if AutoModelForCausalLM is None:
+        #     raise ImportError('ctransformers module not available; Perhaps try: `pip install ctransformers`')
+        if model is None:
+            raise ValueError('Must supply a model')
+        self.model = model
+        self.parameters = kwargs
+
+    def __call__(self, prompt, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API
+
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        # return self.model.generate(prompt, **kwargs)
+        # yield from self.model.generate(prompt, **kwargs)
+        return self.model(prompt, **kwargs)
+
+
 def prompt_to_chat(prompt):
     '''
     Convert a prompt string to a chat-style message list
@@ -209,44 +271,3 @@ async def schedule_callable(callable, *args, **kwargs):
     # Spawn a separate process for the LLM call
     response = await loop.run_in_executor(executor, prepped_callable, *args)
     return response
-
-
-class ctrans_wrapper:
-    '''
-    ctransformers wrapper for LLMs
-    '''
-    def __init__(self, model=None, **kwargs):
-        '''
-        Args:
-            model (XYZ): Name of the model being wrapped
-
-            kwargs (dict, optional): Extra parameters for the API, the model, etc.
-
-        # Set gpu_layers to the number of layers to offload to GPU. Set to 0 if no GPU acceleration is available on your system.
-        llm = AutoModelForCausalLM.from_pretrained("TheBloke/LlongOrca-13B-16K-GGUF", model_file="llongorca-13b-16k.q4_K_M.gguf", model_type="llama", gpu_layers=50)
-
-        ctrans_wrapper = ctrans_wrapper(model=llm)
-        '''
-        # if AutoModelForCausalLM is None:
-        #     raise ImportError('ctransformers module not available; Perhaps try again after: `pip install ctransformers`')
-        if model is None:
-            raise ValueError('Must supply a model')
-        self.model = model
-        self.parameters = kwargs
-
-    def __call__(self, prompt, **kwargs):
-        '''
-        Invoke the LLM with a completion request
-
-        Args:
-            prompt (str): Prompt to send to the LLM
-
-            kwargs (dict, optional): Extra parameters to pass to the model via API
-
-        Returns:
-            dict: JSON response from the LLM
-        '''
-        # return self.model.generate(prompt, **kwargs)
-        # yield from self.model.generate(prompt, **kwargs)
-        return self.model(prompt, **kwargs)
-

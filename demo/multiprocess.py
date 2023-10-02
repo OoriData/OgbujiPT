@@ -22,9 +22,8 @@ import click
 from ogbujipt import config
 from ogbujipt import word_loom
 from ogbujipt import oapi_chat_first_choice_message
-from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.async_helper import console_progress_indicator
-from ogbujipt.prompting.basic import format
 
 
 def file_path_here():

@@ -46,7 +46,9 @@ def openai_live(apikey=None, debug=True, model=''):
         openai_api (openai): Prepared OpenAI API
     '''
     from warnings import warn
-    warn.warn('Use llm_wrapper.openai_api() instead. openai_live will be removed in 0.6.0', DeprecationWarning, stacklevel=2)
+    warn.warn(
+        'Use llm_wrapper.openai_api() instead. openai_live() will be removed in 0.6.0',
+        DeprecationWarning, stacklevel=2)
     import os
     import openai as openai_api
 
@@ -79,7 +81,9 @@ def openai_emulation(
         openai_api (openai): Prepared (emulated) OpenAI API
     '''
     from warnings import warn
-    warn.warn('Use llm_wrapper.openai_api() instead. openai_live will be removed in 0.6.0', DeprecationWarning, stacklevel=2)
+    warn.warn(
+        'Use llm_wrapper.openai_api() instead. openai_live() will be removed in 0.6.0',
+        DeprecationWarning, stacklevel=2)
     import openai as openai_api
 
     rev = 'v1'
