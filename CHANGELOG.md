@@ -5,6 +5,29 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 <!--
 ## [Unreleased]
 -->
+
+## [Unreleased]
+
+### Added
+
+- GGUF support in download-model.py
+
+## [0.4.0] - 20230728
+
+### Added
+
+- Initial implementation of [Word Loom](https://github.com/OoriData/OgbujiPT/wiki/Word-Loom:-A-format-for-managing-language-for-AI-LLMs-(including-prompts)) (see, for example, demo/multiprocess.py)
+- More tests to improve coverage
+- Qadrant collection reset method (embedding_helper.py)
+
+### Fixed
+
+- Input parameter controls in embedding_helper.py
+
+### Changed
+
+- test suite structure
+
 ## [0.3.0] - 20230723
 
 ### Added

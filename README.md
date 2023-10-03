@@ -4,10 +4,11 @@ Toolkit for using self-hosted large language models (LLMs), but also with suppor
 
 Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
-There are some helper functions for common LLM tasks, such as those provided by
-projects such as langchain, but meant to be as extensive. The OgbujiPT approach emphasizes simplicity and transparency.
+There are some helper functions for common LLM tasks, such as those provided by projects such as langchain, but not meant to be as extensive. The OgbujiPT approach emphasizes simplicity and transparency.
 
-Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we use both of these with Nvidia GPU and Apple M1/M2. We've also tested with OpenAI's full service ChatGPT (and use it in our practice).
+Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we apply these with Nvidia and Apple M1/M2 GPU enabled.
+
+We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
 
 <table><tr>
   <td><a href="https://oori.dev/"><img src="https://oori.dev/assets/images/image02.png" width="64" /></a></td>
