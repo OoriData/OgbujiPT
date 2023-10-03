@@ -50,7 +50,7 @@ except ImportError:
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 load_dotenv()
-# ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ======================================== #
+# ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ========================================
 # Generic SQL for creating a table to hold embedded documents
 CREATE_DOC_TABLE = '''\
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -94,7 +94,7 @@ ORDER BY
 LIMIT {limit}
 ;\
 '''
-# ====================================================================================================================== #
+# ======================================================================================================================
 
 class PGvectorConnection:
     def __init__(self, embedding_model, conn):
