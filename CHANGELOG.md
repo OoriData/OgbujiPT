@@ -11,6 +11,8 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ### Added
 
 - GGUF support in download-model.py
+- Switch to a class-based wrapper for LLM endpoints/handlers - #39
+- Add support for in-memory LLM loading via ctransformers
 
 ## [0.4.0] - 20230728
 
