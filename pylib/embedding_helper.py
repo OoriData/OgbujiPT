@@ -232,7 +232,7 @@ class PGvectorConnection:
             k (int): maximum number of results to return (useful for top-k query)
         Returns:
             list[asyncpg.Record]: list of search results
-            asyncpg.Record objects are similar to dicts, but allow for attribute-style access as well as item-style access.
+            asyncpg.Record objects are similar to dicts, but allow for attribute-style access
         '''
         # Check that the connection is still alive
         if self.conn.is_closed():

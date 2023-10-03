@@ -11,7 +11,7 @@ import pytest
 
 from ogbujipt import embedding_helper
 from ogbujipt.embedding_helper import qdrant_collection
-from ogbujipt.embedding_helper import PGvectorConnection
+# from ogbujipt.embedding_helper import PGvectorConnection
 from ogbujipt.text_helper import text_splitter
 
 embedding_helper.QDRANT_AVAILABLE = True
