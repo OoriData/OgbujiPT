@@ -55,12 +55,12 @@ load_dotenv()
 CREATE_DOC_TABLE = '''\
 CREATE TABLE IF NOT EXISTS {table_name} (
     id bigserial primary key, 
-    embedding vector({embed_dimension}), -- embedding vector field size
-    content text NOT NULL,               -- text content of the chunk
-    permission text,                     -- permission of the chunk
-    title text,                          -- title of file
-    page_numbers integer[],              -- page number of the document that the chunk is found in
-    tags text[]                          -- tags associated with the chunk
+    embedding vector({embed_dimension}),  -- embedding vector field size
+    content text NOT NULL,                -- text content of the chunk
+    permission text,                      -- permission of the chunk
+    title text,                           -- title of file
+    page_numbers integer[],               -- page number of the document that the chunk is found in
+    tags text[]                           -- tags associated with the chunk
 );\
 '''
 
