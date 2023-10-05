@@ -15,6 +15,7 @@ Configuration & globally-relevant values
 # OpenAI API requires the model be specified, but many compaitble APIs
 # have a model predetermined by the host
 HOST_DEFAULT_MODEL = HOST_DEFAULT = 'HOST-DEFAULT'
+OPENAI_KEY_DUMMY = 'OPENAI_DUMMY'
 
 
 class attr_dict(dict):
@@ -44,6 +45,10 @@ def openai_live(apikey=None, debug=True, model=''):
     Returns:
         openai_api (openai): Prepared OpenAI API
     '''
+    from warnings import warn
+    warn.warn(
+        'Use llm_wrapper.openai_api() instead. openai_live() will be removed in 0.6.0',
+        DeprecationWarning, stacklevel=2)
     import os
     import openai as openai_api
 
@@ -75,6 +80,10 @@ def openai_emulation(
     Returns:
         openai_api (openai): Prepared (emulated) OpenAI API
     '''
+    from warnings import warn
+    warn.warn(
+        'Use llm_wrapper.openai_api() instead. openai_live() will be removed in 0.6.0',
+        DeprecationWarning, stacklevel=2)
     import openai as openai_api
 
     rev = 'v1'
