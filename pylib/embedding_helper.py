@@ -32,7 +32,11 @@ responses to similar questions without having to use the most powerful LLM
 
 import warnings
 import itertools
+from dotenv import load_dotenv
 
+import asyncpg
+
+# Qdrant is optional, so we'll only import it if it's available
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
@@ -45,6 +49,209 @@ except ImportError:
 # Option for running a Qdrant DB locally in memory
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
+load_dotenv()
+# ======================================== MOVE ME TO A NEW FILE IN THE LIBRARY ========================================
+# Generic SQL for creating a table to hold embedded documents
+CREATE_DOC_TABLE = '''\
+CREATE TABLE IF NOT EXISTS {table_name} (
+    id bigserial primary key, 
+    embedding vector({embed_dimension}),  -- embedding vector field size
+    content text NOT NULL,                -- text content of the chunk
+    permission text,                      -- permission of the chunk
+    title text,                           -- title of file
+    page_numbers integer[],               -- page number of the document that the chunk is found in
+    tags text[]                           -- tags associated with the chunk
+);\
+'''
+
+INSERT_DOC_TABLE = '''\
+INSERT INTO {table_name} (
+    embedding,
+    content,
+    permission,
+    title,
+    page_numbers,
+    tags
+) VALUES (
+    '{embedding}',
+    '{content}',
+    '{permission}',
+    '{title}',
+    '{page_numbers}',
+    '{tags}'
+);\
+'''
+
+SEARCH_DOC_TABLE = '''\
+SELECT 
+    1 - (embedding <=> '{search_embedding}') AS cosine_similarity,
+    title,
+    content
+FROM 
+    embeddings
+ORDER BY
+    cosine_similarity DESC
+LIMIT {limit}
+;\
+'''
+# ======================================================================================================================
+
+class PGvectorConnection:
+    def __init__(self, embedding_model, conn):
+        '''
+        Initialize a pgvector connection
+        This has limited protections against SQL injection, so be careful!
+
+        Args:
+            embedding (SentenceTransformer): SentenceTransformer object of your choice
+            https://huggingface.co/sentence-transformers
+
+            conn_params (mapping): keyword parameters for setting up a pgvector connection
+            See the main docstring (or run `help(pgvector_connection)`)
+        '''
+        # Check if the provided embedding model is a SentenceTransformer
+        if embedding_model.__class__.__name__ == 'SentenceTransformer':
+            self._embedding_model = embedding_model
+        else:
+            raise ValueError('embedding_model must be a SentenceTransformer object')
+
+        self.conn = conn
+
+        self._embed_dimension = len(self._embedding_model.encode(''))
+
+    @classmethod
+    async def create(
+            cls,
+            embedding_model,
+            user: str,
+            password: str,
+            db_name: str,
+            host: str, 
+            port: int,
+            **conn_params
+            ) -> 'PGvectorConnection':
+        conn = await cls._set_up(user, password, db_name, host, port, **conn_params)
+        return cls(embedding_model, conn)
+
+    @staticmethod
+    async def _set_up(user, password, db_name, host, port, **conn_params):
+        try:
+            # Create a connection to the database
+            conn = await asyncpg.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                database=db_name,
+                **conn_params
+            )
+            return conn
+        except Exception as e:
+            raise ConnectionError(f"ERROR: {e}")
+
+    async def create_doc_table(self, table_name: str) -> None:
+        '''
+        Create a table to hold embedded documents
+
+        Args:
+            table_name (str): name of the table to create
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        # Create the table
+        await self.conn.execute(
+            CREATE_DOC_TABLE.format(
+                table_name=table_name,
+                embed_dimension=self._embed_dimension)
+            )
+    
+    async def insert_doc_table(
+            self, 
+            table_name: str, 
+            content: str, 
+            permission: str = "NULL", 
+            title: str = "NULL", 
+            page_numbers: list[int] = [], 
+            tags: list[str] = []
+        ) -> None:
+        '''
+        Update a table to hold embedded documents
+
+        Args:
+            table_name (str): name of the table to update
+
+            content (str): text content of the document
+
+            permission (str): permission of the document
+
+            title (str): title of the document
+
+            page_numbers (list): page number of the document that the chunk is found in
+
+            tags (list): tags associated with the document
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        # Get the embedding of the content as a PGvector compatible list
+        content_embedding = list(self._embedding_model.encode(content))
+        
+        # Get the page numbers and tags as SQL arrays
+        SQL_page_numbers = "{{{}}}".format(", ".join(map(str, page_numbers)))
+        SQL_tags = "{{{}}}".format(", ".join(map(str, tags)))
+
+        await self.conn.execute(
+            INSERT_DOC_TABLE.format(
+                table_name = table_name,
+                embedding = content_embedding,
+                content = content,
+                permission = permission,
+                title = title,
+                page_numbers = SQL_page_numbers,
+                tags = SQL_tags 
+                )
+            )
+        
+    async def search_doc_table(
+            self,
+            table_name: str,
+            query_string: str,
+            limit: int = 1
+            ) -> list[asyncpg.Record]:
+        '''
+        Similarity search documents using a query string
+
+        Args:
+            table_name (str): name of the table to search
+
+            query_string (str): string to compare against items in the table
+
+            k (int): maximum number of results to return (useful for top-k query)
+        Returns:
+            list[asyncpg.Record]: list of search results
+            asyncpg.Record objects are similar to dicts, but allow for attribute-style access
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        # Get the embedding of the query string as a PGvector compatible list
+        query_embedding = list(self._embedding_model.encode(query_string))
+
+        # Search the table
+        search_results = await self.conn.fetch(
+            SEARCH_DOC_TABLE.format(
+                table_name = table_name,
+                search_embedding = query_embedding,
+                limit = limit
+                )
+            )
+        
+        return search_results
+        
 
 class qdrant_collection:
     def __init__(self, name, embedding_model, db=None,
@@ -58,6 +265,7 @@ class qdrant_collection:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
             https://huggingface.co/sentence-transformers
 
+            
             db (optional QdrantClient): existing DB/client to use
 
             distance_function (str): Distance function by which vectors will be compared
@@ -99,7 +307,6 @@ class qdrant_collection:
         self._distance_function = distance_function or models.Distance.COSINE
         self._db_initialized = False
 
-
     def _first_update_prep(self, text):
         if text.__class__.__name__ != 'str':
             raise ValueError('text must be a string')
@@ -119,7 +326,6 @@ class qdrant_collection:
             )
 
         self._db_initialized = True
-
 
     def update(self, texts, metas=None):
         '''
@@ -172,7 +378,6 @@ class qdrant_collection:
                         )
                     ]
                 )
-
     
     def reset(self):
         '''
@@ -183,7 +388,6 @@ class qdrant_collection:
         
         self.db.delete_collection(collection_name=self.name)
         self._db_initialized = False
-        
 
     def search(self, query, **kwargs):
         '''
@@ -202,7 +406,6 @@ class qdrant_collection:
             raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
         return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
-
 
     def count(self):
         '''

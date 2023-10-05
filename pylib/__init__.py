@@ -13,3 +13,10 @@ def oapi_first_choice_text(response):
     Given an OpenAI-compatible API response, return the first choice response text
     '''
     return response['choices'][0]['text']
+
+
+def oapi_first_choice_content(response):
+    '''
+    Given an OpenAI-compatible API response, return the first choice response content
+    '''
+    return response['choices'][0]['message']['content']
