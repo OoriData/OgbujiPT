@@ -31,7 +31,7 @@ support multiprocessing
 
 ## chat_web_selects.py
 
-Simple, command-line "chat my web site" demo, but supporting self-hosted LLM.
+Command-line "chat my web site" demo, but supporting self-hosted LLM.
 
 Definitely a good idea for you to understand demos/alpaca_multitask_fix_xml.py
 before swapping this in.
@@ -65,3 +65,36 @@ though you can easily extend it to e.g. work with multiple docs
 dropped in a directory
 
 Note: manual used for above demo downloaded from Hasbro via [Board Game Capital](https://www.boardgamecapital.com/monopoly-rules.htm).
+
+## PGvector_demo.py
+A demo of the PGvector vector store functionality of OgbujiPT, which takes an initial sample collection of strings and performs a few example actions with them:
+
+1. set up a table in the PGvector store
+2. vectorizes and inserts the strings in the PGvector store
+3. performs a perfect search for one of the sample strings
+4. performs a fuzzy search for a word that is in one of the sample strings
+
+At oori, the demo is run utilizing the [official PGvector docker container](https://hub.docker.com/r/ankane/pgvector) and the following docker compose:
+```docker-compose
+version: '3.1'
+
+services:
+
+  db:
+    image: ankane/pgvector
+    # restart: always
+    environment:
+      POSTGRES_USER: oori
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: PGv
+    ports:
+      - 5432:5432
+    volumes:
+      - ./pg_hba.conf:/var/lib/postgresql/pg_hba.conf
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+```

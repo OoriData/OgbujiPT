@@ -45,8 +45,8 @@ class style(Enum):
 
 
 VICUNA_DELIMITERS = {
-    pdelim.PREQUERY: '### USER:\n',
-    pdelim.POSTQUERY: '\n\n### ASSISTANT:\n',
+    pdelim.PREQUERY: '### USER: ',
+    pdelim.POSTQUERY: '\n### ASSISTANT: ',
 }
 
 ALPACA_DELIMITERS = {

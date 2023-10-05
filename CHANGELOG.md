@@ -13,6 +13,10 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - GGUF support in download-model.py
 - Switch to a class-based wrapper for LLM endpoints/handlers - #39
 - Add support for in-memory LLM loading via ctransformers
+- Added postgreSGL vector support to embedding_helper.py as new Class `PGvectorConnection`
+  - PGvectorConnection is a wrapper around [asyncpg](https://github.com/MagicStack/asyncpg), and is primarily just capable of excecuting raw SQL queries right now.
+  - There are a few common SQL queries included in the class for using PGv as a vector database, but they are not yet fully tested.
+  - Added a demonstration notebook which uses `PGvectorConnection` to do similarity search
 
 ## [0.4.0] - 20230728
 
