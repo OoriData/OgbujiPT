@@ -8,7 +8,7 @@ Using the built-in short name:
 python download-model.py "OPT 1.3B"
 
 Specifying a subset of model files within a repository folder
-python download-model.py --select "ggml-vicuna-13B-1.1-q5_0.bin|ggml-vicuna-13B-1.1-q5_1.bin" CRD716/ggml-vicuna-1.1-quantized
+python download-model.py --output . --select="llongorca-13b-16k.Q4_K_M.gguf|llongorca-13b-16k.Q5_K_M.gguf" TheBloke/LlongOrca-13B-16K-GGUF
 
 Fork of https://github.com/oobabooga/text-generation-webui/blob/main/download-model.py
 
@@ -124,6 +124,7 @@ class ModelDownloader:
         has_pytorch = False
         has_pt = False
         has_ggml = False
+        has_gguf = False
         has_safetensors = False
         is_lora = False
         # The loop is for paging over repos with many files
@@ -147,11 +148,12 @@ class ModelDownloader:
                 is_safetensors = re.match(".*\.safetensors", fname)
                 is_pt = re.match(".*\.pt", fname)
                 is_ggml = re.match(".*ggml.*\.bin", fname)
+                is_gguf = re.match(".*gguf", fname)
                 is_tokenizer = re.match("(tokenizer|ice).*\.model", fname)
                 is_text = re.match(".*\.(txt|json|py|md)", fname) or is_tokenizer
-                if any((is_pytorch, is_safetensors, is_pt, is_ggml, is_tokenizer, is_text)):
+                if any((is_pytorch, is_safetensors, is_pt, is_ggml, is_gguf, is_tokenizer, is_text)):
                     # if a select option is given, and current file is a binary, make sure it's in the select list
-                    if select and any((is_pytorch, is_pt, is_safetensors, is_ggml)):
+                    if select and any((is_pytorch, is_pt, is_safetensors, is_ggml, is_gguf)):
                         if fname not in select:
                             continue
 
@@ -177,6 +179,9 @@ class ModelDownloader:
                         elif is_ggml:
                             has_ggml = True  # noqa F841 (this will eventually be a useful flag)
                             classifications.append('ggml')
+                        elif is_gguf:
+                            has_gguf = True  # noqa F841 (this will eventually be a useful flag)
+                            classifications.append('gguf')
 
             # Set up to move the next page (if any) of HF repo contents
             cursor = base64.b64encode(f'{{"file_name":"{manifest[-1]["path"]}"}}'.encode()) + b':50'

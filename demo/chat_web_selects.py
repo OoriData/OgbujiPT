@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/chat_web_selects.py
 '''
 Advanced, "Chat my docs" demo, using docs from the web
 
@@ -19,7 +22,7 @@ pip install prerequisites, in addition to OgbujiPT cloned dir:
 click sentence_transformers qdrant-client httpx html2text amara3.xml
 
 ```sh
-python demo/chat_web_selects.py --host http://my-llm-host --port 8000 "www.newworldencyclopedia.org/entry/Igbo_People"
+python demo/chat_web_selects.py --apibase http://my-llm-host:8000 "www.newworldencyclopedia.org/entry/Igbo_People"
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"
@@ -32,12 +35,12 @@ import click
 import httpx
 import html2text
 
-from ogbujipt import config
+from ogbujipt import config, oapi_chat_first_choice_message
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
-from ogbujipt.async_helper import schedule_callable, openai_api_surrogate, save_openai_api_params
-from ogbujipt import oapi_first_choice_text
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
+
 
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
@@ -77,19 +80,20 @@ async def read_site(url, collection):
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL
     metas = [{'url': url}]*len(chunks)
-    # Add the text to the collection. Blocks, so no reentrancy concern
+    # Add the text to the collection
     collection.update(texts=chunks, metas=metas)
     print(f'{collection.count()} chunks added to collection')
 
 
-async def async_main(sites):
-    # Automatic download from HuggingFace
+async def async_main(oapi, sites):
+    # Automatic download of embedding model from HuggingFace
     # Seem to be reentrancy issues with HuggingFace; defer import
     from sentence_transformers import SentenceTransformer
     embedding_model = SentenceTransformer(DOC_EMBEDDINGS_LLM)
     # Sites fuel in-memory Qdrant vector DB instance
     collection = qdrant_collection(COLLECTION_NAME, embedding_model)
 
+    # Download & process sites in parallel, loading their content & metadata into a knowledgebase
     url_task_group = asyncio.gather(*[
         asyncio.create_task(read_site(site, collection)) for site in sites.split('|')])
     indicator_task = asyncio.create_task(indicate_progress())
@@ -97,6 +101,7 @@ async def async_main(sites):
     done, _ = await asyncio.wait(
         tasks, return_when=asyncio.FIRST_COMPLETED)
 
+    # Main chat loop
     done = False
     while not done:
         print()
@@ -113,6 +118,7 @@ async def async_main(sites):
                 doc.payload['_text'] for doc in docs if doc.payload)
 
             # Build prompt the doc chunks as context
+            # FIXME: Move this to Word Loom
             prompt = format(
                 f'Given the context, {user_question}\n\n'
                 f'Context: """\n{gathered_chunks}\n"""\n',
@@ -133,8 +139,7 @@ async def async_main(sites):
                 )
 
             indicator_task = asyncio.create_task(indicate_progress())
-            llm_task = asyncio.create_task(
-                schedule_callable(openai_api_surrogate, prompt, **model_params, **save_openai_api_params()))
+            llm_task = oapi.wrap_for_multiproc(prompt_to_chat(prompt), **model_params)
             tasks = [indicator_task, llm_task]
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -147,31 +152,29 @@ async def async_main(sites):
 
             # response is a json-like object; 
             # just get back the text of the response
-            response_text = oapi_first_choice_text(retval)
+            response_text = oapi_chat_first_choice_message(retval)
             print('\nResponse text from LLM:\n\n', response_text)
 
 
 # Command line arguments defined in click decorators
 @click.command()
-@click.option('--host', default='http://127.0.0.1', help='OpenAI API host')
-@click.option('--port', default='8000', help='OpenAI API port')
+@click.option('--apibase', default='http://127.0.0.1:8000', help='OpenAI API base URL')
 @click.option('--openai-key',
               help='OpenAI API key. Leave blank to specify self-hosted model via --host & --port')
 @click.option('--model', default='', type=str, 
               help='OpenAI model to use (see https://platform.openai.com/docs/models).'
               'Use only with --openai-key')
 @click.argument('sites')
-def main(host, port, openai_key, model, sites):
-    # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
+def main(apibase, openai_key, model, sites):
+    # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai_key:
-        model = model or 'text-davinci-003'
-        config.openai_live(apikey=openai_key, model=model, debug=True)
+        model = model or 'gpt-3.5-turbo'
+        oapi = openai_chat_api(api_key=openai_key, model=model)
     else:
-        # Generally not really useful except in conjunction with --openai
         model = model or config.HOST_DEFAULT
-        config.openai_emulation(host=host, port=port, model=model, debug=True)
+        oapi = openai_chat_api(model=model, api_base=apibase)
 
-    asyncio.run(async_main(sites))
+    asyncio.run(async_main(oapi, sites))
 
 
 if __name__ == '__main__':
