@@ -117,7 +117,10 @@ class PGvectorConnection:
 
         self.conn = conn
 
-        self._embed_dimension = len(self._embedding_model.encode(''))
+        if self._embedding_model:  # if self.embedding_model is none, don't try to measure dimensionality
+            self._embed_dimension = len(self._embedding_model.encode(''))
+        else:
+            self._embed_dimension = 0
 
     @classmethod
     async def create(
