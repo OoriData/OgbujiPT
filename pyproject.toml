@@ -31,9 +31,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/ogbujipt#readme"
-Issues = "https://github.com/unknown/ogbujipt/issues"
-Source = "https://github.com/unknown/ogbujipt"
+Documentation = "https://github.com/OoriData/OgbujiPT#readme"
+Issues = "https://github.com/OoriData/OgbujiPT/issues"
+Source = "https://github.com/OoriData/OgbujiPT"
 
 [tool.hatch.version]
 path = "pylib/__about__.py"
