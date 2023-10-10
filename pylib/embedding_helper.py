@@ -110,17 +110,16 @@ class PGvectorConnection:
             See the main docstring (or run `help(pgvector_connection)`)
         '''
         # Check if the provided embedding model is a SentenceTransformer
-        if embedding_model.__class__.__name__ == 'SentenceTransformer':
+        if (embedding_model.__class__.__name__ == 'SentenceTransformer') and (not None):
             self._embedding_model = embedding_model
+            self._embed_dimension = len(self._embedding_model.encode(''))
+        elif embedding_model is None:
+            self._embedding_model = None
+            self._embed_dimension = 0
         else:
-            raise ValueError('embedding_model must be a SentenceTransformer object')
+            raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
         self.conn = conn
-
-        if self._embedding_model:  # if self.embedding_model is none, don't try to measure dimensionality
-            self._embed_dimension = len(self._embedding_model.encode(''))
-        else:
-            self._embed_dimension = 0
 
     @classmethod
     async def create(
