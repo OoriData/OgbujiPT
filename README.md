@@ -1,6 +1,6 @@
 # OgbujiPT
 
-Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as ChatGPT.
+Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
 
 Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
