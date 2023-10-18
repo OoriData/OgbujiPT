@@ -1,4 +1,4 @@
-# OgbujiPT
+<img src="https://www.oori.dev/assets/branding/OgbujiPT_TextLogo.png"/>
 
 Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
 
@@ -11,7 +11,7 @@ Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-pyt
 We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
 
 <table><tr>
-  <td><a href="https://oori.dev/"><img src="https://www.oori.dev/assets/branding/ooriLogo_FullColor.png" width="64" /></a></td>
+  <td><a href="https://oori.dev/"><img src="https://www.oori.dev/assets/branding/oori_Logo_FullColor.png" width="64" /></a></td>
   <td>OgbujiPT is primarily developed by the crew at <a href="https://oori.dev/">Oori Data</a>. We offer software engineering services around LLM applications.</td>
 </tr></table>
 
