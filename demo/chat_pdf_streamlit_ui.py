@@ -158,6 +158,7 @@ def query_llm(openai_api, model):
     gathered_chunks = '\n\n'.join(doc.payload['_text'] for doc in docs if doc.payload)
 
     # Build prompt the doc chunks as context
+    # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
     prompt = format(
         f'Given the context, {user_query}\n\n'
         f'Context: """\n{gathered_chunks}\n"""\n',

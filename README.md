@@ -33,29 +33,16 @@ pip install ogbujipt
 
 ### Just show me some code, dammit!
 
-from ogbujipt.llm_wrapper import ctrans_wrapper
-model = AutoModelForCausalLM.from_pretrained(
-        '/Users/uche/.local/share/models/TheBloke_LlongOrca-13B-16K-GGUF',
-        model_file='llongorca-13b-16k.Q5_K_M.gguf',
-        model_type="llama",
-        gpu_layers=50)
-oapi = ctrans_wrapper(model=model)
-print(oapi('The quick brown fox'))
-
 ```py
-from ogbujipt.llm_wrapper import openai_api
-from ogbujipt import oapi_first_choice_text
-from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_api(api_base='http://localhost:8000')  # Update for your LLM API host
-# Change the delimiters to a prompting style that suits the LLM you're using
-prompt = format('Write a short birthday greeting for my star employee',
-                delimiters=ALPACA_INSTRUCT_DELIMITERS)
+llm_api = openai_chat_api(api_base='http://localhost:8000')  # Update for your LLM API host
+prompt = 'Write a short birthday greeting for my star employee'
 
 # You can set model params as needed
-response = llm_api(prompt=prompt, temperature=0.1, max_tokens=100)
+resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=100)
 # Extract just the response text, but the entire structure is available
-print(oapi_first_choice_text(response))
+print(llm_api.first_choice_message(resp))
 ```
 
 The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:

@@ -15,6 +15,7 @@ import os
 import asyncio
 import concurrent.futures
 from functools import partial
+from typing import List
 
 from ogbujipt import config
 
@@ -24,13 +25,11 @@ try:
 except ImportError:
     openai_api_global = None
 
-# try:
-#     from ctransformers import AutoModelForCausalLM
-# except ImportError:
-#     AutoModelForCausalLM = None
+# In many cases of self-hosted models you just get whatever model is loaded, rather than specifying it in the API
+DUMMY_MODEL = 'DUMMY_MODEL'
 
 
-# FIXME: Should be an ABC
+# FIXME: Should probably be an ABC
 class llm_wrapper:
     '''
     Base-level wrapper for LLMs
@@ -93,7 +92,7 @@ class openai_api(llm_wrapper):
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
         self.api_key = api_key
-        self.model = model
+        self.model = model or DUMMY_MODEL
         self.parameters = config.attr_dict(kwargs)
         self.api_base = api_base
         self.full_api_base = api_base + kwargs.get('api_version', '/v1') if api_base else None
@@ -143,6 +142,31 @@ class openai_api(llm_wrapper):
         return asyncio.create_task(
             schedule_callable(self, prompt, **merged_kwargs))
 
+    def hosted_model_openai(self) -> List[str]:
+        '''
+        Query the OpenAI-compatible API set up via openai_emulation()
+        (or even the real deal)
+        to find what model is being run for APi calls
+        '''
+        try:
+            import httpx  # noqa
+        except ImportError:
+            raise RuntimeError('Needs httpx installed. Try pip install httpx')
+
+        resp = httpx.get(f'{self.api_base}/models').json()
+        # print(resp)
+        model_fullname = [i['id'] for i in resp['data']]
+        return model_fullname
+
+    def first_choice_text(self, response):
+        '''
+        Given an OpenAI-compatible API simple completion response, return the first choice text
+        '''
+        try:
+            return response['choices'][0]['text']
+        except KeyError:
+            raise RuntimeError(f'Response does not appear to be an OpenAI API completion structure, as expected: {repr(response)}')
+
 
 class openai_chat_api(openai_api):
     '''
@@ -166,6 +190,15 @@ class openai_chat_api(openai_api):
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
         self._claim_global_context()
         return api_func(model=self.model, messages=messages, **self.parameters, **kwargs)
+
+    def first_choice_message(self, response):
+        '''
+        Given an OpenAI-compatible API chat completion response, return the first choice message content
+        '''
+        try:
+            return response['choices'][0]['message']['content']
+        except KeyError:
+            raise RuntimeError(f'Response does not appear to be an OpenAI API chat-style completion structure, as expected: {repr(response)}')
 
 
 class ctransformer:

@@ -118,7 +118,7 @@ async def async_main(oapi, sites):
                 doc.payload['_text'] for doc in docs if doc.payload)
 
             # Build prompt the doc chunks as context
-            # FIXME: Move this to Word Loom
+            # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
             prompt = format(
                 f'Given the context, {user_question}\n\n'
                 f'Context: """\n{gathered_chunks}\n"""\n',

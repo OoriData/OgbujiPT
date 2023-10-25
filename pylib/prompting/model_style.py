@@ -133,24 +133,6 @@ MODEL_NAME_SEARCH_PATTERNS = {
 }
 
 
-def hosted_model_openai() -> List[str]:
-    '''
-    Query the OpenAI-compatible API set up via openai_emulation()
-    (or even the real deal)
-    to find what model is being run for APi calls
-    '''
-    try:
-        import httpx  # noqa
-    except ImportError:
-        raise RuntimeError('Needs httpx installed. Try pip install httpx')
-    import openai
-
-    resp = httpx.get(f'{openai.api_base}/models').json()
-    # print(resp)
-    model_fullname = [i['id'] for i in resp['data']]
-    return model_fullname
-
-
 def model_style_from_name(mname: str) -> List[str]:
     '''
     Uses heuristics to figure out the prompting/model style from its name
