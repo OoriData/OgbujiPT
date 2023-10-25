@@ -6,14 +6,6 @@
 Delimiters for common LLM model prompting styles.
 
 For details see https://github.com/uogbuji/OgbujiPT/wiki/Prompt-templates
-
-Also includes model introspection, e.g.:
-
->>> from ogbujipt.prompting.model_style import hosted_model_openai
->>> from ogbujipt.config import openai_emulation
->>> openai_emulation(host='http://127.0.0.1', port='8000')
->>> print(hosted_model_openai())
-['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
 '''
 
 import re
@@ -30,6 +22,8 @@ from ogbujipt.prompting.basic import pdelim, ordering
 # Alpaca/Instruct style, with input = ### Instruction:\n [A…] ### Input:\n ### Response:
 # Vicuña style = ### Human:\n [A…] ### Assistant:
 # Wizard style = USER:\n [A…] ### ASSISTANT:
+
+UNKNOWN = 'UNKNOWN'
 
 
 class style(Enum):
@@ -137,9 +131,13 @@ def model_style_from_name(mname: str) -> List[str]:
     '''
     Uses heuristics to figure out the prompting/model style from its name
 
-    >>> from ogbujipt.model_style import model_style_from_name
+    >>> from ogbujipt.prompting.model_style import model_style_from_name
     >>> model_style_from_name('path/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin')
     [<style.WIZARD: 4>]
+    >>> from ogbujipt.llm_wrapper import openai_api
+    >>> llm_api = openai_api(api_base='http://localhost:8000')
+    # Model style hosted via the API
+    >>> model_style_from_name(llm_api.hosted_model()[0])
     '''
     # Use the final slash portion, in case it's a full path
     mname = mname.split('/')[-1]
@@ -148,6 +146,5 @@ def model_style_from_name(mname: str) -> List[str]:
             mstyles = styles
             break
     else:
-        # XXX: Come up with a default/unknown style?
-        mstyles = []
+        mstyles = UNKNOWN
     return mstyles

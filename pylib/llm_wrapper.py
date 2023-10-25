@@ -142,21 +142,26 @@ class openai_api(llm_wrapper):
         return asyncio.create_task(
             schedule_callable(self, prompt, **merged_kwargs))
 
-    def hosted_model_openai(self) -> List[str]:
+    def hosted_model(self) -> List[str]:
         '''
-        Query the OpenAI-compatible API set up via openai_emulation()
-        (or even the real deal)
-        to find what model is being run for APi calls
+        Query the API to find what model is being run for LLM calls
+
+        Also includes model introspection, e.g.:
+
+        >>> from ogbujipt.llm_wrapper import openai_api
+        >>> llm_api = openai_api(api_base='http://localhost:8000')
+        >>> print(llm_api.hosted_model())
+        ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
         '''
         try:
             import httpx  # noqa
         except ImportError:
             raise RuntimeError('Needs httpx installed. Try pip install httpx')
 
-        resp = httpx.get(f'{self.api_base}/models').json()
+        resp = httpx.get(f'{self.full_api_base}/models').json()
         # print(resp)
-        model_fullname = [i['id'] for i in resp['data']]
-        return model_fullname
+        model_fullnames = [i['id'] for i in resp['data']]
+        return model_fullnames
 
     def first_choice_text(self, response):
         '''
@@ -165,7 +170,9 @@ class openai_api(llm_wrapper):
         try:
             return response['choices'][0]['text']
         except KeyError:
-            raise RuntimeError(f'Response does not appear to be an OpenAI API completion structure, as expected: {repr(response)}')
+            raise RuntimeError(
+                f'''Response does not appear to be an OpenAI API completion structure, as expected:
+{repr(response)}''')
 
 
 class openai_chat_api(openai_api):
@@ -198,7 +205,9 @@ class openai_chat_api(openai_api):
         try:
             return response['choices'][0]['message']['content']
         except KeyError:
-            raise RuntimeError(f'Response does not appear to be an OpenAI API chat-style completion structure, as expected: {repr(response)}')
+            raise RuntimeError(
+                f'''Response does not appear to be an OpenAI API chat-style completion structure, as expected:
+{repr(response)}''')
 
 
 class ctransformer:
