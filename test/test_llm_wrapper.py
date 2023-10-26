@@ -1,5 +1,5 @@
 from ogbujipt import config
-from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat
+from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat, DUMMY_MODEL
 
 
 def test_openai_llm_wrapper():
@@ -7,35 +7,35 @@ def test_openai_llm_wrapper():
     api_key = "jsbdflkajsdhfklajshdfkljalk"
     port = '8000'
     debug = True
-    model = ''
+    model = DUMMY_MODEL
     rev = 'v1'
     api_base = f'{host}:{port}/{rev}'
 
-    test_model = openai_chat_api(api_key=api_key, debug=debug, model=model)
+    test_model = openai_chat_api(api_key=api_key, debug=debug)
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
     assert test_model.model == model
 
     # Not OpenAI
-    test_model = openai_api(debug=debug, model=model)
+    test_model = openai_api(debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
-    assert test_model.model == model
+    assert test_model.model == DUMMY_MODEL
 
-    test_model = openai_chat_api(api_base=api_base, debug=debug, model=model)
+    test_model = openai_chat_api(api_base=api_base, debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
     assert test_model.model == model
     assert test_model.api_base == api_base
 
-    test_model = openai_chat_api(api_key=api_key, debug=debug, model=model)
+    test_model = openai_chat_api(api_key=api_key, debug=debug)
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
-    assert test_model.model == model
+    assert test_model.model == DUMMY_MODEL
 
 
 def test_prompt_to_chat():

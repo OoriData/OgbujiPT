@@ -1,5 +1,7 @@
-from ogbujipt.prompting import model_style
 from unittest.mock import patch, Mock
+
+from ogbujipt.prompting import model_style
+from ogbujipt.llm_wrapper import openai_api
 
 import unittest
 
@@ -25,7 +27,8 @@ class Test_hosted_model_openAI(unittest.TestCase):
         }
         mock_get.return_value = mock_response
         
-        result = model_style.hosted_model_openai()
+        llm = openai_api()
+        result = llm.hosted_model()
 
         self.assertEqual(result, ['model_1', 'model_2'])
         
