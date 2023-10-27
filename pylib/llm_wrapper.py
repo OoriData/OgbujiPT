@@ -22,6 +22,7 @@ from ogbujipt import config
 # Imports of model hosting facilities
 try:
     import openai as openai_api_global
+    DEFAULT_OPENAI_API_BASE = openai_api_global.api_base
 except ImportError:
     openai_api_global = None
 
@@ -55,6 +56,11 @@ class openai_api(llm_wrapper):
     Wrapper for LLM hosted via OpenAI-compatible API (including OpenAI proper).
     Designed for models that provide simple completions from prompt.
     For chat-style models (including OpenAI's gpt-3.5-turbo & gpt-4), use openai_chat_api
+            
+    >>> from ogbujipt.llm_wrapper import openai_api
+    >>> llm_api = openai_api(api_base='http://localhost:8000')
+    >>> resp = llm_api('Knock knock!', max_tokens=128)
+    >>> llm_api.first_choice_text(resp)
     '''
     def __init__(self, model=None, api_base=None, api_key=None, **kwargs):
         '''
@@ -92,10 +98,13 @@ class openai_api(llm_wrapper):
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
         self.api_key = api_key
-        self.model = model or DUMMY_MODEL
         self.parameters = config.attr_dict(kwargs)
-        self.api_base = api_base
-        self.full_api_base = api_base + kwargs.get('api_version', '/v1') if api_base else None
+        # If the user includes the API version in the base, don't add it again
+        if '/' in (api_base or ''):
+            self.api_base = api_base + kwargs.get('api_version', '/v1')
+        self.api_base = api_base or DEFAULT_OPENAI_API_BASE
+        self.original_model = model or None
+        self.model = model or self.hosted_model()
         self._claim_global_context()
 
     # Nature of openai library requires that we babysit their globals
@@ -110,7 +119,15 @@ class openai_api(llm_wrapper):
             #     setattr(openai_api_global, k, getattr(self.parameters, k))
         openai_api_global.model = self.model
         openai_api_global.api_key = self.api_key
-        openai_api_global.api_base = self.full_api_base
+        openai_api_global.api_base = self.api_base
+
+        # If the user didn't set the model, check what's being hosted each time
+        if not self.original_model:
+            # Introspect the model
+            self.model = self.hosted_model()
+            if 'logger' in self.parameters:
+                self.parameters['logger'].debug(f'Switching global context to query LLM hosted at {self.api_base}, model {self.model}')
+        return
 
     def __call__(self, prompt, api_func=None, **kwargs):
         '''
@@ -128,7 +145,11 @@ class openai_api(llm_wrapper):
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
         self._claim_global_context()
         merged_kwargs = {**self.parameters, **kwargs}
-        return api_func(model=self.model, prompt=prompt, **merged_kwargs)
+        result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
+        print(result)
+        if result.get('model') == 'HOSTED_MODEL':
+            result['model'] = self.model
+        return result
 
     def wrap_for_multiproc(self, prompt, **kwargs):
         '''
@@ -142,7 +163,22 @@ class openai_api(llm_wrapper):
         return asyncio.create_task(
             schedule_callable(self, prompt, **merged_kwargs))
 
-    def hosted_model(self) -> List[str]:
+    def hosted_model(self) -> str:
+        '''
+        Model introspection: Query the API to find what model is being run for LLM calls
+
+        >>> from ogbujipt.llm_wrapper import openai_api
+        >>> llm_api = openai_api(api_base='http://localhost:8000')
+        >>> print(llm_api.hosted_model())
+        '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
+        '''
+        models = self.available_models()
+        if len(models) > 1:
+            return models
+        else:
+            return self.model
+
+    def available_models(self) -> List[str]:
         '''
         Query the API to find what model is being run for LLM calls
 
@@ -158,9 +194,9 @@ class openai_api(llm_wrapper):
         except ImportError:
             raise RuntimeError('Needs httpx installed. Try pip install httpx')
 
-        resp = httpx.get(f'{self.full_api_base}/models').json()
+        resp = httpx.get(f'{self.api_base}/models').json()
         # print(resp)
-        model_fullnames = [i['id'] for i in resp['data']]
+        model_fullnames = next(iter((i['id'] for i in resp['data'])))
         return model_fullnames
 
     def first_choice_text(self, response):
@@ -179,6 +215,13 @@ class openai_chat_api(openai_api):
     '''
     Wrapper for a chat-style LLM hosted via OpenAI-compatible API (including OpenAI proper).
     Supports local chat-style models as well as OpenAI's gpt-3.5-turbo & gpt-4
+
+    You need to set an OpenAI API key in your environment, or pass it in, for this next example
+
+        >>> from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+    >>> llm_api = openai_chat_api(model='gpt-3.5-turbo')
+    >>> resp = llm_api(prompt_to_chat('Knock knock!'))
+    >>> llm_api.first_choice_message(resp)
     '''
     def __call__(self, messages, api_func=None, **kwargs):
         '''

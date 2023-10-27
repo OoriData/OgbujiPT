@@ -1,3 +1,4 @@
+# FIXME: For consistency let's migrate this to pytest
 from unittest.mock import patch, Mock
 
 from ogbujipt.prompting import model_style
@@ -37,7 +38,6 @@ class Test_hosted_model_openAI(unittest.TestCase):
 
         result1 = model_style.model_style_from_name('path/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin')
         self.assertEqual(str(result1), "[<style.WIZARD: 4>]")
-
 
 
 if __name__ == '__main__':
