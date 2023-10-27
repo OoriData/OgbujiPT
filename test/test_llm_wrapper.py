@@ -1,5 +1,5 @@
 from ogbujipt import config
-from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat, DUMMY_MODEL
+from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat # , DUMMY_MODEL
 
 
 def test_openai_llm_wrapper():
