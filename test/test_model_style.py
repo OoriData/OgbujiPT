@@ -31,8 +31,11 @@ class Test_hosted_model_openAI(unittest.TestCase):
         llm = openai_api()
         result = llm.hosted_model()
 
-        self.assertEqual(result, ['model_1', 'model_2'])
+        self.assertEqual(result, 'model_1')
         
+        result = llm.available_models()
+
+        self.assertEqual(result, ['model_1', 'model_2'])
 
     def test_model_style_from_name(self):
 

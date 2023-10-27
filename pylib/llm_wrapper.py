@@ -109,7 +109,7 @@ class openai_api(llm_wrapper):
         else:
             self.api_base = DEFAULT_OPENAI_API_BASE
         self.original_model = model or None
-        self.model = model or self.hosted_model()
+        self.model = model
         self._claim_global_context()
 
     # Nature of openai library requires that we babysit their globals
@@ -129,10 +129,10 @@ class openai_api(llm_wrapper):
         # If the user didn't set the model, check what's being hosted each time
         if not self.original_model:
             # Introspect the model
-            self.model = self.hosted_model()
+            model = self.hosted_model()
             if 'logger' in self.parameters:
                 self.parameters['logger'].debug(
-                    f'Switching global context to query LLM hosted at {self.api_base}, model {self.model}')
+                    f'Switching global context to query LLM hosted at {self.api_base}, model {model}')
         return
 
     def __call__(self, prompt, api_func=None, **kwargs):
@@ -154,7 +154,7 @@ class openai_api(llm_wrapper):
         result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
         # print(result)
         if result.get('model') == 'HOSTED_MODEL':
-            result['model'] = self.model
+            result['model'] = self.hosted_model()
         return result
 
     def wrap_for_multiproc(self, prompt, **kwargs):
@@ -178,11 +178,9 @@ class openai_api(llm_wrapper):
         >>> print(llm_api.hosted_model())
         '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
         '''
-        models = self.available_models()
-        if len(models) > 1:
-            return models
-        else:
-            return self.model
+        if self.original_model:
+            return self.original_model
+        return self.available_models()[0]
 
     def available_models(self) -> List[str]:
         '''
@@ -201,9 +199,9 @@ class openai_api(llm_wrapper):
             raise RuntimeError('Needs httpx installed. Try pip install httpx')
 
         resp = httpx.get(f'{self.api_base}/models').json()
-        # print(resp)
-        model_fullnames = next(iter((i['id'] for i in resp['data'])))
-        return model_fullnames
+        if 'data' not in resp:
+            raise RuntimeError(f'Unexpected response from {self.api_base}/models:\n{repr(resp)}')
+        return [ i['id'] for i in resp['data'] ]
 
     def first_choice_text(self, response):
         '''
