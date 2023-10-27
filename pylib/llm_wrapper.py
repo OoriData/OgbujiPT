@@ -17,6 +17,8 @@ import concurrent.futures
 from functools import partial
 from typing import List
 
+from amara3 import iri
+
 from ogbujipt import config
 
 # Imports of model hosting facilities
@@ -99,10 +101,13 @@ class openai_api(llm_wrapper):
 
         self.api_key = api_key
         self.parameters = config.attr_dict(kwargs)
-        # If the user includes the API version in the base, don't add it again
-        if '/' in (api_base or ''):
-            self.api_base = api_base + kwargs.get('api_version', '/v1')
-        self.api_base = api_base or DEFAULT_OPENAI_API_BASE
+        if api_base:
+            # If the user includes the API version in the base, don't add it again
+            scheme, authority, path, query, fragment = iri.split_uri_ref(api_base)
+            path = path or kwargs.get('api_version', '/v1')
+            self.api_base = iri.unsplit_uri_ref((scheme, authority, path, query, fragment))
+        else:
+            self.api_base = DEFAULT_OPENAI_API_BASE
         self.original_model = model or None
         self.model = model or self.hosted_model()
         self._claim_global_context()
@@ -146,7 +151,7 @@ class openai_api(llm_wrapper):
         self._claim_global_context()
         merged_kwargs = {**self.parameters, **kwargs}
         result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
-        print(result)
+        # print(result)
         if result.get('model') == 'HOSTED_MODEL':
             result['model'] = self.model
         return result
