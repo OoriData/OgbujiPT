@@ -7,7 +7,7 @@ def test_openai_llm_wrapper():
     api_key = "jsbdflkajsdhfklajshdfkljalk"
     port = '8000'
     debug = True
-    model = DUMMY_MODEL
+    # model = DUMMY_MODEL
     rev = 'v1'
     api_base = f'{host}:{port}/{rev}'
 
@@ -15,27 +15,27 @@ def test_openai_llm_wrapper():
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
-    assert test_model.model == None
+    assert test_model.model is None
 
     # Not OpenAI
     test_model = openai_api(api_base=api_base, debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
-    assert test_model.model == None
+    assert test_model.model is None
 
     test_model = openai_chat_api(api_base=api_base, debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
-    assert test_model.model == None
+    assert test_model.model is None
     assert test_model.api_base == api_base
 
     test_model = openai_chat_api(api_base=api_base, api_key=api_key, debug=debug)
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
-    assert test_model.model == None
+    assert test_model.model is None
 
 
 def test_prompt_to_chat():
