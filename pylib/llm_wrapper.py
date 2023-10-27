@@ -131,7 +131,8 @@ class openai_api(llm_wrapper):
             # Introspect the model
             self.model = self.hosted_model()
             if 'logger' in self.parameters:
-                self.parameters['logger'].debug(f'Switching global context to query LLM hosted at {self.api_base}, model {self.model}')
+                self.parameters['logger'].debug(
+                    f'Switching global context to query LLM hosted at {self.api_base}, model {self.model}')
         return
 
     def __call__(self, prompt, api_func=None, **kwargs):
