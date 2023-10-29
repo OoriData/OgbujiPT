@@ -33,7 +33,7 @@ responses to similar questions without having to use the most powerful LLM
 import warnings
 import itertools
 from dotenv import load_dotenv
-
+from typing import Sequence
 import asyncpg
 
 # Qdrant is optional, so we'll only import it if it's available
@@ -72,14 +72,7 @@ INSERT INTO {table_name} (
     title,
     page_numbers,
     tags
-) VALUES (
-    '{embedding}',
-    '{content}',
-    '{permission}',
-    '{title}',
-    '{page_numbers}',
-    '{tags}'
-);\
+) VALUES ($1, $2, $3, $4, $5, $6)
 '''
 
 SEARCH_DOC_TABLE = '''\
@@ -199,24 +192,38 @@ class PGvectorConnection:
             raise ConnectionError('Connection to database is closed')
 
         # Get the embedding of the content as a PGvector compatible list
-        content_embedding = list(self._embedding_model.encode(content))
+        content_embedding = self._embedding_model.encode(content)
         
         # Get the page numbers and tags as SQL arrays
         SQL_page_numbers = "{{{}}}".format(", ".join(map(str, page_numbers)))
         SQL_tags = "{{{}}}".format(", ".join(map(str, tags)))
+        await self.conn.execute(INSERT_DOC_TABLE.format(table_name=table_name), content_embedding.tolist(), content,
+                                permission, title, SQL_page_numbers, SQL_tags)
 
-        await self.conn.execute(
-            INSERT_DOC_TABLE.format(
-                table_name = table_name,
-                embedding = content_embedding,
-                content = content,
-                permission = permission,
-                title = title,
-                page_numbers = SQL_page_numbers,
-                tags = SQL_tags 
-                )
-            )
-        
+    async def insert_doc_tables(
+            self,
+            table_name: str,
+            content_list: Sequence[tuple[str, str | None,  str | None, list[int], list[str]]]
+    ) -> None:
+        '''
+        Update a table to include a list of embedded documents all to be added to the same table.  Semantically
+        equivalent to calling insert_doc_tables with each tuple in content_lists as its arguments, but uses
+        executemany for efficiency
+
+        Args:
+            table_name (str): name of the table to update
+            content_list (Sequence[ .. ]): A list of tuples, each of the form: (content, permission, title,
+                                                                                page_numbers, tags)
+        '''
+        # Check that the connection is still alive
+        if self.conn.is_closed():
+            raise ConnectionError('Connection to database is closed')
+
+        await self.conn.execute(INSERT_DOC_TABLE.format(table_name=table_name), [
+            (self._embedding_model.encode(content), content, permission, title, page_numbers, tags)
+            for content, permission, title, page_numbers, tags in content_list
+        ])
+
     async def search_doc_table(
             self,
             table_name: str,
