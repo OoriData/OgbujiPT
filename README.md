@@ -1,4 +1,4 @@
-<img src="https://www.oori.dev/assets/branding/OgbujiPT_TextLogo.png"/>
+![ogbujipt github header](https://github.com/OoriData/OgbujiPT/assets/43561307/cd75f951-b813-43b4-b0f1-2081b8096768)
 
 Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
 
