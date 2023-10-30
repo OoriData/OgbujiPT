@@ -35,6 +35,7 @@ import itertools
 from dotenv import load_dotenv
 from typing import Sequence
 import asyncpg
+from pgvector.asyncpg import register_vector
 
 # Qdrant is optional, so we'll only import it if it's available
 try:
@@ -126,6 +127,7 @@ class PGvectorConnection:
             **conn_params
             ) -> 'PGvectorConnection':
         conn = await cls._set_up(user, password, db_name, host, port, **conn_params)
+        await register_vector(conn)
         return cls(embedding_model, conn)
 
     @staticmethod
@@ -194,11 +196,8 @@ class PGvectorConnection:
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
         
-        # Get the page numbers and tags as SQL arrays
-        SQL_page_numbers = "{{{}}}".format(", ".join(map(str, page_numbers)))
-        SQL_tags = "{{{}}}".format(", ".join(map(str, tags)))
         await self.conn.execute(INSERT_DOC_TABLE.format(table_name=table_name), content_embedding.tolist(), content,
-                                permission, title, SQL_page_numbers, SQL_tags)
+                                permission, title, page_numbers, tags)
 
     async def insert_doc_tables(
             self,
