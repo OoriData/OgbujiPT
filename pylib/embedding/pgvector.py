@@ -8,6 +8,7 @@ Vector databases embeddings using PGVector
 
 import warnings
 import itertools
+import json
 from typing import Sequence
 
 # Handle key imports
@@ -20,22 +21,22 @@ except ImportError:
     asyncpg = None
     register_vector = object()  # Set up a dummy to satisfy the type hints
  
-
-# Generic SQL template for creating a table to hold embedded documents
+# ======================================================================================================================
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
-CREATE_DOC_TABLE = '''\
+# Generic SQL template for creating a table to hold embedded documents
+CREATE_DOC_TABLE = '''-- Create a table to hold embedded documents
 CREATE TABLE IF NOT EXISTS {table_name} (
-    id bigserial primary key, 
-    embedding vector({embed_dimension}),  -- embedding vector field size
-    content text NOT NULL,                -- text content of the chunk
-    permission text,                      -- permission of the chunk
-    title text,                           -- title of file
-    page_numbers integer[],               -- page number of the document that the chunk is found in
-    tags text[]                           -- tags associated with the chunk
-);\
+    id BIGSERIAL PRIMARY KEY,
+    embedding VECTOR({embed_dimension}),  -- embedding vectors (array dimension)
+    content TEXT NOT NULL,                -- text content of the chunk
+    permission TEXT,                      -- permission of the chunk
+    title TEXT,                           -- title of file
+    page_numbers INTEGER[],               -- page number of the document that the chunk is found in
+    tags TEXT[]                           -- tags associated with the chunk
+);
 '''
 
-INSERT_DOCS = '''\
+INSERT_DOCS = '''-- Insert a document into a table
 INSERT INTO {table_name} (
     embedding,
     content,
@@ -43,20 +44,76 @@ INSERT INTO {table_name} (
     title,
     page_numbers,
     tags
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES ($1, $2, $3, $4, $5, $6);
 '''
 
-SEARCH_DOC_TABLE = '''\
+SEARCH_DOC_TABLE = '''-- Semantic search a document
 SELECT 
-    1 - (embedding <=> '{search_embedding}') AS cosine_similarity,
+    (embedding <=> '{search_embedding}') AS cosine_similarity,
     title,
-    content
+    content,
+    permission,
+    page_numbers,
+    tags
 FROM 
     {table_name}
 ORDER BY
-    cosine_similarity DESC
-LIMIT {limit}
-;\
+    cosine_similarity ASC
+LIMIT {limit};
+'''
+# ----------------------------------------------------------------------------------------------------------------------
+# Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
+CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
+CREATE TABLE IF NOT EXISTS {table_name} (
+    id BIGSERIAL PRIMARY KEY,             -- unique id for the row
+    history_key UUID,                     -- history key (unique identifier) of the chatlog this message belongs to
+    index SERIAL,                         -- index of the message in the chatlog
+    role INT,                             -- role of the message
+    content TEXT NOT NULL,                -- text content of the message
+    embedding VECTOR({embed_dimension}),  -- embedding vectors (array dimension)
+    metadata_JSON JSON                    -- additional metadata of the message
+);
+'''
+
+INSERT_CHATLOG = '''-- Insert a message into a chatlog
+INSERT INTO {table_name} (
+    history_key,
+    index,
+    role,
+    content,
+    embedding,
+    metadata_JSON
+) VALUES ($1, $2, $3, $4, $5, $6);
+'''
+
+RETURN_CHATLOG_BY_HISTORY_KEY = '''-- Get entire chatlog of a history key
+SELECT
+    index,
+    role,
+    content,
+    metadata_JSON
+FROM
+    {table_name}
+WHERE
+    history_key = '{history_key}'
+ORDER BY
+    index ASC;
+'''
+
+SEMANTIC_SEARCH_CHATLOG_TABLE = '''-- Semantic search a chatlog
+SELECT 
+    (embedding <=> '{search_embedding}') AS cosine_similarity,
+    index,
+    role,
+    content,
+    metadata_JSON
+FROM 
+    {table_name}
+WHERE
+    history_key = '{history_key}'
+ORDER BY
+    cosine_similarity ASC
+LIMIT {limit};
 '''
 
 # ======================================================================================================================
@@ -178,7 +235,8 @@ class PGvectorHelper:
         await self.conn.execute(INSERT_DOCS.format(table_name=self.table_name), content_embedding.tolist(), content,
                                 permission, title, page_numbers, tags)
 
-    async def insert_docs(self,
+    async def insert_docs(
+            self,
             content_list: Sequence[tuple[str, str | None,  str | None, list[int], list[str]]]
     ) -> None:
         '''
@@ -187,7 +245,7 @@ class PGvectorHelper:
         Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
 
         Args:
-            content_list (Sequence[ .. ]): A list of tuples, each of the form: (content, permission, title,                                                                                page_numbers, tags)
+            content_list (Sequence[ .. ]): A list of tuples, each of the form: (content, permission, title, page_numbers, tags)
         '''
         await self.conn.execute(INSERT_DOCS.format(table_name=self.table_name), [
             (self._embedding_model.encode(content), content, permission, title, page_numbers, tags)
