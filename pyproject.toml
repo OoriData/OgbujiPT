@@ -60,7 +60,8 @@ only-include = ["pylib", "resources"]
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "pytest-mock"
+  "pytest-mock",
+  "pytest-asyncio",
 ]
 dev-mode = false
 [tool.hatch.envs.default.scripts]

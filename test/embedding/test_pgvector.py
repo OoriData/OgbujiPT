@@ -5,8 +5,17 @@ or
 
 pytest test/embedding/test_pgvector.py
 
-Uses the COME_THUNDER_POEM fixture from conftest.py
+Uses fixtures from ../conftest.py
+
+Useful notes for asyncio: https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html
+
+Notes, if needed, for mocking PG by running a local Docker container: https://ryan-duve.medium.com/how-to-mock-postgresql-with-pytest-and-pytest-postgresql-26b4a5ea3c25
+
+TODO: incorporate with PG/Docker in CI/CD. GitLab recipe we might be bale to adapt: https://forum.gitlab.com/t/how-to-run-pytest-with-fixtures-that-spin-up-docker-containers/57190
+
+Another option might be: https://pypi.org/project/pytest-docker/
 '''
+
 import pytest
 
 from ogbujipt.text_helper import text_splitter
@@ -18,38 +27,61 @@ from ogbujipt.text_helper import text_splitter
 # USER = 'oori'
 # PASSWORD = 'example'
 
-from ogbujipt.embedding.pgvector import PGvectorHelper
-from sentence_transformers     import SentenceTransformer
-
-@pytest.fixture
-def SENTENCE_TRANSFORMER():
-    e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
-    return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
-
 from unittest.mock import MagicMock, patch
+
+from ogbujipt.embedding.pgvector import PGvectorHelper
+# Ugh. even this import is slow as hell, but needed if we want to spec the mocker
+# time python -c "from sentence_transformers import SentenceTransformer"
+# 2.78s user 4.17s system 47% cpu 14.757 total [on MacBook Pro 2020]
+from sentence_transformers import SentenceTransformer
 
 from ogbujipt import embedding_helper
 from ogbujipt.text_helper import text_splitter
+
+
+# @pytest.fixture
+# def SENTENCE_TRANSFORMER():
+#     e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
+#     return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
+
 
 pacer_copypasta = [  # Demo data
     "Structure of visceral layer of Bowman's capsule is a glomerular capsule structure and a structure of epithelium."
 ]
 
-@patch('ogbujipt.embedding_helper.PGvectorConnection')
-@patch('sentence_transformers.SentenceTransformer')
-def test_PGv_embed_poem(mock_sentence_transformer, mock_pgvector_connection, COME_THUNDER_POEM, CORRECT_STRING):
-    # LLM will be downloaded from HuggingFace automatically
-    # FIXME: We want to mock this instead, or rather just have a fixture with the results
-    # Split the chunks
-    chunks = text_splitter(
-        COME_THUNDER_POEM, 
-        chunk_size=21, 
-        chunk_overlap=3, 
-        separator='\n'
-        )
+# FIXME: This stanza to go away once mocking is complete
+import os
+HOST = os.environ.get('PGHOST', 'localhost')
+DB_NAME = 'PGv'
+PORT = 5432
+USER = 'oori'
+PASSWORD = 'example'
+
+# @patch('ogbujipt.embedding_helper.PGvectorConnection')
+# @patch('sentence_transformers.SentenceTransformer')
+# def test_PGv_embed_poem(mock_sentence_transformer, mock_pgvector_connection, COME_THUNDER_POEM, CORRECT_STRING):
+@pytest.mark.asyncio
+async def test_PGv_embed_poem(mocker):
+    e_model = MagicMock(spec=SentenceTransformer)
+    TABLE_NAME = 'embedding_test'
+    vDB = await PGvectorHelper.from_conn_params(
+        embedding_model=e_model,
+        table_name=TABLE_NAME,
+        db_name=DB_NAME,
+        host=HOST,
+        port=int(PORT),
+        user=USER,
+        password=PASSWORD)
+
+    # mock_connect = MagicMock()
+    # mock_cursor = MagicMock()
+    # mock_cursor.fetchall.return_value = expected
+    # mock_connect.cursor.return_value = mock_cursor
+
+    # result = d.read(mock_connect)
+    # self.assertEqual(result, expected)
 
     # TODO: Add more shape to the mocking, to increase the tests's usefulness
-    embedding_model = MagicMock(spec=mock_sentence_transformer)
     embedding_helper.models = MagicMock()
     mock_vparam = object()
     embedding_helper.models.VectorParams.side_effect = [mock_vparam]
