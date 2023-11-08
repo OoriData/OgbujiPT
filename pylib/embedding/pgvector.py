@@ -119,36 +119,29 @@ LIMIT {limit};
 '''
 # ======================================================================================================================
 
+ROLE_INTS = {
+    'system': 0,
+    'user': 1,
+    'assistant': 2,
+    'tool': 3  # formerly 'function'
+}
+
+INT_ROLES = { (v, k) for k, v in ROLE_INTS.items()}
+
+
+# Client code could avoid the function call overheads by just doing the dict lookups directly
 def role_to_int(role):
-    ''' Convert OpenAI style message role from strings to integers for faster database operations '''
-    match role:
-        case 'system':
-            role_int = 0
-        case 'user':
-            role_int = 1
-        case 'assistant':
-            role_int = 2
-        case 'tool':  # formerly 'function'
-            role_int = 3
-        case _:
-            role_int = -1
-    return role_int
+    '''
+    Convert OpenAI style message role from strings to integers for faster DB ops
+    '''
+    return ROLE_INTS.get(role, -1)
 
 
 def int_to_role(role_int):
-    ''' Convert OpenAI style message role from integers to strings for faster database operations '''
-    match role_int:
-        case 0:
-            role = 'system'
-        case 1:
-            role = 'user'
-        case 2:
-            role = 'assistant'
-        case 3:
-            role = 'tool'  # formerly 'function'
-        case _:
-            role = 'unknown'
-    return role
+    '''
+    Convert OpenAI style message role from integers to strings for faster DB ops
+    '''
+    return INT_ROLES.get(role_int, 'unknown')
 
 
 class PGvectorHelper:
@@ -257,7 +250,9 @@ class PGvectorHelper:
 
 
 class docDB(PGvectorHelper):
-    ''' Subclass of PGvectorHelper for documents '''
+    '''
+    Specialize PGvectorHelper for documents
+    '''
     async def create_doc_table(self) -> None:
         '''
         Create the table to hold embedded documents
@@ -359,7 +354,9 @@ class docDB(PGvectorHelper):
     
 
 class chatlogDB(PGvectorHelper):
-    ''' Subclass of PGvectorHelper for chatlogs '''
+    '''
+    Specialize PGvectorHelper for chatlogs
+    '''
     async def create_chatlog_table(self):
         '''
         Create the table to hold chatlogs
