@@ -24,6 +24,8 @@ except ImportError:
 
 # ======================================================================================================================
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
+# Table names are checked to be legit sequel table names, and embed_dimension is checked to be an integer
+
 CREATE_VECTOR_EXTENSION = 'CREATE EXTENSION IF NOT EXISTS vector;'
 
 # Generic SQL template for creating a table to hold embedded documents
