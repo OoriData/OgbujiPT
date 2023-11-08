@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "openai",
+  "openai<=0.28.1",
   "python-dotenv",
   "tomli",
   "amara3.iri"
