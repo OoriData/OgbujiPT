@@ -10,6 +10,7 @@ import warnings
 import itertools
 import json
 from typing import Sequence
+from uuid import UUID
 
 # Handle key imports
 try:
@@ -20,9 +21,11 @@ except ImportError:
     PREREQS_AVAILABLE = False
     asyncpg = None
     register_vector = object()  # Set up a dummy to satisfy the type hints
- 
+
 # ======================================================================================================================
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
+CREATE_VECTOR_EXTENSION = 'CREATE EXTENSION IF NOT EXISTS vector;'
+
 # Generic SQL template for creating a table to hold embedded documents
 CREATE_DOC_TABLE = '''-- Create a table to hold embedded documents
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -116,6 +119,38 @@ LIMIT {limit};
 '''
 # ======================================================================================================================
 
+def role_to_int(role):
+    ''' Convert OpenAI style message role from strings to integers for faster database operations '''
+    match role:
+        case 'system':
+            role_int = 0
+        case 'user':
+            role_int = 1
+        case 'assistant':
+            role_int = 2
+        case 'tool':  # formerly 'function'
+            role_int = 3
+        case _:
+            role_int = -1
+    return role_int
+
+
+def int_to_role(role_int):
+    ''' Convert OpenAI style message role from integers to strings for faster database operations '''
+    match role_int:
+        case 0:
+            role = 'system'
+        case 1:
+            role = 'user'
+        case 2:
+            role = 'assistant'
+        case 3:
+            role = 'tool'  # formerly 'function'
+        case _:
+            role = 'unknown'
+    return role
+
+
 class PGvectorHelper:
     def __init__(self, embedding_model, table_name: str, apg_conn):
         '''
@@ -187,9 +222,42 @@ class PGvectorHelper:
         # Ensure the vector extension is installed
         await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
         await register_vector(conn)
+
+        await conn.set_type_codec(  # Register a codec for JSON
+            'JSON',
+            encoder=json.dumps,
+            decoder=json.loads,
+            schema='pg_catalog'
+        )
+
         # print('PGvector extension created and loaded.')
         return cls(embedding_model, table_name, conn)
 
+    async def count_entries(self) -> int:
+        '''
+        Count the number of documents in the table
+
+        Args:
+        Returns:
+            int: number of documents in the table
+        '''
+        # Count the number of documents in the table
+        count = await self.conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
+        return count
+
+    async def drop_table(self) -> None:
+        '''
+        Delete the table
+
+        Exercise caution!
+        '''
+        # Delete the table
+        await self.conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
+        # await self.conn.execute(f'DROP TABLE {self.table_name}')
+
+
+class docDB(PGvectorHelper):
+    ''' Subclass of PGvectorHelper for documents '''
     async def create_doc_table(self) -> None:
         '''
         Create the table to hold embedded documents
@@ -289,6 +357,9 @@ class PGvectorHelper:
         )
         return search_results
     
+
+class chatlogDB(PGvectorHelper):
+    ''' Subclass of PGvectorHelper for chatlogs '''
     async def create_chatlog_table(self):
         '''
         Create the table to hold chatlogs
@@ -306,7 +377,7 @@ class PGvectorHelper:
 
     async def insert_message(
             self,
-            history_key: str,
+            history_key: UUID,
             role: str,
             content: str,
             metadata: dict = {}
@@ -323,17 +394,7 @@ class PGvectorHelper:
 
             metadata (dict): additional metadata of the message
         '''
-        match role:  # Set role as an integer
-            case 'system':
-                role_int = 0
-            case 'user':
-                role_int = 1
-            case 'assistant':
-                role_int = 2
-            case 'tool':  # formerly 'function'
-                role_int = 3
-            case _:
-                role_int = -1
+        role_int = role_to_int(role)  # Convert from string roles to integer roles
 
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
@@ -345,11 +406,11 @@ class PGvectorHelper:
             content,
             content_embedding.tolist(),
             metadata
-        )
+        )   
     
     async def get_chatlog(
             self,
-            history_key: str
+            history_key: UUID
     ) -> list[asyncpg.Record]:
         '''
         Get the entire chatlog of a history key
@@ -361,17 +422,28 @@ class PGvectorHelper:
             asyncpg.Record objects are similar to dicts, but allow for attribute-style access
         '''
         # Get the chatlog
-        chatlog = await self.conn.fetch(
+        chatlog_records = await self.conn.fetch(
             RETURN_CHATLOG_BY_HISTORY_KEY.format(
                 table_name=self.table_name,
                 history_key=history_key
             )
         )
+
+        chatlog = [
+            {
+                'index': record['index'],
+                'role': int_to_role(record['role']),
+                'content': record['content'],
+                'metadata': record['metadata_json']
+            }
+            for record in chatlog_records
+        ]
+
         return chatlog
     
     async def search_chatlog(
             self,
-            history_key: str,
+            history_key: UUID,
             query_string: str,
             limit: int = 1
     ) -> list[asyncpg.Record]:
@@ -391,7 +463,7 @@ class PGvectorHelper:
 
         # Search the table
         # FIXME: Figure out the SQL injection guard for vectors. Not sure SQL Query params is an option here
-        search_results = await self.conn.fetch(
+        records = await self.conn.fetch(
             SEMANTIC_QUERY_CHATLOG_TABLE.format(
                 table_name=self.table_name,
                 query_embedding=query_embedding,
@@ -399,26 +471,16 @@ class PGvectorHelper:
                 limit=limit
             )
         )
+
+        search_results = [
+            {
+                'index': record['index'],
+                'role': int_to_role(record['role']),
+                'content': record['content'],
+                'metadata': record['metadata_json'],
+                'cosine_similarity': record['cosine_similarity']
+            }
+            for record in records
+        ]
+
         return search_results
-
-    async def count_entries(self) -> int:
-        '''
-        Count the number of documents in the table
-
-        Args:
-        Returns:
-            int: number of documents in the table
-        '''
-        # Count the number of documents in the table
-        count = await self.conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
-        return count
-
-    async def drop_table(self) -> None:
-        '''
-        Delete the table
-
-        Exercise caution!
-        '''
-        # Delete the table
-        await self.conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
-        # await self.conn.execute(f'DROP TABLE {self.table_name}')
