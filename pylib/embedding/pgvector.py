@@ -316,7 +316,7 @@ class docDB(PGvectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, permission, title, page_numbers, tags)
         '''
-        await self.conn.execute(
+        await self.conn.executemany(
             INSERT_DOCS.format(table_name=self.table_name),
             [
                 (self._embedding_model.encode(content), content, permission, title, page_numbers, tags)
