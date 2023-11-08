@@ -128,7 +128,7 @@ ROLE_INTS = {
     'tool': 3  # formerly 'function'
 }
 
-INT_ROLES = {(v, k) for k, v in ROLE_INTS.items()}
+INT_ROLES = {v: k for k, v in ROLE_INTS.items()}
 
 
 # Client code could avoid the function call overheads by just doing the dict lookups directly
