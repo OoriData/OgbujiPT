@@ -135,7 +135,7 @@ def model_style_from_name(mname: str) -> List[str]:
     >>> model_style_from_name('path/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin')
     [<style.WIZARD: 4>]
     >>> from ogbujipt.llm_wrapper import openai_api
-    >>> llm_api = openai_api(api_base='http://localhost:8000')
+    >>> llm_api = openai_api(base_url='http://localhost:8000')
     # Model style hosted via the API
     >>> model_style_from_name(llm_api.hosted_model()[0])
     '''

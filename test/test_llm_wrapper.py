@@ -9,29 +9,29 @@ def test_openai_llm_wrapper():
     debug = True
     # model = DUMMY_MODEL
     rev = 'v1'
-    api_base = f'{host}:{port}/{rev}'
+    base_url = f'{host}:{port}/{rev}'
 
-    test_model = openai_chat_api(api_base=api_base, api_key=api_key, debug=debug)
+    test_model = openai_chat_api(base_url=base_url, api_key=api_key, debug=debug)
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
     assert test_model.model is None
 
     # Not OpenAI
-    test_model = openai_api(api_base=api_base, debug=debug)
+    test_model = openai_api(base_url=base_url, debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
     assert test_model.model is None
 
-    test_model = openai_chat_api(api_base=api_base, debug=debug)
+    test_model = openai_chat_api(base_url=base_url, debug=debug)
 
     assert test_model.api_key == config.OPENAI_KEY_DUMMY
     assert test_model.parameters.debug == debug
     assert test_model.model is None
-    assert test_model.api_base == api_base
+    assert test_model.base_url == base_url
 
-    test_model = openai_chat_api(api_base=api_base, api_key=api_key, debug=debug)
+    test_model = openai_chat_api(base_url=base_url, api_key=api_key, debug=debug)
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug

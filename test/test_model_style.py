@@ -6,21 +6,17 @@ from ogbujipt.llm_wrapper import openai_api
 
 import unittest
 
-# def test_hosted_model_openai():
+# Should no longer be necessary, with mocking
 #     try:
 #         import httpx  # noqa
 #     except ImportError:
 #         raise RuntimeError('Needs httpx installed. Try pip install httpx')
-#     import openai
-#     test_resp = httpx.get(f'{openai.api_base}/models').json()
-#     test_fullmodel = [i['id'] for i in test_resp['data']]
-#     assert test_fullmodel == model_style.hosted_model_openai()
 
 
 class Test_hosted_model_openAI(unittest.TestCase):
 
     @patch('httpx.get')
-    @patch('openai.api_base', 'https://api.openai.com/v1')  # Use your actual API URL
+    @patch('openai.base_url', 'https://api.openai.com/v1')  # Use your actual API URL
     def test_hosted_model_openai(self, mock_get):
         mock_response = Mock()
         mock_response.json.return_value = {

@@ -21,12 +21,13 @@ from amara3 import iri
 
 from ogbujipt import config
 
-# Imports of model hosting facilities
 try:
-    import openai as openai_api_global
-    DEFAULT_OPENAI_API_BASE = openai_api_global.api_base
+    from openai import OpenAI
+    o = OpenAI(api_key='dummy')
+    DEFAULT_OPENAI_API_BASE = o.base_url
+    del o
 except ImportError:
-    openai_api_global = None
+    OpenAI = None
 
 # In many cases of self-hosted models you just get whatever model is loaded, rather than specifying it in the API
 DUMMY_MODEL = 'DUMMY_MODEL'
@@ -48,9 +49,10 @@ class llm_wrapper:
         self.parameters = kwargs
 
 
-# Extracted from https://github.com/openai/openai-python/blob/main/openai/__init__.py
-OPENAI_GLOBALS = ['api_key', 'api_key_path', 'api_base', 'organization', 'api_type', 'api_version',
-                 'proxy', 'app_info', 'debug', 'log']
+# Based on class BaseClient defn in https://github.com/openai/openai-python/blob/main/src/openai/_base_client.py
+# plus class OpenAI in https://github.com/openai/openai-python/blob/main/src/openai/_client.py
+# Omits lot-level HTTP stuff unless it turns out to be needed
+OPENAI_KEY_ATTRIBS = ['api_key', 'base_url', 'organization', 'timeout', 'max_retries']
 
 
 class openai_api(llm_wrapper):
@@ -60,80 +62,46 @@ class openai_api(llm_wrapper):
     For chat-style models (including OpenAI's gpt-3.5-turbo & gpt-4), use openai_chat_api
             
     >>> from ogbujipt.llm_wrapper import openai_api
-    >>> llm_api = openai_api(api_base='http://localhost:8000')
+    >>> llm_api = openai_api(base_url='http://localhost:8000')
     >>> resp = llm_api('Knock knock!', max_tokens=128)
     >>> llm_api.first_choice_text(resp)
     '''
-    def __init__(self, model=None, api_base=None, api_key=None, **kwargs):
+    def __init__(self, model=None, base_url=None, api_key=None, **kwargs):
         '''
         If using OpenAI proper, you can pass in an API key, otherwise environment variable
         OPENAI_API_KEY will be checked
 
-        This class is designed such that you can have multiple instances with different LLMs wrapped,
-        perhaps one is OpenAI proper, another is a locally hosted model, etc. (a good way to save costs)
-        This also opens up reentrancy concerns, especially if you're using multi-threading or multi-processing.
-
-        If multi-processing, this class should bundle its settings correctly across the fork,
-        and when you call methods in the child process, these settings should be swapped into global context correctly
+        You can have multiple instances with different LLMs wrapped; perhaps one is OpenAI proper,
+        another is a locally hosted model, etc. (a good way to save costs)
 
         Args:
             model (str, optional): Name of the model being wrapped. Useful for using
             OpenAI proper, or any endpoint that allows you to select a model
 
-            api_base (str, optional): Base URL of the API endpoint
+            base_url (str, optional): Base URL of the API endpoint
 
             api_key (str, optional): OpenAI API key to use for authentication
 
-            debug (bool, optional): Debug flag
-
-        Returns:
-            openai_api (openai): Prepared OpenAI API
-
-        Args:
-            model (str): Name of the model being wrapped
-
-            kwargs (dict, optional): Extra parameters for the API, the model, etc.
+            kwargs (dict, optional): Extra parameters for the API or for the model host
         '''
-        if openai_api_global is None:
+        if OpenAI is None:
             raise ImportError('openai module not available; Perhaps try: `pip install openai`')
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
+        self.oai_client = OpenAI(api_key=api_key, base_url=base_url)
+
         self.api_key = api_key
         self.parameters = config.attr_dict(kwargs)
-        if api_base:
+        if base_url:
             # If the user includes the API version in the base, don't add it again
-            scheme, authority, path, query, fragment = iri.split_uri_ref(api_base)
+            scheme, authority, path, query, fragment = iri.split_uri_ref(base_url)
             path = path or kwargs.get('api_version', '/v1')
-            self.api_base = iri.unsplit_uri_ref((scheme, authority, path, query, fragment))
+            self.base_url = iri.unsplit_uri_ref((scheme, authority, path, query, fragment))
         else:
-            self.api_base = DEFAULT_OPENAI_API_BASE
+            self.base_url = DEFAULT_OPENAI_API_BASE
         self.original_model = model or None
         self.model = model
-        self._claim_global_context()
-
-    # Nature of openai library requires that we babysit their globals
-    def _claim_global_context(self):
-        '''
-        Set global context of the OpenAI API according to this class's settings
-        '''
-        for k in OPENAI_GLOBALS:
-            if k in self.parameters:
-                setattr(openai_api_global, k, self.parameters[k])
-            # if hasattr(self.parameters, k):
-            #     setattr(openai_api_global, k, getattr(self.parameters, k))
-        openai_api_global.model = self.model
-        openai_api_global.api_key = self.api_key
-        openai_api_global.api_base = self.api_base
-
-        # If the user didn't set the model, check what's being hosted each time
-        if not self.original_model:
-            # Introspect the model
-            model = self.hosted_model()
-            if 'logger' in self.parameters:
-                self.parameters['logger'].debug(
-                    f'Switching global context to query LLM hosted at {self.api_base}, model {model}')
-        return
 
     def __call__(self, prompt, api_func=None, **kwargs):
         '''
@@ -147,9 +115,8 @@ class openai_api(llm_wrapper):
         Returns:
             dict: JSON response from the LLM
         '''
-        api_func = api_func or openai_api_global.Completion.create
+        api_func = api_func or self.oai_client.chat.completions.create
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
-        self._claim_global_context()
         merged_kwargs = {**self.parameters, **kwargs}
         result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
         # print(result)
@@ -174,7 +141,7 @@ class openai_api(llm_wrapper):
         Model introspection: Query the API to find what model is being run for LLM calls
 
         >>> from ogbujipt.llm_wrapper import openai_api
-        >>> llm_api = openai_api(api_base='http://localhost:8000')
+        >>> llm_api = openai_api(base_url='http://localhost:8000')
         >>> print(llm_api.hosted_model())
         '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
         '''
@@ -189,7 +156,7 @@ class openai_api(llm_wrapper):
         Also includes model introspection, e.g.:
 
         >>> from ogbujipt.llm_wrapper import openai_api
-        >>> llm_api = openai_api(api_base='http://localhost:8000')
+        >>> llm_api = openai_api(base_url='http://localhost:8000')
         >>> print(llm_api.hosted_model())
         ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
         '''
@@ -198,9 +165,9 @@ class openai_api(llm_wrapper):
         except ImportError:
             raise RuntimeError('Needs httpx installed. Try pip install httpx')
 
-        resp = httpx.get(f'{self.api_base}/models').json()
+        resp = httpx.get(f'{self.base_url}/models').json()
         if 'data' not in resp:
-            raise RuntimeError(f'Unexpected response from {self.api_base}/models:\n{repr(resp)}')
+            raise RuntimeError(f'Unexpected response from {self.base_url}/models:\n{repr(resp)}')
         return [ i['id'] for i in resp['data'] ]
 
     def first_choice_text(self, response):
@@ -208,8 +175,8 @@ class openai_api(llm_wrapper):
         Given an OpenAI-compatible API simple completion response, return the first choice text
         '''
         try:
-            return response['choices'][0]['text']
-        except KeyError:
+            return response.choices[0].content
+        except AttributeError:
             raise RuntimeError(
                 f'''Response does not appear to be an OpenAI API completion structure, as expected:
 {repr(response)}''')
@@ -240,9 +207,8 @@ class openai_chat_api(openai_api):
         Returns:
             dict: JSON response from the LLM
         '''
-        api_func = api_func or openai_api_global.ChatCompletion.create
+        api_func = api_func or self.oai_client.completion.create
         # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
-        self._claim_global_context()
         return api_func(model=self.model, messages=messages, **self.parameters, **kwargs)
 
     def first_choice_message(self, response):
@@ -250,8 +216,8 @@ class openai_chat_api(openai_api):
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''
         try:
-            return response['choices'][0]['message']['content']
-        except KeyError:
+            return response.choices[0].message.content
+        except AttributeError:
             raise RuntimeError(
                 f'''Response does not appear to be an OpenAI API chat-style completion structure, as expected:
 {repr(response)}''')
