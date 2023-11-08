@@ -6,8 +6,8 @@
 Vector databases embeddings using PGVector
 '''
 
-import warnings
-import itertools
+# import warnings
+# import itertools
 import json
 from typing import Sequence
 from uuid import UUID
@@ -317,7 +317,7 @@ class docDB(PGvectorHelper):
         Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
 
         Args:
-            content_list (Sequence[ .. ]): A list of tuples, each of the form: (content, permission, title, page_numbers, tags)
+            content_list: List of tuples, each of the form: (content, permission, title, page_numbers, tags)
         '''
         await self.conn.execute(
             INSERT_DOCS.format(table_name=self.table_name),

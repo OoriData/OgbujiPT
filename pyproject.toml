@@ -61,6 +61,7 @@ dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
   "pytest-mock",
+  "pytest-httpx",
   "pytest-asyncio",
 ]
 dev-mode = false

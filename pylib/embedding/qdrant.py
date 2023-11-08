@@ -8,7 +8,7 @@ Vector databases embeddings using Qdrant
 
 import warnings
 import itertools
-from typing import Sequence
+# from typing import Sequence
 
 # Qdrant install is optional for OgbujiPT
 try:

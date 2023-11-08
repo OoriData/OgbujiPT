@@ -16,7 +16,14 @@ TODO: incorporate with PG/Docker in CI/CD. GitLab recipe we might be bale to ada
 Another option might be: https://pypi.org/project/pytest-docker/
 '''
 
+# Remove, or narow down, once we no longer need to skip
+# ruff: noqa
+
 import pytest
+
+# FIXME: Replace with a check for a running PG instance
+if True:
+    pytest.skip("Postgres instance/docker not available for testing PG code", allow_module_level=True)
 
 from ogbujipt.text_helper import text_splitter
 
@@ -43,7 +50,6 @@ from ogbujipt.text_helper import text_splitter
 # def SENTENCE_TRANSFORMER():
 #     e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
 #     return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
-
 
 pacer_copypasta = [  # Demo data
     "Structure of visceral layer of Bowman's capsule is a glomerular capsule structure and a structure of epithelium."
