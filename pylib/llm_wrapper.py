@@ -89,8 +89,6 @@ class openai_api(llm_wrapper):
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
-        self.oai_client = OpenAI(api_key=api_key, base_url=base_url)
-
         self.api_key = api_key
         self.parameters = config.attr_dict(kwargs)
         if base_url:
@@ -115,13 +113,21 @@ class openai_api(llm_wrapper):
         Returns:
             dict: JSON response from the LLM
         '''
-        api_func = api_func or self.oai_client.chat.completions.create
-        # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
+        # Have to build the upstream client object each time because it's not thread-safe
+        # It seems to contain a thread lock object
+        # Manifests in multiproc as TypeError: cannot pickle '_thread.RLock' object
+        oai_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        api_func = api_func or oai_client.completions.create
+
         merged_kwargs = {**self.parameters, **kwargs}
+        # XXX Figure this out more elegantly
+        if 'model' in merged_kwargs:
+            del merged_kwargs['model']
+
         result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
         # print(result)
-        if result.get('model') == 'HOSTED_MODEL':
-            result['model'] = self.hosted_model()
+        if result.model == 'HOSTED_MODEL':
+            result.model = self.hosted_model()
         return result
 
     def wrap_for_multiproc(self, prompt, **kwargs):
@@ -132,7 +138,7 @@ class openai_api(llm_wrapper):
             asyncio.Task: Task for the LLM invocation
         '''
         merged_kwargs = {**self.parameters, **kwargs}
-        # print(f'wrap_for_multiproc: merged_kwargs={merged_kwargs}')
+        # print(f'wrap_for_multiproc: {prompt =} {merged_kwargs =}')
         return asyncio.create_task(
             schedule_callable(self, prompt, **merged_kwargs))
 
@@ -207,9 +213,26 @@ class openai_chat_api(openai_api):
         Returns:
             dict: JSON response from the LLM
         '''
-        api_func = api_func or self.oai_client.completion.create
-        # Ensure the right context, e.g. after a fork or when using multiple LLM wrappers
-        return api_func(model=self.model, messages=messages, **self.parameters, **kwargs)
+        # Have to build the upstream client object each time because it's not thread-safe
+        # It seems to contain a thread lock object
+        # Manifests in multiproc as TypeError: cannot pickle '_thread.RLock' object
+        oai_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        api_func = api_func or oai_client.chat.completions.create
+
+        # XXX Figure this out more elegantly
+        # if 'api_key' in merged_kwargs:
+        #     del merged_kwargs['api_key']
+        # if 'base_url' in merged_kwargs:
+        #     del merged_kwargs['base_url']
+        merged_kwargs = {**self.parameters, **kwargs}
+        if 'model' in merged_kwargs:
+            del merged_kwargs['model']
+
+        result = api_func(model=self.model, messages=messages, **merged_kwargs)
+        # print(result)
+        if result.model == 'HOSTED_MODEL':
+            result.model = self.hosted_model()
+        return result
 
     def first_choice_message(self, response):
         '''
@@ -317,7 +340,7 @@ async def schedule_callable(callable, *args, **kwargs):
     Returns:
         response: Response object
     '''
-    # print(f'schedule_callable: kwargs={kwargs}')
+    # print(f'schedule_callable: {kwargs=}')
     # Link up the current async event loop for multiprocess execution
     loop = asyncio.get_running_loop()
     executor = concurrent.futures.ProcessPoolExecutor()

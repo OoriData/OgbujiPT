@@ -1,13 +1,12 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt/demo/alpaca_simple_qa_discord.py
+# ogbujipt/demo/simple_qa_discord.py
 '''
 Advanced demo of a Discord chatbot with an LLM back end
 
-Demonstrates async processing via ogbujipt.async_helper & Discord API integration.
-Users can make an LLM request by @mentioning the bot by its user ID
+Demonstrates async processing & Discord API integration
 
-Note: This is a simple demo, which doesn't do any client-side job management,
+Note: Simple demo, which doesn't do any client-side job management,
 so for example if a request is sent, and a second comes in before it has completed,
 the LLM back end is relied on to cope.
 
@@ -24,28 +23,24 @@ LLM_BASE=http://my-llm-host:8000
 LLM_TEMP=0.5
 ```
 
-For some discussion of setting up the environment: https://github.com/OoriData/OgbujiPT/discussions/36
+For some deeper discussion of setting up the environment: https://github.com/OoriData/OgbujiPT/discussions/36
 
-Then to launch the bot:
+To launch the bot:
 
 ```shell
-python demo/alpaca_simple_qa_discord.py
+python demo/simple_qa_discord.py
 ```
 
 You can then @mention the bot in a Discord channel where it's been added & chat with it
 
-For hints on how to modify this to use OpenAI's actual services,
-see demo/alpaca_simple_fix_xml.py
+For hints on how to modify this to use OpenAI's actual services, see demo/alpaca_simple_fix_xml.py
 '''
 
 import os
 
 import discord
 
-from ogbujipt import config, oapi_first_choice_text
-from ogbujipt.llm_wrapper import openai_api
-from ogbujipt.prompting.basic import format
-from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
 # Enable all standard intents, plus message content
 # The bot app you set up on Discord will require this intent (Bot tab)
@@ -59,20 +54,15 @@ async def send_llm_msg(msg):
     '''
     Schedule the LLM request
     '''
-    prompt = format(msg, delimiters=ALPACA_DELIMITERS)
-    print(prompt, '\n')
-
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
-    oapi.parameters
-    response = await oapi.wrap_for_multiproc(prompt, max_tokens=512)
+    # oapi.parameters
+    response = await oapi.wrap_for_multiproc(prompt_to_chat(msg), max_tokens=512)
     print(response)
 
-    # Response is a json-like object; extract the text
     print('\nFull response data from LLM:\n', response)
 
-    # Response is a json-like object; 
-    # just get back the text of the response
-    response_text = oapi_first_choice_text(response)
+    # Response is a json-like object; we just need the message text
+    response_text = oapi.first_choice_message(response)
     print('\nResponse text from LLM:\n', response_text)
 
     return response_text
@@ -117,14 +107,13 @@ def main():
     llmtemp = float(os.getenv('LLM_TEMP', '0.9'))
 
     # Set up API connector; OpenAI API emulation with supplied API base, fixed temp, from the environment
-    oapi = openai_api(model=config.HOST_DEFAULT, api_base=llm_base, temperature=llmtemp)
+    oapi = openai_chat_api(base_url=llm_base, temperature=llmtemp)
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)
 
 
 if __name__ == '__main__':
-    # Entry point protects against multiple launching of the overall program
-    # when a child process imports this 
+    # Entry point protects against multiple launching of the overall program when a child process imports
     # viz https://docs.python.org/3/library/multiprocessing.html#multiprocessing-safe-main-import
     main()
