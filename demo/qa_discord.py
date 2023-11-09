@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt/demo/simple_qa_discord.py
+# ogbujipt/demo/qa_discord.py
 '''
 Advanced demo of a Discord chatbot with an LLM back end
 
@@ -28,12 +28,12 @@ For some deeper discussion of setting up the environment: https://github.com/Oor
 To launch the bot:
 
 ```shell
-python demo/simple_qa_discord.py
+python demo/qa_discord.py
 ```
 
 You can then @mention the bot in a Discord channel where it's been added & chat with it
 
-For hints on how to modify this to use OpenAI's actual services, see demo/alpaca_simple_fix_xml.py
+For hints on how to modify this to use OpenAI's actual services, see demo/alpaca_fix_xml.py
 '''
 
 import os

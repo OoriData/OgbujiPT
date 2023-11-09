@@ -88,7 +88,9 @@ class openai_api(llm_wrapper):
         if OpenAI is None:
             raise ImportError('openai module not available; Perhaps try: `pip install openai`')
         if 'api_base' in kwargs:
-            warnings.warn('api_base no longer works; use base_url instead')
+            warnings.warn('api_base is deprecated; use base_url instead', DeprecationWarning, stacklevel=2)
+            base_url = kwargs['api_base']
+            del kwargs['api_base']
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
@@ -179,12 +181,13 @@ class openai_api(llm_wrapper):
             raise RuntimeError(f'Unexpected response from {self.base_url}/models:\n{repr(resp)}')
         return [ i['id'] for i in resp['data'] ]
 
-    def first_choice_text(self, response):
+    @staticmethod
+    def first_choice_text(response):
         '''
         Given an OpenAI-compatible API simple completion response, return the first choice text
         '''
         try:
-            return response.choices[0].content
+            return response.choices[0].text
         except AttributeError:
             raise RuntimeError(
                 f'''Response does not appear to be an OpenAI API completion structure, as expected:
@@ -237,7 +240,8 @@ class openai_chat_api(openai_api):
             result.model = self.hosted_model()
         return result
 
-    def first_choice_message(self, response):
+    @staticmethod
+    def first_choice_message(response):
         '''
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''

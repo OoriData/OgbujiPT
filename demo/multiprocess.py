@@ -21,7 +21,6 @@ import click
 
 from ogbujipt import config
 from ogbujipt import word_loom
-from ogbujipt import oapi_chat_first_choice_message
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.async_helper import console_progress_indicator
 
@@ -65,7 +64,7 @@ async def async_main(requests_info):
         # resp is an instance of openai.openai_object.OpenAIObject, with lots of useful info
         print('\nFull response data from LLM:\n', resp)
         # Just the response text
-        response_text = oapi_chat_first_choice_message(resp)
+        response_text = openai_chat_api.first_choice_message(resp)
         print('\nResponse text from LLM:\n\n', response_text)
         print('-'*80)
 
@@ -82,10 +81,8 @@ async def async_main(requests_info):
 def main(apibase, llmtemp, openai, model):
     # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai:
-        model = model or 'gpt-3.5-turbo'
-        oapi = openai_chat_api(model=model)
+        oapi = openai_chat_api(model=(model or 'gpt-3.5-turbo'))
     else:
-        model = model or config.HOST_DEFAULT
         oapi = openai_chat_api(model=model, api_base=apibase)
 
     # Separate models or params—e.g. temp—for each LLM request is left as an exercise 😊

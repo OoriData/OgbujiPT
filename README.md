@@ -37,7 +37,7 @@ pip install ogbujipt
 ```py
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_chat_api(api_base='http://localhost:8000')  # Update for your LLM API host
+llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
 prompt = 'Write a short birthday greeting for my star employee'
 
 # You can set model params as needed

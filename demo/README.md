@@ -16,7 +16,7 @@ Works even if the LLM framework suport asyncio, thanks to ogbujipt.async_helper
 
 # Advanced
 
-## simple_qa_discord.py
+## qa_discord.py
 
 <img width="555" alt="image" src="https://github.com/uogbuji/OgbujiPT/assets/279982/82121324-a930-4b2c-ab26-d8a3c6a50f54">
 
