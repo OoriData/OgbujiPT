@@ -35,7 +35,6 @@ import streamlit as st
 from PyPDF2 import PdfReader
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.prompting import format, OPENAI_GPT_DELIMITERS
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -165,7 +164,7 @@ You are a helpful assistant, who answers questions directly and as briefly as po
 Consider the following context and answer the user\'s question.
 If you cannot answer with the given context, just say so.\n\n'''
     sys_prompt += gathered_chunks + '\n\n'
-    messages = prompt_to_chat(user_query, system=sys_prompt, )
+    messages = prompt_to_chat(user_query, system=sys_prompt)
 
     print('  MESSAGES FOR LLM:  '.center(CONSOLE_WIDTH, '='), '\n', messages)
 
@@ -194,7 +193,6 @@ def main():
     # Streamlit treats function docstrings as magic strings for user display. Use comments instead
     # Set up LLM host connection & launch the main loop
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc. for self-hosted LLM
-    # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if OPENAI:
         assert not (LLM_BASE), 'Don\'t use LLM_BASE with the OPENAI variable'
         oapi = openai_chat_api(api_key=OPENAI_API_KEY, model=(LLM or 'gpt-3.5-turbo'))

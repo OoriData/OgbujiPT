@@ -16,6 +16,7 @@ import asyncio
 import concurrent.futures
 from functools import partial
 from typing import List
+import warnings
 
 from amara3 import iri
 
@@ -86,6 +87,8 @@ class openai_api(llm_wrapper):
         '''
         if OpenAI is None:
             raise ImportError('openai module not available; Perhaps try: `pip install openai`')
+        if 'api_base' in kwargs:
+            warnings.warn('api_base no longer works; use base_url instead')
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
