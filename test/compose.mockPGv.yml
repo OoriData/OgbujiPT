@@ -1,0 +1,12 @@
+version: '3.1'
+
+services:
+
+  pgvector:
+    image: ankane/pgvector
+    environment:
+      POSTGRES_USER: oori
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: PGv
+    ports:
+      - 5432:5432

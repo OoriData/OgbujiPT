@@ -461,7 +461,8 @@ class chatlogDB(PGvectorHelper):
         query_embedding = list(self._embedding_model.encode(query_string))
 
         # Search the table
-        # FIXME: Figure out the SQL injection guard for history_key and limit. Not sure SQL Query params is an option here
+        # FIXME: Figure out the SQL injection guard for history_key and limit. 
+        # # Not sure SQL Query params is an option here
         records = await self.conn.fetch(
             SEMANTIC_QUERY_CHATLOG_TABLE.format(
                 table_name=self.table_name,
