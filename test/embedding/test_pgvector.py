@@ -60,13 +60,12 @@ async def test_PGv_embed_pacer():
     
     # Create tables
     await vDB.drop_table()
-    await vDB.create_doc_table()
+    await vDB.create_table()
 
     # Insert data
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
-        await vDB.insert_doc(                        # Insert the line into the table
+        await vDB.insert(                            # Insert the line into the table
             content=text,                            # The text to be embedded
-            permission='public',                     # Permission metadata for access control
             title=f'Pacer Copypasta line {index}',   # Title metadata
             page_numbers=[1, 2, 3],                  # Page number metadata
             tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
@@ -74,11 +73,11 @@ async def test_PGv_embed_pacer():
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search_doc_table(query_string=search_string, limit=3)
+    sim_search = await vDB.search(query_string=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     search_string = 'straight'
-    sim_search = await vDB.search_doc_table(query_string=search_string, limit=3)
+    sim_search = await vDB.search(query_string=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from straight search")
 
     await vDB.drop_table()
