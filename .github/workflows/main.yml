@@ -8,7 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11"]
+    services:
+      mockdb:
+        image: ankane/pgvector
+        env:
+          POSTGRES_USER: mock_user
+          POSTGRES_PASSWORD: mock_password
+          POSTGRES_DB: mock_db
+        ports: # give multiple ports for each python versionto avoid conflicts
+          - 5433:5432
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v3
@@ -19,9 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest pytest-mock httpx
-
-          pip install asyncpg  # this definitely shouldn't be here, but i wanna get the tests running -Osi
+          pip install ruff pytest pytest-mock pytest-asyncio pytest-httpx
+          pip install pgvector asyncpg pytest-asyncio # Added by Kai, Osi
           
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install OgbujiPT itself, as checked out
@@ -35,6 +44,11 @@ jobs:
           # ruff --format=github --target-version=py311 .  # No longer works
           ruff --target-version=py311 .
       - name: Test with pytest
+        env:
+          PG_HOST: 0.0.0.0
+          PG_DATABASE: mock_db
+          PG_USER: mock_user
+          PG_PASSWORD: mock_password
+          PG_PORT: 5432
         run: |
           pytest
-

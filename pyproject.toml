@@ -61,7 +61,8 @@ dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
   "pytest-mock",
-  "asyncpg"
+  "pytest-httpx",
+  "pytest-asyncio",
 ]
 dev-mode = false
 [tool.hatch.envs.default.scripts]
