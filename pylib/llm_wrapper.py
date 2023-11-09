@@ -308,7 +308,7 @@ class ctransformer:
         return self.model(prompt, **kwargs)
 
 
-def prompt_to_chat(prompt):
+def prompt_to_chat(prompt, system=None):
     '''
     Convert a prompt string to a chat-style message list
 
@@ -320,7 +320,9 @@ def prompt_to_chat(prompt):
         e.g. messages=[{"role": "user", "content": "Hello world"}])
     '''
     # return [{'role': 'user', 'content': m} for m in prompt.split('\n')]
-    return [{'role': 'user', 'content': prompt}]
+    messages = [] if system is None else [{'role': 'system', 'content': system}]
+    messages.append({'role': 'user', 'content': prompt})
+    return messages
 
 
 async def schedule_callable(callable, *args, **kwargs):

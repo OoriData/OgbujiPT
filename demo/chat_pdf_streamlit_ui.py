@@ -34,8 +34,7 @@ import os
 import streamlit as st
 from PyPDF2 import PdfReader
 
-from ogbujipt import config, oapi_chat_first_choice_message
-from ogbujipt.llm_wrapper import openai_chat_api
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.prompting import format, OPENAI_GPT_DELIMITERS
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
@@ -136,10 +135,10 @@ def prep_pdf():
         label=PDF_USER_QUERY_PROMPT,
         key='user_query_str',
         on_change=query_llm,
-        args=(st.session_state['openai_api'], st.session_state['model']))
+        args=(st.session_state['openai_api'],))
 
 
-def query_llm(openai_api, model):
+def query_llm(openai_api):
     '''
     Oori — Ask your PDF 📄💬
     '''
@@ -157,27 +156,30 @@ def query_llm(openai_api, model):
     # Concatenate text chunks for insertion into prompt
     gathered_chunks = '\n\n'.join(doc.payload['_text'] for doc in docs if doc.payload)
 
-    # Build prompt the doc chunks as context
-    # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
-    prompt = format(
-        f'Given the context, {user_query}\n\n'
-        f'Context: """\n{gathered_chunks}\n"""\n',
-        preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
-        'questions directly and as briefly as possible. '
-        'If you cannot answer with the given context, just say so.',
-        delimiters=OPENAI_GPT_DELIMITERS)
+    # In examples I've seen rag-stuffed content seems to go in the system message
+    # https://www.pinecone.io/learn/context-aware-chatbot-with-vercel-ai-sdk/#Step-3.-Adding-Context
 
-    print('  PROMPT FOR LLM:  '.center(CONSOLE_WIDTH, '='), '\n', prompt)
+    # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
+    sys_prompt = '''\
+You are a helpful assistant, who answers questions directly and as briefly as possible.
+Consider the following context and answer the user\'s question.
+If you cannot answer with the given context, just say so.\n\n'''
+    sys_prompt += gathered_chunks + '\n\n'
+    messages = prompt_to_chat(user_query, system=sys_prompt, )
+
+    print('  MESSAGES FOR LLM:  '.center(CONSOLE_WIDTH, '='), '\n', messages)
 
     # Remember max Token length default is 16)
     oapi = st.session_state['openai_api']
-    st.session_state['messages'].append({'role': 'user', 'content': prompt})
+    # Need to remove old system messages for subsequent queries
+    st.session_state['messages'].extend(messages)
+    # print(st.session_state['messages'], '\n', '-'*10)
     response = oapi(st.session_state['messages'], temperature=LLM_TEMP, max_tokens=1024)
 
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; extract the text
-    response_text = oapi_chat_first_choice_message(response)
+    response_text = oapi.first_choice_message(response)
     print('\nResponse text from LLM:\n', response_text)
 
     st.session_state['messages'].append({'role': 'assistant', 'content': response})
@@ -195,15 +197,12 @@ def main():
     # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if OPENAI:
         assert not (LLM_BASE), 'Don\'t use LLM_BASE with the OPENAI variable'
-        model = LLM or 'gpt-3.5-turbo'
-        oapi = openai_chat_api(api_key=OPENAI_API_KEY, model=model)
+        oapi = openai_chat_api(api_key=OPENAI_API_KEY, model=(LLM or 'gpt-3.5-turbo'))
     else:
-        model = LLM or config.HOST_DEFAULT
-        oapi = openai_chat_api(model=model, api_base=LLM_BASE)
+        oapi = openai_chat_api(base_url=LLM_BASE, model=LLM)
 
     st.session_state['embedding_model'] = None
     st.session_state['openai_api'] = oapi
-    st.session_state['model'] = model
     # Chat message history in memory
     st.session_state['messages'] = []
 
