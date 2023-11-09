@@ -20,12 +20,12 @@ import os
 from ogbujipt.embedding.pgvector import docDB
 import numpy as np
 
-# FIXME: This stanza to go away once mocking is complete - Kai
-HOST = os.environ.get('PGHOST', '0.0.0.0')
-DB_NAME = os.environ.get('PGDATABASE', 'mock_db')
-USER = os.environ.get('PGUSER', 'mock_user')
-PASSWORD = os.environ.get('PGPASSWORD', 'mock_password')
-PORT = os.environ.get('PGPORT', 5432)
+# XXX: This stanza to go away once mocking is complete - Kai
+HOST = os.environ.get('PG_HOST', '0.0.0.0')
+DB_NAME = os.environ.get('PG_DATABASE', 'mock_db')
+USER = os.environ.get('PG_USER', 'mock_user')
+PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
+PORT = os.environ.get('PG_PORT', 5432)
 
 pacer_copypasta = [  # Demo document
     'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it \
@@ -38,7 +38,7 @@ pacer_copypasta = [  # Demo document
     'The test will begin on the word start. On your mark, get ready, start.'
 ]
 
-# FIXME: This is to get around the fact that we can't mock the SentenceTransformer class without importing it - Kai
+# XXX: This is to get around the fact that we can't mock the SentenceTransformer class without importing it - Kai
 class SentenceTransformer(object):
     def __init__(self, model_name_or_path):
         self.encode = MagicMock()
