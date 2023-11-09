@@ -45,7 +45,7 @@ pacer_copypasta = [  # Demo document
 
 @pytest.mark.asyncio
 async def test_PGv_embed_pacer():
-    e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
+    e_model = MagicMock(spec=SentenceTransformer)
     TABLE_NAME = 'embedding_test'
     vDB = await docDB.from_conn_params(
         embedding_model=e_model,
@@ -84,86 +84,86 @@ async def test_PGv_embed_pacer():
     await vDB.drop_table()
 
 # FIXME: Fix test_PGv_embed_poem
-# if True:
-#     pytest.skip("Skipping test_PGv_embed_poem tests for now", allow_module_level=True)
-# from unittest.mock import MagicMock, patch
+if True:
+    pytest.skip("Skipping test_PGv_embed_poem tests for now", allow_module_level=True)
+from unittest.mock import MagicMock, patch
 
-# # Ugh. even this import is slow as hell, but needed if we want to spec the mocker
-# # time python -c "from sentence_transformers import SentenceTransformer"
-# # 2.78s user 4.17s system 47% cpu 14.757 total [on MacBook Pro 2020]
-# from sentence_transformers import SentenceTransformer
+# Ugh. even this import is slow as hell, but needed if we want to spec the mocker
+# time python -c "from sentence_transformers import SentenceTransformer"
+# 2.78s user 4.17s system 47% cpu 14.757 total [on MacBook Pro 2020]
+from sentence_transformers import SentenceTransformer
 
-# from ogbujipt import embedding_helper
-# from ogbujipt.text_helper import text_splitter
+from ogbujipt import embedding_helper
+from ogbujipt.text_helper import text_splitter
 
 
-# # @pytest.fixture
-# # def SENTENCE_TRANSFORMER():
-# #     e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
-# #     return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
+# @pytest.fixture
+# def SENTENCE_TRANSFORMER():
+#     e_model = SentenceTransformer('all-MiniLM-L6-v2')  # Load the embedding model
+#     return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
 
-# pacer_copypasta = [  # Demo data
-#     "Structure of visceral layer of Bowman's capsule is a glomerular capsule structure and a structure of epithelium."
-# ]
+pacer_copypasta = [  # Demo data
+    "Structure of visceral layer of Bowman's capsule is a glomerular capsule structure and a structure of epithelium."
+]
 
-# # FIXME: This stanza to go away once mocking is complete
-# import os
-# HOST = os.environ.get('PGHOST', 'localhost')
-# DB_NAME = 'PGv'
-# PORT = 5432
-# USER = 'oori'
-# PASSWORD = 'example'
+# FIXME: This stanza to go away once mocking is complete
+import os
+HOST = os.environ.get('PGHOST', 'localhost')
+DB_NAME = 'PGv'
+PORT = 5432
+USER = 'oori'
+PASSWORD = 'example'
 
-# # @patch('ogbujipt.embedding_helper.PGvectorConnection')
-# # @patch('sentence_transformers.SentenceTransformer')
-# # def test_PGv_embed_poem(mock_sentence_transformer, mock_pgvector_connection, COME_THUNDER_POEM, CORRECT_STRING):
-# @pytest.mark.asyncio
-# async def test_PGv_embed_poem(mocker):
-#     e_model = MagicMock(spec=SentenceTransformer)
-#     TABLE_NAME = 'embedding_test'
-#     vDB = await PGvectorHelper.from_conn_params(
-#         embedding_model=e_model,
-#         table_name=TABLE_NAME,
-#         db_name=DB_NAME,
-#         host=HOST,
-#         port=int(PORT),
-#         user=USER,
-#         password=PASSWORD)
+# @patch('ogbujipt.embedding_helper.PGvectorConnection')
+# @patch('sentence_transformers.SentenceTransformer')
+# def test_PGv_embed_poem(mock_sentence_transformer, mock_pgvector_connection, COME_THUNDER_POEM, CORRECT_STRING):
+@pytest.mark.asyncio
+async def test_PGv_embed_poem(mocker):
+    e_model = MagicMock(spec=SentenceTransformer)
+    TABLE_NAME = 'embedding_test'
+    vDB = await PGvectorHelper.from_conn_params(
+        embedding_model=e_model,
+        table_name=TABLE_NAME,
+        db_name=DB_NAME,
+        host=HOST,
+        port=int(PORT),
+        user=USER,
+        password=PASSWORD)
 
-#     # mock_connect = MagicMock()
-#     # mock_cursor = MagicMock()
-#     # mock_cursor.fetchall.return_value = expected
-#     # mock_connect.cursor.return_value = mock_cursor
+    # mock_connect = MagicMock()
+    # mock_cursor = MagicMock()
+    # mock_cursor.fetchall.return_value = expected
+    # mock_connect.cursor.return_value = mock_cursor
 
-#     # result = d.read(mock_connect)
-#     # self.assertEqual(result, expected)
+    # result = d.read(mock_connect)
+    # self.assertEqual(result, expected)
 
-#     # TODO: Add more shape to the mocking, to increase the tests's usefulness
-#     embedding_helper.models = MagicMock()
-#     mock_vparam = object()
-#     embedding_helper.models.VectorParams.side_effect = [mock_vparam]
+    # TODO: Add more shape to the mocking, to increase the tests's usefulness
+    embedding_helper.models = MagicMock()
+    mock_vparam = object()
+    embedding_helper.models.VectorParams.side_effect = [mock_vparam]
 
-#     conn = MagicMock(spec=mock_pgvector_connection).create.return_value
+    conn = MagicMock(spec=mock_pgvector_connection).create.return_value
 
-#     # client.count.side_effect = ['count=0']
-#     conn.db.count.side_effect = lambda collection_name: 'count=0'
-#     conn.update(chunks)
-#     conn.db.recreate_collection.assert_called_once_with(
-#         collection_name='test_collection',
-#         vectors_config=mock_vparam
-#         )
+    # client.count.side_effect = ['count=0']
+    conn.db.count.side_effect = lambda collection_name: 'count=0'
+    conn.update(chunks)
+    conn.db.recreate_collection.assert_called_once_with(
+        collection_name='test_collection',
+        vectors_config=mock_vparam
+        )
 
-#     embedding_model.encode.assert_called_with(CORRECT_STRING)
+    embedding_model.encode.assert_called_with(CORRECT_STRING)
 
-#     # Test update/insert into the DB
-#     mock_pstruct = object()
-#     embedding_helper.models.PointStruct.side_effect = lambda id=None, vector=None, payload=None: mock_pstruct
+    # Test update/insert into the DB
+    mock_pstruct = object()
+    embedding_helper.models.PointStruct.side_effect = lambda id=None, vector=None, payload=None: mock_pstruct
 
-#     conn.db.count.reset_mock()
-#     conn.update(chunks)
+    conn.db.count.reset_mock()
+    conn.update(chunks)
 
-#     # XXX: Add test with metadata
-#     conn.db.upsert.assert_called_with(
-#         collection_name=collection_name,
-#         points=[mock_pstruct]
-#         )
+    # XXX: Add test with metadata
+    conn.db.upsert.assert_called_with(
+        collection_name=collection_name,
+        points=[mock_pstruct]
+        )

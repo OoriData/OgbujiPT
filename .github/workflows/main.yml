@@ -28,8 +28,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ruff pytest pytest-mock pytest-asyncio pytest-httpx
-
-          pip install pgvector asyncpg pytest-asyncio sentence_transformers # this definitely shouldn't be here, but i wanna get the tests running -Osi, Kai
+          pip install pgvector asyncpg pytest-asyncio # Added by Kai, Osi
           
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install OgbujiPT itself, as checked out
