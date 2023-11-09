@@ -12,12 +12,12 @@ Uses fixtures from ../conftest.py
 # Remove, or narow down, once we no longer need to skip
 # ruff: noqa
 
+import sys
 import pytest
 from unittest.mock import MagicMock, patch
 
 import os
 from ogbujipt.embedding.pgvector import docDB
-from sentence_transformers       import SentenceTransformer
 import numpy as np
 
 # FIXME: This stanza to go away once mocking is complete - Kai
@@ -28,7 +28,8 @@ PASSWORD = os.environ.get('PGPASSWORD', 'mock_password')
 PORT = os.environ.get('PGPORT', 5432)
 
 pacer_copypasta = [  # Demo document
-    'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it continues.', 
+    'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it \
+        continues.', 
     'The 20 meter pacer test will begin in 30 seconds. Line up at the start.', 
     'The running speed starts slowly, but gets faster each minute after you hear this signal.', 
     '[beep] A single lap should be completed each time you hear this sound.', 
@@ -37,10 +38,14 @@ pacer_copypasta = [  # Demo document
     'The test will begin on the word start. On your mark, get ready, start.'
 ]
 
-@patch('sentence_transformers.SentenceTransformer', spec=SentenceTransformer)
+# FIXME: This is to get around the fact that we can't mock the SentenceTransformer class without importing it - Kai
+class SentenceTransformer(object):
+    def __init__(self, model_name_or_path):
+        self.encode = MagicMock()
+
 @pytest.mark.asyncio
-async def test_PGv_embed_pacer(mock_SentenceTransformer):
-    dummy_model = mock_SentenceTransformer()
+async def test_PGv_embed_pacer():
+    dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
     print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
@@ -54,11 +59,12 @@ async def test_PGv_embed_pacer(mock_SentenceTransformer):
         password=PASSWORD)
     
     assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
-    # assert vDB is not None, pytest.skip("Postgres instance/docker not available for testing PG code", allow_module_level=True)
     
     # Create tables
     await vDB.drop_table()
+    assert await vDB.table_exists() is False, Exception("Table exists before creation")
     await vDB.create_table()
+    assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
 
     # Insert data
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
@@ -68,6 +74,8 @@ async def test_PGv_embed_pacer(mock_SentenceTransformer):
             page_numbers=[1, 2, 3],                  # Page number metadata
             tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
         )
+
+    assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'

@@ -28,6 +28,13 @@ except ImportError:
 
 CREATE_VECTOR_EXTENSION = 'CREATE EXTENSION IF NOT EXISTS vector;'
 
+CHECK_TABLE_EXISTS = '''-- Check if a table exists
+SELECT EXISTS (
+    SELECT FROM pg_tables
+    WHERE tablename = $1
+);
+'''
+
 # Generic SQL template for creating a table to hold embedded documents
 CREATE_DOC_TABLE = '''-- Create a table to hold embedded documents
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -189,7 +196,7 @@ class PGvectorHelper:
         Create a PGvector helper from connection parameters
 
         For details on accepted parameters, See the `pgvector_connection` docstring
-        (e.g. run `help(pgvector_connection)`)
+            (e.g. run `help(pgvector_connection)`)
         '''
         try:
             conn = await asyncpg.connect(
@@ -211,7 +218,7 @@ class PGvectorHelper:
         Create a PGvector helper from connection parameters
 
         For details on accepted parameters, See the `pgvector_connection` docstring
-        (e.g. run `help(pgvector_connection)`)
+            (e.g. run `help(pgvector_connection)`)
         '''
         # Ensure the vector extension is installed
         await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
@@ -237,6 +244,20 @@ class PGvectorHelper:
         # Count the number of documents in the table
         count = await self.conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
         return count
+    
+    async def table_exists(self) -> bool:
+        '''
+        Check if the table exists
+
+        Returns:
+            bool: True if the table exists, False otherwise
+        '''
+        # Check if the table exists
+        table_exists = await self.conn.fetchval(
+            CHECK_TABLE_EXISTS,
+            self.table_name
+        )
+        return table_exists
 
     async def drop_table(self) -> None:
         '''
@@ -331,14 +352,15 @@ class docDB(PGvectorHelper):
 
             query_title (str, optional): title of the document to compare against items in the table (mildly fuzzy)
 
-            query_page_numbers (list[int], optional): page number of the document that the chunk is found in to compare against items in the table
+            query_page_numbers (list[int], optional): page number of the document that the chunk is found in to compare 
+                against items in the table
 
             query_tags (list[str], optional): tags associated with the document to compare against items in the table
 
             limit (int, optional): maximum number of results to return (useful for top-k query)
         Returns:
             list[asyncpg.Record]: list of search results
-            asyncpg.Record objects are similar to dicts, but allow for attribute-style access
+                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')
@@ -434,7 +456,7 @@ class chatlogDB(PGvectorHelper):
             history_key (str): history key of the chatlog
         Returns:
             list[asyncpg.Record]: list of chatlog
-            (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
+                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
         # Get the chatlog
         chatlog_records = await self.conn.fetch(
@@ -471,7 +493,7 @@ class chatlogDB(PGvectorHelper):
             k (int, optional): maximum number of results to return (useful for top-k query)
         Returns:
             list[asyncpg.Record]: list of search results
-            asyncpg.Record objects are similar to dicts, but allow for attribute-style access
+                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')
