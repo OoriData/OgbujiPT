@@ -19,7 +19,6 @@ from pathlib import Path
 
 import click
 
-from ogbujipt import config
 from ogbujipt import word_loom
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.async_helper import console_progress_indicator
