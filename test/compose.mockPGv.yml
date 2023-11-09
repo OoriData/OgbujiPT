@@ -5,8 +5,8 @@ services:
   pgvector:
     image: ankane/pgvector
     environment:
-      POSTGRES_USER: oori
-      POSTGRES_PASSWORD: example
-      POSTGRES_DB: PGv
+      POSTGRES_USER: mock_user
+      POSTGRES_PASSWORD: mock_password
+      POSTGRES_DB: mock_db
     ports:
       - 5432:5432
