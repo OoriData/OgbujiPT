@@ -1,6 +1,7 @@
-# OgbujiPT
+![ogbujipt github header](https://github.com/OoriData/OgbujiPT/assets/43561307/1a88b411-1ce2-43df-83f0-c9c39d6679bc)
 
-Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as ChatGPT.
+
+Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
 
 Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
@@ -11,7 +12,7 @@ Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-pyt
 We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
 
 <table><tr>
-  <td><a href="https://oori.dev/"><img src="https://oori.dev/assets/images/image02.png" width="64" /></a></td>
+  <td><a href="https://oori.dev/"><img src="https://www.oori.dev/assets/branding/oori_Logo_FullColor.png" width="64" /></a></td>
   <td>OgbujiPT is primarily developed by the crew at <a href="https://oori.dev/">Oori Data</a>. We offer software engineering services around LLM applications.</td>
 </tr></table>
 
@@ -33,29 +34,16 @@ pip install ogbujipt
 
 ### Just show me some code, dammit!
 
-from ogbujipt.llm_wrapper import ctrans_wrapper
-model = AutoModelForCausalLM.from_pretrained(
-        '/Users/uche/.local/share/models/TheBloke_LlongOrca-13B-16K-GGUF',
-        model_file='llongorca-13b-16k.Q5_K_M.gguf',
-        model_type="llama",
-        gpu_layers=50)
-oapi = ctrans_wrapper(model=model)
-print(oapi('The quick brown fox'))
-
 ```py
-from ogbujipt.llm_wrapper import openai_api
-from ogbujipt import oapi_first_choice_text
-from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_api(api_base='http://localhost:8000')  # Update for your LLM API host
-# Change the delimiters to a prompting style that suits the LLM you're using
-prompt = format('Write a short birthday greeting for my star employee',
-                delimiters=ALPACA_INSTRUCT_DELIMITERS)
+llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
+prompt = 'Write a short birthday greeting for my star employee'
 
 # You can set model params as needed
-response = llm_api(prompt=prompt, temperature=0.1, max_tokens=100)
+resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=100)
 # Extract just the response text, but the entire structure is available
-print(oapi_first_choice_text(response))
+print(llm_api.first_choice_message(resp))
 ```
 
 The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:

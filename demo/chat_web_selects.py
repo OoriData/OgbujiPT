@@ -35,9 +35,7 @@ import click
 import httpx
 import html2text
 
-from ogbujipt import config, oapi_chat_first_choice_message
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
 
@@ -117,17 +115,16 @@ async def async_main(oapi, sites):
             gathered_chunks = '\n\n'.join(
                 doc.payload['_text'] for doc in docs if doc.payload)
 
-            # Build prompt the doc chunks as context
-            # FIXME: Move this to Word Loom
-            prompt = format(
-                f'Given the context, {user_question}\n\n'
-                f'Context: """\n{gathered_chunks}\n"""\n',
-                preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
-                'questions directly and as briefly as possible. '
-                'If you cannot answer with the given context, just say so.\n',
-                delimiters=ALPACA_INSTRUCT_DELIMITERS)
+            # Build system message with the doc chunks as provided context
+            # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
+            sys_prompt = '''\
+You are a helpful assistant, who answers questions directly and as briefly as possible.
+Consider the following context and answer the user\'s question.
+If you cannot answer with the given context, just say so.\n\n'''
+            sys_prompt += gathered_chunks + '\n\n'
+            messages = prompt_to_chat(user_question, system=sys_prompt)
 
-            print(prompt)
+            print('-'*80, '\n', messages, '\n', '-'*80)
 
             # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
@@ -139,7 +136,7 @@ async def async_main(oapi, sites):
                 )
 
             indicator_task = asyncio.create_task(indicate_progress())
-            llm_task = oapi.wrap_for_multiproc(prompt_to_chat(prompt), **model_params)
+            llm_task = oapi.wrap_for_multiproc(messages, **model_params)
             tasks = [indicator_task, llm_task]
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -152,7 +149,7 @@ async def async_main(oapi, sites):
 
             # response is a json-like object; 
             # just get back the text of the response
-            response_text = oapi_chat_first_choice_message(retval)
+            response_text = oapi.first_choice_message(retval)
             print('\nResponse text from LLM:\n\n', response_text)
 
 
@@ -168,11 +165,9 @@ async def async_main(oapi, sites):
 def main(apibase, openai_key, model, sites):
     # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai_key:
-        model = model or 'gpt-3.5-turbo'
-        oapi = openai_chat_api(api_key=openai_key, model=model)
+        oapi = openai_chat_api(api_key=openai_key, model=(model or 'gpt-3.5-turbo'))
     else:
-        model = model or config.HOST_DEFAULT
-        oapi = openai_chat_api(model=model, api_base=apibase)
+        oapi = openai_chat_api(model=model, base_url=apibase)
 
     asyncio.run(async_main(oapi, sites))
 

@@ -25,15 +25,16 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "openai",
+  "openai>=1.1.0",
   "python-dotenv",
-  "tomli"
+  "tomli",
+  "amara3.iri"
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/ogbujipt#readme"
-Issues = "https://github.com/unknown/ogbujipt/issues"
-Source = "https://github.com/unknown/ogbujipt"
+Documentation = "https://github.com/OoriData/OgbujiPT#readme"
+Issues = "https://github.com/OoriData/OgbujiPT/issues"
+Source = "https://github.com/OoriData/OgbujiPT"
 
 [tool.hatch.version]
 path = "pylib/__about__.py"
@@ -59,7 +60,9 @@ only-include = ["pylib", "resources"]
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "pytest-mock"
+  "pytest-mock",
+  "pytest-httpx",
+  "pytest-asyncio",
 ]
 dev-mode = false
 [tool.hatch.envs.default.scripts]
