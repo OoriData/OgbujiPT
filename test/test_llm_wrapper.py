@@ -6,6 +6,9 @@ def test_openai_llm_wrapper(httpx_mock):
     httpx_mock.add_response(
         url='http://127.0.0.1:8000/v1/models',
         json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
+    httpx_mock.add_response(
+        url='https://api.openai.com/v1/models',
+        json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
     host = 'http://127.0.0.1'
     api_key = 'jsbdflkajsdhfklajshdfkljalk'
     port = '8000'
