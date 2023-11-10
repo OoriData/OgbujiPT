@@ -8,9 +8,9 @@ Needs access to an OpenAI-like service. Default assumption is that you
 have a self-hosted framework such as llama-cpp-python or text-generation-webui
 running. Say it's at my-llm-host:8000, you can do:
 
-python demo/alpaca_simple_fix_xml.py --apibase=http://my-llm-host --port=8000
+python demo/simple_fix_xml.py --apibase=http://localhost:8000
 
-You can also use OpenAI by using the --openai param
+You can alternatively use OpenAI by using the --openai param
 
 Uses a simple completion model, so it probably shouldn't be used with the actual OpenAI service,
 now that they've deprecated simple completion in favor of chat completion.
@@ -18,7 +18,6 @@ now that they've deprecated simple completion in favor of chat completion.
 
 import click
 
-from ogbujipt import config, oapi_first_choice_text
 from ogbujipt.llm_wrapper import openai_api
 from ogbujipt.prompting.basic import format
 from ogbujipt.prompting.model_style import ALPACA_INSTRUCT_INPUT_DELIMITERS
@@ -37,10 +36,8 @@ def main(apibase, llmtemp, openai, model):
     # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
     if openai:
         assert not apibase, 'Don\'t use --apibase with --openai'
-        model = model or 'gpt-3.5-turbo'
-        oapi = openai_api(model=model)
+        oapi = openai_api(model=(model or 'gpt-3.5-turbo'))
     else:
-        model = model or config.HOST_DEFAULT
         oapi = openai_api(model=model, api_base=apibase)
 
     BAD_XML_CODE = '''\
@@ -74,9 +71,8 @@ def main(apibase, llmtemp, openai, model):
     # Response is a json-like object; extract the text
     print('\nFull response data from LLM:\n', response)
 
-    # Response is a json-like object; 
-    # just get back the text of the response
-    response_text = oapi_first_choice_text(response)
+    # Response is a json-like object; just get back the text of the response
+    response_text = oapi.first_choice_text(response)
     print('\nResponse text from LLM:\n\n', response_text)
 
 

@@ -16,7 +16,7 @@ Works even if the LLM framework suport asyncio, thanks to ogbujipt.async_helper
 
 # Advanced
 
-## alpaca_simple_qa_discord.py
+## qa_discord.py
 
 <img width="555" alt="image" src="https://github.com/uogbuji/OgbujiPT/assets/279982/82121324-a930-4b2c-ab26-d8a3c6a50f54">
 
@@ -67,7 +67,7 @@ dropped in a directory
 Note: manual used for above demo downloaded from Hasbro via [Board Game Capital](https://www.boardgamecapital.com/monopoly-rules.htm).
 
 ## PGvector_demo.py
-A demo of the PGvector vector store functionality of OgbujiPT, which takes an initial sample collection of strings and performs a few example actions with them:
+Demo of the PGvector vector store functionality of OgbujiPT, which takes an initial sample collection of strings and performs a few example actions with them:
 
 1. set up a table in the PGvector store
 2. vectorizes and inserts the strings in the PGvector store
