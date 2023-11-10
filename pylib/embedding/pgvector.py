@@ -25,7 +25,6 @@ except ImportError:
 # ======================================================================================================================
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
 # Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
-
 CREATE_VECTOR_EXTENSION = 'CREATE EXTENSION IF NOT EXISTS vector;'
 
 CHECK_TABLE_EXISTS = '''-- Check if a table exists
@@ -58,13 +57,13 @@ INSERT INTO {table_name} (
 '''
 
 QUERY_DOC_TABLE = '''-- Semantic search a document
-SELECT 
+SELECT
     (embedding <=> '{query_embedding}') AS cosine_similarity,
     title,
     content,
     page_numbers,
     tags
-FROM 
+FROM
     {table_name}
 {where_clauses}\
 ORDER BY
@@ -115,13 +114,13 @@ ORDER BY
 '''
 
 SEMANTIC_QUERY_CHATLOG_TABLE = '''-- Semantic search a chatlog
-SELECT 
+SELECT
     (embedding <=> '{query_embedding}') AS cosine_similarity,
     id,
     role,
     content,
     metadata_JSON
-FROM 
+FROM
     {table_name}
 WHERE
     history_key = '{history_key}'
