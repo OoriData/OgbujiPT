@@ -6,17 +6,55 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
-## [Unreleased]
+## [0.6.0] - 20231109
 
 ### Added
 
-- GGUF support in download-model.py
-- Switch to a class-based wrapper for LLM endpoints/handlers - #39
-- Add support for in-memory LLM loading via ctransformers
-- Added postgreSGL vector support to embedding_helper.py as new Class `PGvectorConnection`
+- Support for efficient multi-queries (`executemany`): `insert_docs_table` vs `insert_doc_table`
+- Chatlog-specific PGVector helper (`PGvectorHelper` specialized into `docDB` & `chatlogDB`)
+- PG Vector DB instance launch fo ruse in test suite & GitHub actions
+
+### Changed
+
+- Model introspection moved to llm_wrapper classes: `hosted_model` & `available_models`
+- Move OAI API response structure handling helpers to be static methods of the llm_wrapper classes
+- Clarified demo names
+- Support upstream python-openai > 1.0
+
+### Fixed
+
+- README sample code
+- Demos
+- Test cases
+- Use of string formatting intead of SQL query parameters
+- Registration of vector type
+- pgvector test case
+
+## [0.5.1] - 20231010
+
+### Fixed
+
+- `embedding_helper.py` logic
+
+## [0.5.0] - 20230919
+
+### Added
+
+- Support for GGUF in download-model.py
+- Support for in-memory LLM loading via ctransformers
+- PostgreSGL vector support to embedding_helper.py, new class `PGvectorConnection`
   - PGvectorConnection is a wrapper around [asyncpg](https://github.com/MagicStack/asyncpg), and is primarily just capable of excecuting raw SQL queries right now.
   - There are a few common SQL queries included in the class for using PGv as a vector database, but they are not yet fully tested.
   - Added a demonstration notebook which uses `PGvectorConnection` to do similarity search
+- `oapi_first_choice_content` function
+
+### Changed
+
+- Switch to a class-based wrapper for LLM endpoints/handlers - #39
+
+### Fixed
+
+- Model style tweaks
 
 ## [0.4.0] - 20230728
 
