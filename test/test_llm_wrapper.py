@@ -6,7 +6,8 @@ import respx
 
 from httpx import Response
 
-del os.environ['OPENAI_API_KEY']
+if 'OPENAI_API_KEY' in os.environ:
+    del os.environ['OPENAI_API_KEY']
 
 @respx.mock
 def test_openai_llm_wrapper():

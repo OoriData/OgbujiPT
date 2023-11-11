@@ -13,6 +13,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - Support for efficient multi-queries (`executemany`): `insert_docs_table` vs `insert_doc_table`
 - Chatlog-specific PGVector helper (`PGvectorHelper` specialized into `docDB` & `chatlogDB`)
 - PG Vector DB instance launch fo ruse in test suite & GitHub actions
+- Updated model styles and prompt formatting, particularly for improved closed-context patterns & per-context metadata (e.g. for Airboros)
 
 ### Changed
 
