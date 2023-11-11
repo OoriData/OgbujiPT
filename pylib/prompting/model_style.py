@@ -43,6 +43,11 @@ VICUNA_DELIMITERS = {
     pdelim.POSTQUERY: '\n### ASSISTANT: ',
 }
 
+VICUNA_NOHASH_DELIMITERS = {
+    pdelim.PREQUERY: 'USER: ',
+    pdelim.POSTQUERY: '\n\nASSISTANT:\n',
+}
+
 ALPACA_DELIMITERS = {
     pdelim.POSTQUERY: '\n\n### Response:\n',
 }
@@ -69,12 +74,38 @@ ORCA_DELIMITERS = {
     pdelim.META_ORDERING: ordering.QUERY_CONTEXT
 }
 
+LLAMA_INSTRUCT = {
+    pdelim.PRE_PREAMBLE: '### System:\n',
+    pdelim.PREQUERY: '\n\n### User:\n',
+    pdelim.POSTQUERY: '\n\n### Assistant:\n',
+}
+
+AIROBOROS_SUMMARIZATION_DELIMITERS = {
+    pdelim.PRE_ALL_CONTEXT: 'User:\nBEGININPUT\nBEGINCONTEXT\n',
+    pdelim.PREQUERY: '\nBEGININSTRUCTION\n',
+    pdelim.POSTQUERY: '\nENDINSTRUCTION\nASSISTANT: ',
+    pdelim.POST_ALL_CONTEXT: '\nENDCONTEXT\nENDINPUT\n'
+}
+
 # Closed-context prompting
 AIROBOROS_OBEDIENT_DELIMITERS = {
-    pdelim.PRE_ALL_CONTEXT: 'BEGININPUT',
-    pdelim.POST_ALL_CONTEXT: '\nENDINPUT',
+    pdelim.PRECONTEXT: 'BEGININPUT\n',
+    pdelim.POSTCONTEXT: '\nENDINPUT',
+    pdelim.PRE_CONTEXT_METADATA: 'BEGINCONTEXT',
+    pdelim.POST_CONTEXT_METADATA: 'ENDCONTEXT',
     pdelim.PREQUERY: '\nBEGININSTRUCTION\n',
     pdelim.POSTQUERY: '\nENDINSTRUCTION\n'
+}
+
+MISTRAL_INSTRUCTION_DELIMITERS = {
+    pdelim.PRE_ALL_CONTEXT: '<s>[INST]',
+    pdelim.POST_ALL_CONTEXT: '\n[/INST]',
+}
+
+CHATML_DELIMITERS = {
+    pdelim.PRE_PREAMBLE: '<|im_start|>system\n',
+    pdelim.PREQUERY: '<|im_end|>\n<|im_start|>user\n',
+    pdelim.POSTQUERY: '<|im_end|>\n<|im_start|>assistant',
 }
 
 # If not using the closed-context/obedient prompting, it's just Vicuña style
