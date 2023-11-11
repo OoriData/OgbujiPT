@@ -1,14 +1,24 @@
+import os
 from ogbujipt import config
 from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat # , DUMMY_MODEL
 
+import respx
 
-def test_openai_llm_wrapper(httpx_mock):
-    httpx_mock.add_response(
-        url='http://127.0.0.1:8000/v1/models',
-        json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
-    httpx_mock.add_response(
-        url='https://api.openai.com/v1/models',
-        json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
+from httpx import Response
+
+del os.environ['OPENAI_API_KEY']
+
+@respx.mock
+def test_openai_llm_wrapper():
+    # httpx_mock.add_response(
+    #     url='http://127.0.0.1:8000/v1/models',
+    #     json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
+    # httpx_mock.add_response(
+    #     url='https://api.openai.com/v1/models',
+    #     json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
+
+    route1 = respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
+
     host = 'http://127.0.0.1'
     api_key = 'jsbdflkajsdhfklajshdfkljalk'
     port = '8000'
@@ -18,6 +28,7 @@ def test_openai_llm_wrapper(httpx_mock):
     base_url = f'{host}:{port}/{rev}'
 
     test_model = openai_chat_api(base_url=base_url, api_key=api_key, debug=debug)
+    # assert route1.called
 
     assert test_model.api_key == api_key
     assert test_model.parameters.debug == debug
