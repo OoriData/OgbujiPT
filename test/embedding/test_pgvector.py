@@ -9,12 +9,9 @@ Uses fixtures from ../conftest.py
 
 '''
 
-# Remove, or narow down, once we no longer need to skip
-# ruff: noqa
-
-import sys
 import pytest
-from unittest.mock import MagicMock, patch
+# from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import os
 from ogbujipt.embedding.pgvector import DocDB
@@ -49,14 +46,17 @@ async def test_PGv_embed_pacer():
     dummy_model.encode.return_value = np.array([1, 2, 3])
     print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
-    vDB = await DocDB.from_conn_params(
-        embedding_model=dummy_model,
-        table_name=TABLE_NAME,
-        db_name=DB_NAME,
-        host=HOST,
-        port=int(PORT),
-        user=USER,
-        password=PASSWORD)
+    try:
+        vDB = await DocDB.from_conn_params(
+            embedding_model=dummy_model,
+            table_name=TABLE_NAME,
+            db_name=DB_NAME,
+            host=HOST,
+            port=int(PORT),
+            user=USER,
+            password=PASSWORD)
+    except ConnectionRefusedError:
+        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
     
     assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
     

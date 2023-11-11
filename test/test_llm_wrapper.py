@@ -17,7 +17,9 @@ def test_openai_llm_wrapper():
     #     url='https://api.openai.com/v1/models',
     #     json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
 
-    route1 = respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
+    respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
+    # FIXME: Figure out the right patterns for checking the HTTP requests
+    # route1 = respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
 
     host = 'http://127.0.0.1'
     api_key = 'jsbdflkajsdhfklajshdfkljalk'

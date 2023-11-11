@@ -190,7 +190,7 @@ class PGVectorHelper:
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, user, 
                                password, db_name, host, port, **conn_params
-    ) -> 'PGvectorHelper':
+    ) -> 'PGVectorHelper':
         '''
         Create a PGvector helper from connection parameters
 
@@ -212,7 +212,7 @@ class PGVectorHelper:
         return await cls.from_connection(embedding_model, table_name, conn)
 
     @classmethod
-    async def from_connection(cls, embedding_model, table_name, conn) -> 'PGvectorHelper':
+    async def from_connection(cls, embedding_model, table_name, conn) -> 'PGVectorHelper':
         '''
         Create a PGvector helper from connection parameters
 
