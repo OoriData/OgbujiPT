@@ -17,7 +17,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 import os
-from ogbujipt.embedding.pgvector import docDB
+from ogbujipt.embedding.pgvector import DocDB
 import numpy as np
 
 # XXX: This stanza to go away once mocking is complete - Kai
@@ -49,7 +49,7 @@ async def test_PGv_embed_pacer():
     dummy_model.encode.return_value = np.array([1, 2, 3])
     print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
-    vDB = await docDB.from_conn_params(
+    vDB = await DocDB.from_conn_params(
         embedding_model=dummy_model,
         table_name=TABLE_NAME,
         db_name=DB_NAME,

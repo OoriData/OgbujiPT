@@ -151,7 +151,7 @@ def int_to_role(role_int):
     return INT_ROLES.get(role_int, 'unknown')
 
 
-class PGvectorHelper:
+class PGVectorHelper:
     def __init__(self, embedding_model, table_name: str, apg_conn):
         '''
         Create a PGvector helper from an asyncpg connection
@@ -268,7 +268,7 @@ class PGvectorHelper:
         await self.conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
 
 
-class docDB(PGvectorHelper):
+class DocDB(PGVectorHelper):
     ''' Specialize PGvectorHelper for documents '''
     async def create_table(self) -> None:
         '''
@@ -394,7 +394,7 @@ class docDB(PGvectorHelper):
         return search_results
     
 
-class chatlogDB(PGvectorHelper):
+class MessageDB(PGVectorHelper):
     ''' Specialize PGvectorHelper for chatlogs '''
     async def create_table(self):
         '''
@@ -408,8 +408,9 @@ class chatlogDB(PGvectorHelper):
         await self.conn.execute(
             CREATE_CHATLOG_TABLE.format(
                 table_name=self.table_name,
-                embed_dimension=self._embed_dimension)
+                embed_dimension=self._embed_dimension
             )
+        )
 
     async def insert(
             self,
