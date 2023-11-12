@@ -101,13 +101,14 @@ experiments, adapt to and adopt other models.
 
 # Contributions
 
-For reasons I'm still investigating (some of the more recent developments and issues in Python packaging are [quite esoteric](https://chriswarrick.com/blog/2023/01/15/how-to-improve-python-packaging/)), some of the hatch tools such as `hatch run` are problematic. I suspect they might not like the way I rename directories during build, but I won't be compromising on that. So, for example, to run tests, just stick to:
+If you want to run the test suite, a quick recipe is as follows:
 
 ```shell
+pip install ruff pytest pytest-mock pytest-asyncio respx pgvector asyncpg pytest-asyncio
 pytest test
 ```
 
-More [notes for contributors in the wiki](https://github.com/uogbuji/OgbujiPT/wiki/Notes-for-contributors).
+If you want to make contributions to the project, please [read these notes](https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors).
 
 # License
 
