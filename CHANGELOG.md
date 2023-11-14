@@ -6,7 +6,17 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
-## [0.6.0] - 20231109
+## [0.6.1] - 20231114
+
+### Changed
+
+- Use PG timestamp rather than serial for chat logs
+
+### Removed
+
+- test/test_text_w_apostrophe.ipynb (incorporated into test/embedding/test_pgvector.py)
+
+## [0.6.0] - 20231113
 
 ### Added
 
