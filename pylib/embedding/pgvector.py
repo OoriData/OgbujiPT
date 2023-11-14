@@ -433,6 +433,8 @@ class MessageDB(PGVectorHelper):
 
             content (str): text content of the message
 
+            timestamp (datetime, optional): timestamp of the message, defaults to current time
+
             metadata (dict[str, str], optional): additional metadata of the message
         '''
         if not timestamp:
