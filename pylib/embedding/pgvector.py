@@ -9,8 +9,9 @@ Vector databases embeddings using PGVector
 # import warnings
 # import itertools
 import json
-from typing import Sequence
-from uuid   import UUID
+from typing   import Sequence
+from uuid     import UUID
+from datetime import datetime
 
 # Handle key imports
 try:
@@ -80,7 +81,7 @@ TAGS_WHERE_CLAUSE = 'tags && {query_tags}  -- Overlap operator\n'
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
 CREATE TABLE IF NOT EXISTS {table_name} (
-    id SERIAL PRIMARY KEY,                -- id of the message
+    ts TIMESTAMP PRIMARY KEY,             -- timestamp of the message
     history_key UUID,                     -- history key (unique identifier) of the chatlog this message belongs to
     role INT,                             -- role of the message
     content TEXT NOT NULL,                -- text content of the message
@@ -91,17 +92,18 @@ CREATE TABLE IF NOT EXISTS {table_name} (
 
 INSERT_CHATLOG = '''-- Insert a message into a chatlog
 INSERT INTO {table_name} (
+    ts,
     history_key,
     role,
     content,
     embedding,
     metadata_JSON
-) VALUES ($1, $2, $3, $4, $5);
+) VALUES ($1, $2, $3, $4, $5, $6);
 '''
 
 RETURN_CHATLOG_BY_HISTORY_KEY = '''-- Get entire chatlog of a history key
 SELECT
-    id,
+    ts,
     role,
     content,
     metadata_JSON
@@ -110,13 +112,13 @@ FROM
 WHERE
     history_key = '{history_key}'
 ORDER BY
-    id;
+    ts;
 '''
 
 SEMANTIC_QUERY_CHATLOG_TABLE = '''-- Semantic search a chatlog
 SELECT
     (embedding <=> '{query_embedding}') AS cosine_similarity,
-    id,
+    ts,
     role,
     content,
     metadata_JSON
@@ -306,6 +308,7 @@ class DocDB(PGVectorHelper):
         '''
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
+
         await self.conn.execute(
             INSERT_DOCS.format(table_name=self.table_name),
             content_embedding.tolist(),
@@ -431,6 +434,8 @@ class MessageDB(PGVectorHelper):
 
             metadata (dict[str, str], optional): additional metadata of the message
         '''
+        timestamp = datetime.utcnow()
+
         role_int = role_to_int(role)  # Convert from string roles to integer roles
 
         # Get the embedding of the content as a PGvector compatible list
@@ -438,6 +443,7 @@ class MessageDB(PGVectorHelper):
 
         await self.conn.execute(
             INSERT_CHATLOG.format(table_name=self.table_name),
+            timestamp,
             history_key,
             role_int,
             content,
@@ -468,7 +474,7 @@ class MessageDB(PGVectorHelper):
 
         chatlog = [
             {
-                'id': record['id'],
+                'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
                 'metadata': record['metadata_json']
@@ -515,7 +521,7 @@ class MessageDB(PGVectorHelper):
 
         search_results = [
             {
-                'id': record['id'],
+                'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
                 'metadata': record['metadata_json'],
