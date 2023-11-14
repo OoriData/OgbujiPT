@@ -420,6 +420,7 @@ class MessageDB(PGVectorHelper):
             history_key: UUID,
             role: str,
             content: str,
+            timestamp: datetime | None = None,
             metadata: dict | None = None
     ) -> None:
         '''
@@ -434,7 +435,8 @@ class MessageDB(PGVectorHelper):
 
             metadata (dict[str, str], optional): additional metadata of the message
         '''
-        timestamp = datetime.utcnow()
+        if not timestamp:
+            timestamp = datetime.utcnow()
 
         role_int = role_to_int(role)  # Convert from string roles to integer roles
 
