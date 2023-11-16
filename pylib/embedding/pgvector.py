@@ -11,7 +11,7 @@ Vector databases embeddings using PGVector
 import json
 from typing   import Sequence
 from uuid     import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Handle key imports
 try:
@@ -81,12 +81,12 @@ TAGS_WHERE_CLAUSE = 'tags && {query_tags}  -- Overlap operator\n'
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
 CREATE TABLE IF NOT EXISTS {table_name} (
-    ts TIMESTAMP PRIMARY KEY,             -- timestamp of the message
-    history_key UUID,                     -- history key (unique identifier) of the chatlog this message belongs to
-    role INT,                             -- role of the message
-    content TEXT NOT NULL,                -- text content of the message
-    embedding VECTOR({embed_dimension}),  -- embedding vectors (array dimension)
-    metadata_JSON JSON                    -- additional metadata of the message
+    ts TIMESTAMP WITH TIME ZONE PRIMARY KEY,  -- timestamp of the message
+    history_key UUID,                         -- history key (unique identifier) of the chatlog this message belongs to
+    role INT,                                 -- role of the message
+    content TEXT NOT NULL,                    -- text content of the message
+    embedding VECTOR({embed_dimension}),      -- embedding vectors (array dimension)
+    metadata_JSON JSON                        -- additional metadata of the message
 );
 '''
 
@@ -438,7 +438,7 @@ class MessageDB(PGVectorHelper):
             metadata (dict[str, str], optional): additional metadata of the message
         '''
         if not timestamp:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         role_int = role_to_int(role)  # Convert from string roles to integer roles
 
