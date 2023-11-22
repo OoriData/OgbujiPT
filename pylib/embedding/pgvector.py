@@ -110,7 +110,7 @@ SELECT
 FROM
     {table_name}
 WHERE
-    history_key = '{history_key}'
+    history_key = $1
 ORDER BY
     ts;
 '''
@@ -125,10 +125,10 @@ SELECT
 FROM
     {table_name}
 WHERE
-    history_key = '{history_key}'
+    history_key = $1
 ORDER BY
     cosine_similarity
-LIMIT {limit};
+LIMIT $2;
 '''
 # ======================================================================================================================
 
@@ -472,8 +472,8 @@ class MessageDB(PGVectorHelper):
         chatlog_records = await self.conn.fetch(
             RETURN_CHATLOG_BY_HISTORY_KEY.format(
                 table_name=self.table_name,
-                history_key=history_key
-            )
+            ),
+            history_key
         )
 
         chatlog = [
@@ -512,15 +512,13 @@ class MessageDB(PGVectorHelper):
         query_embedding = list(self._embedding_model.encode(query_string))
 
         # Search the table
-        # FIXME: Figure out the SQL injection guard for history_key and limit. 
-        # # Not sure SQL Query params is an option here
         records = await self.conn.fetch(
             SEMANTIC_QUERY_CHATLOG_TABLE.format(
                 table_name=self.table_name,
-                query_embedding=query_embedding,
-                history_key=history_key,
-                limit=limit
-            )
+                query_embedding=query_embedding
+            ),
+            history_key,
+            limit
         )
 
         search_results = [
