@@ -76,7 +76,7 @@ TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default simila
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator\n'
 
-TAGS_WHERE_CLAUSE = 'tags && {query_tags}  -- Overlap operator\n'
+TAGS_WHERE_CLAUSE = 'tags  @> ARRAY{query_tags}  -- Overlap operator\n'
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
