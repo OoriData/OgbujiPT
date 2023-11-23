@@ -333,8 +333,8 @@ class DocDB(PGVectorHelper):
         await self.conn.executemany(
             INSERT_DOCS.format(table_name=self.table_name),
             [
-                (self._embedding_model.encode(content), content, permission, title, page_numbers, tags)
-                for content, permission, title, page_numbers, tags in content_list
+                (self._embedding_model.encode(content), content, title, page_numbers, tags)
+                for content, title, page_numbers, tags in content_list
             ]
         )
 
