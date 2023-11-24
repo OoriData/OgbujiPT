@@ -190,8 +190,16 @@ class PGVectorHelper:
         self.table_name = table_name
 
     @classmethod
-    async def from_conn_params(cls, embedding_model, table_name, user, 
-                               password, db_name, host, port, **conn_params
+    async def from_conn_params(
+            cls,
+            embedding_model,
+            table_name,
+            user, 
+            password,
+            db_name,
+            host,
+            port,
+            **conn_params
     ) -> 'PGVectorHelper':
         '''
         Create a PGvector helper from connection parameters
@@ -320,7 +328,7 @@ class DocDB(PGVectorHelper):
 
     async def insert_many(
             self,
-            content_list: Sequence[tuple[str, str | None,  str | None, list[int], list[str]]]
+            content_list: Sequence[tuple[str, str | None, list[int], list[str]]]
     ) -> None:
         '''
         Update a table with one or more embedded documents
@@ -328,13 +336,13 @@ class DocDB(PGVectorHelper):
         Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
 
         Args:
-            content_list: List of tuples, each of the form: (content, permission, title, page_numbers, tags)
+            content_list: List of tuples, each of the form: (content, title, page_numbers, tags)
         '''
         await self.conn.executemany(
             INSERT_DOCS.format(table_name=self.table_name),
             [
-                (self._embedding_model.encode(content), content, permission, title, page_numbers, tags)
-                for content, permission, title, page_numbers, tags in content_list
+                (self._embedding_model.encode(content), content, title, page_numbers, tags)
+                for content, title, page_numbers, tags in content_list
             ]
         )
 
