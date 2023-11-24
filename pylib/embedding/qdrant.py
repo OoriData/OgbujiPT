@@ -24,7 +24,7 @@ except ImportError:
 MEMORY_QDRANT_CONNECTION_PARAMS = {'location': ':memory:'}
 
 
-class qdrant_collection:
+class collection:
     def __init__(self, name, embedding_model, db=None,
                  distance_function=None, **conn_params):
         '''
@@ -48,12 +48,12 @@ class qdrant_collection:
         Example:
 
         >>> from ogbujipt.text_helper import text_splitter
-        >>> from ogbujipt.embedding_helper import qdrant_collection  # pip install qdrant_client
+        >>> from ogbujipt.embedding.qdrant import collection  # pip install qdrant_client
         >>> from sentence_transformers import SentenceTransformer  # pip install sentence_transformers
         >>> text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
         >>> text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
         >>> embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        >>> collection = qdrant_collection('my-text', embedding_model)
+        >>> collection = collection('my-text', embedding_model)
         >>> chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
         >>> collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
         >>> retval = collection.search('what does the fox say?', limit=1)
@@ -187,3 +187,12 @@ class qdrant_collection:
         # This ugly declaration just gets the count as an integer
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         return current_count
+
+
+# Already disambiguated by the module name. Anyone can use import as if that's not enough
+# Deprecating the old name
+class qdrant_collection(collection):
+    def __init__(self, name, embedding_model, db=None,
+                 distance_function=None, **conn_params):
+        warnings.warn('qdrant_collection is deprecated. Use collection instead.', DeprecationWarning)
+        super().__init__(name, embedding_model, db=db, distance_function=distance_function, **conn_params)

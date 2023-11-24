@@ -8,7 +8,7 @@ Download one or more web pages and query an LLM using them as context.
 Works especially well with airoboros self-hosted LLM.
 
 Vector store: Qdrant - https://qdrant.tech/
-    Alternatives: pgvector, Chroma, Faiss, Weaviate, etc.
+    Alternatives: pgvector & Chroma (built-in support from OgbujiPT), Faiss, Weaviate, etc.
 Text to vector (embedding) model: 
     Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
 
@@ -26,6 +26,13 @@ python demo/chat_web_selects.py --apibase http://my-llm-host:8000 "www.newworlde
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"
+
+You can tweak it with the following command line options:
+--verbose - print more information while processing (for debugging)
+--limit (max number of chunks to retrieve for use as context)
+--chunk-size (characters per chunk, while prepping to create embeddings)
+--chunk-overlap (character overlap between chunks, while prepping to create embeddings)
+--question (The user question; if None (the default), prompt the user interactively)
 '''
 # en.wikipedia.org/wiki/Igbo_people|ahiajoku.igbonet.com/2000/|en.wikivoyage.org/wiki/Igbo_phrasebook"
 import asyncio
@@ -37,7 +44,7 @@ import html2text
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.text_helper import text_splitter
-from ogbujipt.embedding_helper import qdrant_collection
+from ogbujipt.embedding.qdrant import collection
 
 
 # Avoid re-entrace complaints from huggingface/tokenizers
@@ -49,9 +56,6 @@ DOC_EMBEDDINGS_LLM = 'all-MiniLM-L12-v2'
 COLLECTION_NAME = 'chat-web-selects'
 USER_PROMPT = 'What do you want to know from the site(s)?\n'
 
-# Hard-code for demo
-EMBED_CHUNK_SIZE = 200
-EMBED_CHUNK_OVERLAP = 20
 DOTS_SPACING = 0.2  # Number of seconds between each dot printed to console
 
 
@@ -61,7 +65,7 @@ async def indicate_progress(pause=DOTS_SPACING):
         await asyncio.sleep(pause)
 
 
-async def read_site(url, collection):
+async def read_site(url, coll, chunk_size, chunk_overlap):
     # Crude check; good enough for demo
     if not url.startswith('http'): url = 'https://' + url  # noqa E701
     print('Downloading & processing', url)
@@ -72,28 +76,27 @@ async def read_site(url, collection):
     text = html2text.html2text(html)
 
     # Split text into chunks
-    chunks = text_splitter(text, chunk_size=EMBED_CHUNK_SIZE,
-                           chunk_overlap=EMBED_CHUNK_OVERLAP, separator='\n')
+    chunks = text_splitter(text, chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator='\n')
 
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL
     metas = [{'url': url}]*len(chunks)
     # Add the text to the collection
-    collection.update(texts=chunks, metas=metas)
-    print(f'{collection.count()} chunks added to collection')
+    coll.update(texts=chunks, metas=metas)
+    print(f'{coll.count()} chunks added to collection')
 
 
-async def async_main(oapi, sites):
+async def async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, question):
     # Automatic download of embedding model from HuggingFace
     # Seem to be reentrancy issues with HuggingFace; defer import
     from sentence_transformers import SentenceTransformer
     embedding_model = SentenceTransformer(DOC_EMBEDDINGS_LLM)
     # Sites fuel in-memory Qdrant vector DB instance
-    collection = qdrant_collection(COLLECTION_NAME, embedding_model)
+    coll = collection(COLLECTION_NAME, embedding_model)
 
     # Download & process sites in parallel, loading their content & metadata into a knowledgebase
     url_task_group = asyncio.gather(*[
-        asyncio.create_task(read_site(site, collection)) for site in sites.split('|')])
+        asyncio.create_task(read_site(site, coll, chunk_size, chunk_overlap)) for site in sites.split('|')])
     indicator_task = asyncio.create_task(indicate_progress())
     tasks = [indicator_task, url_task_group]
     done, _ = await asyncio.wait(
@@ -103,13 +106,16 @@ async def async_main(oapi, sites):
     done = False
     while not done:
         print()
-        user_question = input(USER_PROMPT)
+        if question:
+            user_question = question
+        else:
+            user_question = input(USER_PROMPT)
         if user_question.strip() == 'done':
             break
 
-        docs = collection.search(user_question, limit=4)
-
-        print(docs)
+        docs = coll.search(user_question, limit=limit)
+        if verbose:
+            print(docs)
         if docs:
             # Collects "chunked_doc" into "gathered_chunks"
             gathered_chunks = '\n\n'.join(
@@ -123,8 +129,8 @@ Consider the following context and answer the user\'s question.
 If you cannot answer with the given context, just say so.\n\n'''
             sys_prompt += gathered_chunks + '\n\n'
             messages = prompt_to_chat(user_question, system=sys_prompt)
-
-            print('-'*80, '\n', messages, '\n', '-'*80)
+            if verbose:
+                print('-'*80, '\n', messages, '\n', '-'*80)
 
             # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
@@ -143,9 +149,11 @@ If you cannot answer with the given context, just say so.\n\n'''
 
             # Instance of openai.openai_object.OpenAIObject, with lots of useful info
             retval = next(iter(done)).result()
-            print(type(retval))
+            if verbose:
+                print(type(retval))
             # Response is a json-like object; extract the text
-            print('\nFull response data from LLM:\n', retval)
+            if verbose:
+                print('\nFull response data from LLM:\n', retval)
 
             # response is a json-like object; 
             # just get back the text of the response
@@ -155,21 +163,29 @@ If you cannot answer with the given context, just say so.\n\n'''
 
 # Command line arguments defined in click decorators
 @click.command()
-@click.option('--apibase', default='http://127.0.0.1:8000', help='OpenAI API base URL')
+@click.option('--verbose/--no-verbose', default=False)
+@click.option('--chunk-size', type=int, default=200,
+              help='Number of characters to include per chunk')
+@click.option('--chunk-overlap', type=int, default=20,
+              help='Number of characters to overlap at the edges of chunks')
+@click.option('--limit', default=4, type=int,
+              help='Maximum number of chunks matched against the posed question to use as context for the LLM')
 @click.option('--openai-key',
               help='OpenAI API key. Leave blank to specify self-hosted model via --host & --port')
+@click.option('--apibase', default='http://127.0.0.1:8000', help='OpenAI API base URL')
 @click.option('--model', default='', type=str, 
               help='OpenAI model to use (see https://platform.openai.com/docs/models).'
               'Use only with --openai-key')
+@click.option('--question', default=None, help='The question to ask (or prompt for one)')
 @click.argument('sites')
-def main(apibase, openai_key, model, sites):
+def main(verbose, chunk_size, chunk_overlap, limit, openai_key, apibase, model, question, sites):
     # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai_key:
         oapi = openai_chat_api(api_key=openai_key, model=(model or 'gpt-3.5-turbo'))
     else:
         oapi = openai_chat_api(model=model, base_url=apibase)
 
-    asyncio.run(async_main(oapi, sites))
+    asyncio.run(async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, question))
 
 
 if __name__ == '__main__':

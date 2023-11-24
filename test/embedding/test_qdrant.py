@@ -10,7 +10,7 @@ Uses the COME_THUNDER_POEM fixture from conftest.py
 # import pytest
 
 from ogbujipt.embedding import qdrant
-from ogbujipt.embedding.qdrant import qdrant_collection
+from ogbujipt.embedding.qdrant import collection
 from ogbujipt.text_helper import text_splitter
 
 qdrant.QDRANT_AVAILABLE = True
@@ -59,7 +59,7 @@ def test_qdrant_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
     qdrant.models.VectorParams.side_effect = [mock_vparam]
     mocker.patch('ogbujipt.embedding.qdrant.QdrantClient')
 
-    coll = qdrant_collection(name=collection_name, embedding_model=embedding_model)
+    coll = collection(name=collection_name, embedding_model=embedding_model)
 
     # client.count.side_effect = ['count=0']
     coll.db.count.side_effect = lambda collection_name: 'count=0'
