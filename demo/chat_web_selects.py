@@ -8,7 +8,7 @@ Download one or more web pages and query an LLM using them as context.
 Works especially well with airoboros self-hosted LLM.
 
 Vector store: Qdrant - https://qdrant.tech/
-    Alternatives: pgvector, Chroma, Faiss, Weaviate, etc.
+    Alternatives: pgvector & Chroma (built-in support from OgbujiPT), Faiss, Weaviate, etc.
 Text to vector (embedding) model: 
     Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
 
@@ -26,6 +26,13 @@ python demo/chat_web_selects.py --apibase http://my-llm-host:8000 "www.newworlde
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"
+
+You can tweak it with the following command line options:
+--verbose - print more information while processing (for debugging)
+--limit (max number of chunks to retrieve for use as context)
+--chunk-size (characters per chunk, while prepping to create embeddings)
+--chunk-overlap (character overlap between chunks, while prepping to create embeddings)
+--question (The user question; if None (the default), prompt the user interactively)
 '''
 # en.wikipedia.org/wiki/Igbo_people|ahiajoku.igbonet.com/2000/|en.wikivoyage.org/wiki/Igbo_phrasebook"
 import asyncio
@@ -37,7 +44,7 @@ import html2text
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.text_helper import text_splitter
-from ogbujipt.embedding_helper import qdrant_collection
+from ogbujipt.embedding.qdrant import collection
 
 
 # Avoid re-entrace complaints from huggingface/tokenizers
@@ -49,9 +56,6 @@ DOC_EMBEDDINGS_LLM = 'all-MiniLM-L12-v2'
 COLLECTION_NAME = 'chat-web-selects'
 USER_PROMPT = 'What do you want to know from the site(s)?\n'
 
-# Hard-code for demo
-EMBED_CHUNK_SIZE = 200
-EMBED_CHUNK_OVERLAP = 20
 DOTS_SPACING = 0.2  # Number of seconds between each dot printed to console
 
 
@@ -61,7 +65,7 @@ async def indicate_progress(pause=DOTS_SPACING):
         await asyncio.sleep(pause)
 
 
-async def read_site(url, collection, chunk_size, chunk_overlap):
+async def read_site(url, coll, chunk_size, chunk_overlap):
     # Crude check; good enough for demo
     if not url.startswith('http'): url = 'https://' + url  # noqa E701
     print('Downloading & processing', url)
@@ -78,8 +82,8 @@ async def read_site(url, collection, chunk_size, chunk_overlap):
     # Crude—for demo. Set URL metadata for all chunks to doc URL
     metas = [{'url': url}]*len(chunks)
     # Add the text to the collection
-    collection.update(texts=chunks, metas=metas)
-    print(f'{collection.count()} chunks added to collection')
+    coll.update(texts=chunks, metas=metas)
+    print(f'{coll.count()} chunks added to collection')
 
 
 async def async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, question):
@@ -88,11 +92,11 @@ async def async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, que
     from sentence_transformers import SentenceTransformer
     embedding_model = SentenceTransformer(DOC_EMBEDDINGS_LLM)
     # Sites fuel in-memory Qdrant vector DB instance
-    collection = qdrant_collection(COLLECTION_NAME, embedding_model)
+    coll = collection(COLLECTION_NAME, embedding_model)
 
     # Download & process sites in parallel, loading their content & metadata into a knowledgebase
     url_task_group = asyncio.gather(*[
-        asyncio.create_task(read_site(site, collection, chunk_size, chunk_overlap)) for site in sites.split('|')])
+        asyncio.create_task(read_site(site, coll, chunk_size, chunk_overlap)) for site in sites.split('|')])
     indicator_task = asyncio.create_task(indicate_progress())
     tasks = [indicator_task, url_task_group]
     done, _ = await asyncio.wait(
@@ -109,7 +113,7 @@ async def async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, que
         if user_question.strip() == 'done':
             break
 
-        docs = collection.search(user_question, limit=limit)
+        docs = coll.search(user_question, limit=limit)
         if verbose:
             print(docs)
         if docs:
@@ -160,8 +164,9 @@ If you cannot answer with the given context, just say so.\n\n'''
 # Command line arguments defined in click decorators
 @click.command()
 @click.option('--verbose/--no-verbose', default=False)
-@click.option('--chunk-size', default=EMBED_CHUNK_SIZE, type=int, help='Number of characters to include per chunk')
-@click.option('--chunk-overlap', default=EMBED_CHUNK_OVERLAP, type=int,
+@click.option('--chunk-size', default=EMBED_CHUNK_SIZE, type=int, default=200,
+              help='Number of characters to include per chunk')
+@click.option('--chunk-overlap', default=EMBED_CHUNK_OVERLAP, type=int, default=20,
               help='Number of characters to overlap at the edges of chunks')
 @click.option('--limit', default=4, type=int,
               help='Maximum number of chunks matched against the posed question to use as context for the LLM')

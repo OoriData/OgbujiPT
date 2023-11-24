@@ -36,7 +36,7 @@ from PyPDF2 import PdfReader
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.text_helper import text_splitter
-from ogbujipt.embedding_helper import qdrant_collection
+from ogbujipt.embedding.qdrant import collection
 
 from sentence_transformers import SentenceTransformer
 
@@ -104,7 +104,7 @@ def prep_pdf():
 
         # Vectorizes chunks for sLLM lookup
         # XXX: Look up rules around uploaded object names
-        kb = qdrant_collection(pdf.name, emb_model)  # in-memory vector DB instance
+        kb = collection(pdf.name, emb_model)  # in-memory vector DB instance
 
         # Show throbber, embed the PDF, and get ready for similarity search
         embedding_placeholder = st.container()
