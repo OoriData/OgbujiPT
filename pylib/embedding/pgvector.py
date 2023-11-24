@@ -9,7 +9,7 @@ Vector databases embeddings using PGVector
 # import warnings
 # import itertools
 import json
-from typing   import Sequence
+from typing   import Sequence, Iterable
 from uuid     import UUID
 from datetime import datetime, timezone
 
@@ -320,7 +320,7 @@ class DocDB(PGVectorHelper):
 
     async def insert_many(
             self,
-            content_list: Sequence[tuple[str, str | None,  str | None, list[int], list[str]]]
+            content_list: Iterable[tuple[str, str | None,  str | None, list[int], list[str]]]
     ) -> None:
         '''
         Update a table with one or more embedded documents
@@ -332,10 +332,10 @@ class DocDB(PGVectorHelper):
         '''
         await self.conn.executemany(
             INSERT_DOCS.format(table_name=self.table_name),
-            [
+            (
                 (self._embedding_model.encode(content), content, title, page_numbers, tags)
                 for content, title, page_numbers, tags in content_list
-            ]
+            )
         )
 
     async def search(
