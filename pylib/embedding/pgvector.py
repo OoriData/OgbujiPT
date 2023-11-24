@@ -9,7 +9,7 @@ Vector databases embeddings using PGVector
 # import warnings
 # import itertools
 import json
-from typing   import Sequence, Iterable
+from typing   import Iterable
 from uuid     import UUID
 from datetime import datetime, timezone
 
