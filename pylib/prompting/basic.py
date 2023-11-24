@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 #
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.prompting.basic
@@ -31,6 +31,8 @@ class pdelim(Enum):
     POSTCONTEXT = 8
     PRE_ALL_CONTEXT = 9
     POST_ALL_CONTEXT = 10
+    PRE_CONTEXT_METADATA = 11   #Mostly for Airoboros (BEGINCONTEXT [..] ENDCONTEXT) format
+    POST_CONTEXT_METADATA = 12  #"       "
     META_ORDERING = 100
 
 
@@ -42,12 +44,15 @@ class ordering(Enum):
     CONTEXT_QUERY = 2
 
 
-def format(query, preamble='', contexts=None, delimiters=None):
+def format(query, preamble='', contexts=None, delimiters=None, context_with_metadata=False):
     '''
     Build a full LLM prompt out of the actual human/user query, an optional
     preamble (e.g. system message to condition the LLM's responses),
     zero or more context items (either simple text or tuples of text/metadata
     dict), and optional delimiters
+
+    When context_with_metadata is True, this will assume contexts is a list of 2-item tuple of strings, where
+    the first item is the metadata for the context (a string) and the second item is the context string itself
 
     >>> from ogbujipt.prompting.basic import format
     >>> format('How are you?', preamble='You are a friendly AI who loves conversation') 
@@ -76,7 +81,16 @@ def format(query, preamble='', contexts=None, delimiters=None):
                 # Some prompt conventions might use a pre & post context convention
                 # Some use internal delimiters only
                 parts.append(delimiters.get(pdelim.PRECONTEXT, ''))
-                parts.append(str(c))
+                if context_with_metadata:
+                    metadata, val = c
+                    parts.append(delimiters.get(pdelim.PRE_CONTEXT_METADATA, '') + '\n')
+                    parts.append(metadata + '\n')
+                    parts.append(delimiters.get(pdelim.POST_CONTEXT_METADATA, '') + '\n')
+                if context_with_metadata:
+                    metadata, val = c
+                    parts.append(str(val))
+                else:
+                    parts.append(str(c))
                 parts.append(delimiters.get(pdelim.POSTCONTEXT, ''))
                 parts.append(delimiters.get(pdelim.INTERCONTEXT, '\n'))
             del parts[-1]  # Final intercontext (might be empty anyway) not needed
@@ -89,6 +103,7 @@ def format(query, preamble='', contexts=None, delimiters=None):
         parts.append(delimiters.get(pdelim.PREQUERY, ''))
         parts.append(query)
 
+    # 
     if delimiters.get(pdelim.META_ORDERING, ordering.CONTEXT_QUERY) \
             == ordering.CONTEXT_QUERY:
         add_context()
@@ -98,9 +113,9 @@ def format(query, preamble='', contexts=None, delimiters=None):
         add_context()
 
     # XXX: Feels a bit weird that the post-query bit must be outside the query
-    # clusure. Maybe needs a rename?
-    parts.append(delimiters.get(pdelim.POSTQUERY, ''))
-    full_context = '\n'.join(parts)
+    # closure. Maybe needs a rename?
+    parts.append(delimiters.get(pdelim.POSTQUERY, '\n'))
+    full_context = ''.join(parts)
     return full_context
 
 

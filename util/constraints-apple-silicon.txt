@@ -1,0 +1,15 @@
+# Constraints file for installing requirements for various LLM libs, with all the attendant DLL hell
+# Use with pip install … --constraint=constraints-apple-silicon.txt
+# Some sources:
+# https://github.com/unixwzrd/oobabooga-macOS/
+# https://github.com/oobabooga/text-generation-webui/blob/main/requirements_apple_silicon.txt
+# Recommended to install PyTorch from nightly
+accelerate==0.24.*
+exllamav2==0.0.8
+gradio==3.50.*
+numpy==1.24.*
+optimum==1.14.0
+peft==0.6.*
+Pillow>=9.5.0
+safetensors==0.4.0
+transformers==4.35.*

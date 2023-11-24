@@ -1,0 +1,18 @@
+# Word loom format. Top level lang is default for this file
+lang = "en"
+
+# A language item, which can be looked up in the code as e.g. `loom['test_prompt_joke']`
+[test_prompt_joke]
+# Every language item must have a text entry. This one will follow the default language `en`
+text = """
+Tell me a funny joke about {topic}
+"""
+markers = ["topic"]
+
+# French equivalent of the same language item.
+# It's possible this is not a direct translation of the other versions, if e.g. LLMOps testing
+# Reveals variations that work better for that case. Remember that code might even use a completely
+# Different LLM to process different languages
+fr = """
+Dites-moi une blague drôle sur {topic}
+"""

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/chat_web_selects.py
 '''
 Advanced, "Chat my docs" demo, using docs from the web
 
@@ -19,7 +22,7 @@ pip install prerequisites, in addition to OgbujiPT cloned dir:
 click sentence_transformers qdrant-client httpx html2text amara3.xml
 
 ```sh
-python demo/chat_web_selects.py --host http://my-llm-host --port 8000 "www.newworldencyclopedia.org/entry/Igbo_People"
+python demo/chat_web_selects.py --apibase http://my-llm-host:8000 "www.newworldencyclopedia.org/entry/Igbo_People"
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"
@@ -32,12 +35,10 @@ import click
 import httpx
 import html2text
 
-from ogbujipt import config
-from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
-from ogbujipt.async_helper import schedule_callable, openai_api_surrogate, save_openai_api_params
-from ogbujipt import oapi_first_choice_text
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.text_helper import text_splitter
 from ogbujipt.embedding_helper import qdrant_collection
+
 
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
@@ -76,19 +77,20 @@ async def read_site(url, collection, chunk_size, chunk_overlap):
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL
     metas = [{'url': url}]*len(chunks)
-    # Add the text to the collection. Blocks, so no reentrancy concern
+    # Add the text to the collection
     collection.update(texts=chunks, metas=metas)
     print(f'{collection.count()} chunks added to collection')
 
 
-async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question):
-    # Automatic download from HuggingFace
+async def async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, question):
+    # Automatic download of embedding model from HuggingFace
     # Seem to be reentrancy issues with HuggingFace; defer import
     from sentence_transformers import SentenceTransformer
     embedding_model = SentenceTransformer(DOC_EMBEDDINGS_LLM)
     # Sites fuel in-memory Qdrant vector DB instance
     collection = qdrant_collection(COLLECTION_NAME, embedding_model)
 
+    # Download & process sites in parallel, loading their content & metadata into a knowledgebase
     url_task_group = asyncio.gather(*[
         asyncio.create_task(read_site(site, collection, chunk_size, chunk_overlap)) for site in sites.split('|')])
     indicator_task = asyncio.create_task(indicate_progress())
@@ -96,6 +98,7 @@ async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question)
     done, _ = await asyncio.wait(
         tasks, return_when=asyncio.FIRST_COMPLETED)
 
+    # Main chat loop
     done = False
     while not done:
         print()
@@ -114,16 +117,16 @@ async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question)
             gathered_chunks = '\n\n'.join(
                 doc.payload['_text'] for doc in docs if doc.payload)
 
-            # Build prompt the doc chunks as context
-            prompt = format(
-                f'Given the context, {user_question}\n\n'
-                f'Context: """\n{gathered_chunks}\n"""\n',
-                preamble='### SYSTEM:\nYou are a helpful assistant, who answers '
-                'questions directly and as briefly as possible. '
-                'If you cannot answer with the given context, just say so.\n',
-                delimiters=ALPACA_INSTRUCT_DELIMITERS)
+            # Build system message with the doc chunks as provided context
+            # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
+            sys_prompt = '''\
+You are a helpful assistant, who answers questions directly and as briefly as possible.
+Consider the following context and answer the user\'s question.
+If you cannot answer with the given context, just say so.\n\n'''
+            sys_prompt += gathered_chunks + '\n\n'
+            messages = prompt_to_chat(user_question, system=sys_prompt)
             if verbose:
-                print(prompt)
+                print('-'*80, '\n', messages, '\n', '-'*80)
 
             # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
@@ -135,8 +138,7 @@ async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question)
                 )
 
             indicator_task = asyncio.create_task(indicate_progress())
-            llm_task = asyncio.create_task(
-                schedule_callable(openai_api_surrogate, prompt, **model_params, **save_openai_api_params()))
+            llm_task = oapi.wrap_for_multiproc(messages, **model_params)
             tasks = [indicator_task, llm_task]
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -151,7 +153,7 @@ async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question)
 
             # response is a json-like object; 
             # just get back the text of the response
-            response_text = oapi_first_choice_text(retval)
+            response_text = oapi.first_choice_message(retval)
             print('\nResponse text from LLM:\n\n', response_text)
 
 
@@ -160,29 +162,25 @@ async def async_main(sites, verbose, limit, chunk_size, chunk_overlap, question)
 @click.option('--verbose/--no-verbose', default=False)
 @click.option('--chunk-size', default=EMBED_CHUNK_SIZE, type=int, help='Number of characters to include per chunk')
 @click.option('--chunk-overlap', default=EMBED_CHUNK_OVERLAP, type=int,
-              help='Number of characters to overlap at the edges of chunks')
-@click.option('--host', default='http://127.0.0.1', help='OpenAI API host')
-@click.option('--port', default='8000', help='OpenAI API port')
+              help='Number of characters to overlap at the edges of chunks')@click.option('--apibase', default='http://127.0.0.1:8000', help='OpenAI API base URL')
 @click.option('--limit', default=4, type=int,
               help='Maximum number of chunks matched against the posed question to use as context for the LLM')
 @click.option('--openai-key',
               help='OpenAI API key. Leave blank to specify self-hosted model via --host & --port')
+@click.option('--apibase', default='http://127.0.0.1:8000', help='OpenAI API base URL')
 @click.option('--model', default='', type=str, 
               help='OpenAI model to use (see https://platform.openai.com/docs/models).'
               'Use only with --openai-key')
 @click.option('--question', default=None, help='The question to ask (or prompt for one)')
 @click.argument('sites')
-def main(verbose, chunk_size, chunk_overlap, host, port, limit, openai_key, model, question, sites):
-    # Use OpenAI API if specified, otherwise emulate with supplied host, etc.
+def main(verbose, chunk_size, chunk_overlap, limit, openai_key, apibase, model, question, sites):
+    # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai_key:
-        model = model or 'text-davinci-003'
-        config.openai_live(apikey=openai_key, model=model, debug=True)
+        oapi = openai_chat_api(api_key=openai_key, model=(model or 'gpt-3.5-turbo'))
     else:
-        # Generally not really useful except in conjunction with --openai
-        model = model or config.HOST_DEFAULT
-        config.openai_emulation(host=host, port=port, model=model, debug=True)
+        oapi = openai_chat_api(model=model, base_url=apibase)
 
-    asyncio.run(async_main(sites, verbose, limit, chunk_size, chunk_overlap, question))
+    asyncio.run(async_main(oapi, sites, verbose, limit, chunk_size, chunk_overlap, question))
 
 
 if __name__ == '__main__':

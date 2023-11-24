@@ -1,38 +1,16 @@
-# SPDX-FileCopyrightText: 2023-present Uche Ogbuji <uche@ogbuji.net>
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding_helper
+# ogbujipt.embedding.qdrant
 
 '''
-Helper for vector databases embeddings in such as Qdrant
-
-Vector DBs are useful when you have a lot of context to use with LLMs,
-e.g. a large document or collection of docs. One common pattern is to create
-vector indices on this text. Given an LLM prompt, the vector DB is first queried
-to find the most relevant "top k" sections of text based on the prompt,
-which are added as context in the ultimate LLM invocation.
-
-For sample code see demo/chat_pdf_streamlit_ui.py
-
-You need an LLM to turn the text into vectors for such indexing, and these
-vectors are called the embeddings. You can usually create useful embeddings
-with a less powerful (and more efficient) LLM.
-
-This module provides utilities to set up a vector DB, and use it to index
-chunks of text using a provided LLM model to create the embeddings.
-
-Other common use-cases for vector DBs in LLM applications:
-
-* Long-term LLM Memory for chat: index the entire chat history and retrieve
-the most relevant and recent N messages based on the user's new message,
-to give the LLM a chance to make its responses coherent and on-topic
-
-* Cache previous LLM interactions, saving resources by retrieving previous
-responses to similar questions without having to use the most powerful LLM
+Vector databases embeddings using Qdrant
 '''
 
 import warnings
 import itertools
+# from typing import Sequence
 
+# Qdrant install is optional for OgbujiPT
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
@@ -58,6 +36,7 @@ class qdrant_collection:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
             https://huggingface.co/sentence-transformers
 
+            
             db (optional QdrantClient): existing DB/client to use
 
             distance_function (str): Distance function by which vectors will be compared
@@ -164,12 +143,22 @@ class qdrant_collection:
                 collection_name=self.name,
                 points=[
                     models.PointStruct(
-                        id=ix + before_count,  # Insistenmtly sequential IDs
+                        id=ix + before_count,  # sequential IDs
                         vector=embeddings,
                         payload=payload
                         )
                     ]
                 )
+    
+    def reset(self):
+        '''
+        Reset the Qdrant collection, deleting the collection and all its contents
+        '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before deleting its contents.')
+        
+        self.db.delete_collection(collection_name=self.name)
+        self._db_initialized = False
 
     def search(self, query, **kwargs):
         '''
@@ -181,6 +170,9 @@ class qdrant_collection:
             kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
         '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before searching its contents.')
+        
         if query.__class__.__name__ != 'str':
             raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
@@ -190,6 +182,8 @@ class qdrant_collection:
         '''
         Return the count of items in this Qdrant collection
         '''
+        if not self._db_initialized:
+            raise RuntimeError('Qdrant Collection must be initialized before counting its contents.')
         # This ugly declaration just gets the count as an integer
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         return current_count

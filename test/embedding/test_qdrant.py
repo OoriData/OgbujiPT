@@ -3,22 +3,17 @@ pytest test
 
 or
 
-pytest test/test_embedding_helper.py
+pytest test/embedding/test_qdrant.py
 
 Uses the COME_THUNDER_POEM fixture from conftest.py
 '''
-import pytest
+# import pytest
 
-from ogbujipt import embedding_helper
-from ogbujipt.embedding_helper import qdrant_collection
+from ogbujipt.embedding import qdrant
+from ogbujipt.embedding.qdrant import qdrant_collection
 from ogbujipt.text_helper import text_splitter
 
-embedding_helper.QDRANT_AVAILABLE = True
-
-
-@pytest.fixture
-def CORRECT_STRING():
-    return 'And the secret thing in its heaving\nThreatens with iron mask\nThe last lighted torch of the century…'
+qdrant.QDRANT_AVAILABLE = True
 
 
 class SentenceTransformer:
@@ -33,7 +28,6 @@ class SentenceTransformer:
                  ):
         pass
 
-
     def encode(self, sentences,
                batch_size: int = 32,
                show_progress_bar= None,
@@ -45,7 +39,7 @@ class SentenceTransformer:
         pass
 
 
-def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
+def test_qdrant_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
     # LLM will be downloaded from HuggingFace automatically
     # FIXME: We want to mock this instead, or rather just have a fixture with the results
     # Split the chunks
@@ -60,10 +54,10 @@ def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
 
     # TODO: Add more shape to the mocking, to increase the tests's usefulness
     embedding_model = mocker.MagicMock(spec=SentenceTransformer)
-    embedding_helper.models = mocker.MagicMock()
+    qdrant.models = mocker.MagicMock()
     mock_vparam = object()
-    embedding_helper.models.VectorParams.side_effect = [mock_vparam]
-    mocker.patch('ogbujipt.embedding_helper.QdrantClient')
+    qdrant.models.VectorParams.side_effect = [mock_vparam]
+    mocker.patch('ogbujipt.embedding.qdrant.QdrantClient')
 
     coll = qdrant_collection(name=collection_name, embedding_model=embedding_model)
 
@@ -79,7 +73,7 @@ def test_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
 
     # Test update/insert into the DB
     mock_pstruct = object()
-    embedding_helper.models.PointStruct.side_effect = lambda id=None, vector=None, payload=None: mock_pstruct
+    qdrant.models.PointStruct.side_effect = lambda id=None, vector=None, payload=None: mock_pstruct
 
     coll.db.count.reset_mock()
     coll.update(chunks)

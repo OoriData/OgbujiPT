@@ -14,6 +14,7 @@ authors = [
   { name = "Uche Ogbuji", email = "uche@ogbuji.net" },
   { name = "Osi Ogbuji", email = "osita@ogbuji.net" },
   { name = "Aidan Reese", email = "aidanreese.professional@gmail.com" },
+  { name = "Kai Schuyler Gonzalez", email = "kai.schuyler@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -24,14 +25,16 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "openai",
-  "python-dotenv"
+  "openai>=1.1.0",
+  "python-dotenv",
+  "tomli",
+  "amara3.iri"
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/ogbujipt#readme"
-Issues = "https://github.com/unknown/ogbujipt/issues"
-Source = "https://github.com/unknown/ogbujipt"
+Documentation = "https://github.com/OoriData/OgbujiPT#readme"
+Issues = "https://github.com/OoriData/OgbujiPT/issues"
+Source = "https://github.com/OoriData/OgbujiPT"
 
 [tool.hatch.version]
 path = "pylib/__about__.py"
@@ -39,8 +42,16 @@ path = "pylib/__about__.py"
 # Rewriting path in distribution
 [tool.hatch.build.sources]
 "pylib" = "ogbujipt"
+"resources" = "ogbujipt/resources"
 
-# Hatch environemnts aren't working. For example, from `hatch run test` I get 
+[tool.hatch.build.targets.wheel]
+only-include = ["pylib", "resources"]
+
+[tool.hatch.build.targets.wheel.sources]
+"pylib" = "ogbujipt"
+"resources" = "ogbujipt/resources"
+
+# Hatch environemnts are too fiddly. For example, from `hatch run test` I get 
 # ModuleNotFoundError: No module named 'ogbujipt'
 # This may well have to do with my rewriting path in distribution,
 # But I'm not compromising on that, so I guess just install & use
@@ -49,7 +60,9 @@ path = "pylib/__about__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "pytest-mock"
+  "pytest-mock",
+  "pytest-httpx",
+  "pytest-asyncio",
 ]
 dev-mode = false
 [tool.hatch.envs.default.scripts]

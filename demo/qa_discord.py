@@ -1,49 +1,46 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# ogbujipt/demo/qa_discord.py
 '''
 Advanced demo of a Discord chatbot with an LLM back end
 
-Demonstrates async processing via ogbujipt.async_helper & Discord API integration.
-Users can make an LLM request by @mentioning the bot by its user ID
+Demonstrates async processing & Discord API integration
 
-Note: This is a simple demo, which doesn't do any client-side job management,
+Note: Simple demo, which doesn't do any client-side job management,
 so for example if a request is sent, and a second comes in before it has completed,
 the LLM back end is relied on to cope.
 
-Prerequisites: python-dotenv discord.py
+Additional prerequisites: discord.py
 
-You also need to make sure Python has root SSL certificates installed
+Also need to make sure Python has root SSL certificates installed
 On MacOS this is via double-clicking `Install Certificates.command`
 
-You also need to have a file, just named `.env`, in the same directory,
-with contents such as:
+Requires the following environment variables:
 
 ```env
 DISCORD_TOKEN={your-bot-token}
-LLM_HOST=http://my-llm-host
-LLM_PORT=8000
+LLM_BASE=http://my-llm-host:8000
 LLM_TEMP=0.5
 ```
 
-Then to launch the bot:
+For some deeper discussion of setting up the environment: https://github.com/OoriData/OgbujiPT/discussions/36
+
+To launch the bot:
 
 ```shell
-python demo/alpaca_simple_qa_discord.py
+python demo/qa_discord.py
 ```
 
-For hints on how to modify this to use OpenAI's actual services,
-see demo/alpaca_simple_fix_xml.py
+You can then @mention the bot in a Discord channel where it's been added & chat with it
+
+For hints on how to modify this to use OpenAI's actual services, see demo/alpaca_fix_xml.py
 '''
 
 import os
-import asyncio
 
 import discord
-from dotenv import load_dotenv
 
-from ogbujipt.config import openai_emulation
-from ogbujipt.async_helper import schedule_callable, openai_api_surrogate, save_openai_api_params
-from ogbujipt import oapi_first_choice_text
-from ogbujipt.prompting.basic import format
-from ogbujipt.prompting.model_style import ALPACA_DELIMITERS
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
 # Enable all standard intents, plus message content
 # The bot app you set up on Discord will require this intent (Bot tab)
@@ -57,26 +54,15 @@ async def send_llm_msg(msg):
     '''
     Schedule the LLM request
     '''
-    prompt = format(msg, delimiters=ALPACA_DELIMITERS)
-    print(prompt, '\n')
-
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
-    llm_task = asyncio.create_task(
-        schedule_callable(openai_api_surrogate, prompt, temperature=llmtemp, max_tokens=512,
-                          **save_openai_api_params()))
+    # oapi.parameters
+    response = await oapi.wrap_for_multiproc(prompt_to_chat(msg), max_tokens=512)
+    print(response)
 
-    tasks = [llm_task]
-    done, _ = await asyncio.wait(
-        tasks, return_when=asyncio.FIRST_COMPLETED)
-
-    response = next(iter(done)).result()
-
-    # Response is a json-like object; extract the text
     print('\nFull response data from LLM:\n', response)
 
-    # Response is a json-like object; 
-    # just get back the text of the response
-    response_text = oapi_first_choice_text(response)
+    # Response is a json-like object; we just need the message text
+    response_text = oapi.first_choice_message(response)
     print('\nResponse text from LLM:\n', response_text)
 
     return response_text
@@ -112,25 +98,22 @@ async def on_ready():
 
 
 def main():
-    # A real app would probably use a discord.py cog w/ these as data members
-    global llm, llmtemp
+    # A real app would probably use a discord.py cog w/ this as data member
+    global oapi
 
-    load_dotenv()  # From .env file
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
     assert DISCORD_TOKEN
-    LLM_HOST = os.getenv('LLM_HOST', 'http://localhost')
-    LLM_PORT = os.getenv('LLM_PORT', '8000')
-
-    # Set up API connector & update temperature from environment
-    llm = openai_emulation(host=LLM_HOST, port=LLM_PORT)
+    llm_base = os.getenv('LLM_BASE', 'http://localhost:8000')
     llmtemp = float(os.getenv('LLM_TEMP', '0.9'))
+
+    # Set up API connector; OpenAI API emulation with supplied API base, fixed temp, from the environment
+    oapi = openai_chat_api(base_url=llm_base, temperature=llmtemp)
 
     # launch Discord client event loop
     client.run(DISCORD_TOKEN)
 
 
 if __name__ == '__main__':
-    # Entry point protects against multiple launching of the overall program
-    # when a child process imports this 
+    # Entry point protects against multiple launching of the overall program when a child process imports
     # viz https://docs.python.org/3/library/multiprocessing.html#multiprocessing-safe-main-import
     main()

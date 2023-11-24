@@ -1,17 +1,18 @@
-# OgbujiPT
+![ogbujipt github header](https://github.com/OoriData/OgbujiPT/assets/43561307/1a88b411-1ce2-43df-83f0-c9c39d6679bc)
 
-Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as ChatGPT.
+
+Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
 
 Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
 
-There are some helper functions for common LLM tasks, such as those provided by
-projects such as langchain, but not yet as extensive. The OgbujiPT versions,
-however, emphasize simplicity and transparency.
+There are some helper functions for common LLM tasks, such as those provided by projects such as langchain, but not meant to be as extensive. The OgbujiPT approach emphasizes simplicity and transparency.
 
-Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba). In our own practice we use both of these with Nvidia GPU and Apple M1/M2. We've also tested with OpenAI's full service ChatGPT (and use it in our practice).
+Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we apply these with Nvidia and Apple M1/M2 GPU enabled.
+
+We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
 
 <table><tr>
-  <td><a href="https://oori.dev/"><img src="https://oori.dev/assets/images/image02.png" width="64" /></a></td>
+  <td><a href="https://oori.dev/"><img src="https://www.oori.dev/assets/branding/oori_Logo_FullColor.png" width="64" /></a></td>
   <td>OgbujiPT is primarily developed by the crew at <a href="https://oori.dev/">Oori Data</a>. We offer software engineering services around LLM applications.</td>
 </tr></table>
 
@@ -34,19 +35,15 @@ pip install ogbujipt
 ### Just show me some code, dammit!
 
 ```py
-from ogbujipt.config import openai_emulation
-from ogbujipt import oapi_first_choice_text
-from ogbujipt.prompting import format, ALPACA_INSTRUCT_DELIMITERS
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_emulation(host='http://localhost', port=8000)  # Update with your LLM host
-# Change the delimiters to a prompting style that suits the LLM you're using
-prompt = format('Write a short birthday greeting for my star employee',
-                delimiters=ALPACA_INSTRUCT_DELIMITERS)
+llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
+prompt = 'Write a short birthday greeting for my star employee'
 
-# Just using pyopenai directly, for simplicity, setting params as needed
-response = llm_api.Completion.create(prompt=prompt, model='', temperature=0.1, max_tokens=100)
+# You can set model params as needed
+resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=100)
 # Extract just the response text, but the entire structure is available
-print(oapi_first_choice_text(response))
+print(llm_api.first_choice_message(resp))
 ```
 
 The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:
@@ -55,12 +52,30 @@ The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM 
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
 > On this occasion, I want you to know that you are appreciated and valued beyond measure. May your day be filled with joy and laughter.
 
+Here's an example using a model loaded in memory using ctransformers, a LLaMMa-based model (so ultimately via llama.cpp).
+
+```py
+from ctransformers import AutoModelForCausalLM
+
+from ogbujipt.llm_wrapper import ctransformer as ctrans_wrapper
+
+model = AutoModelForCausalLM.from_pretrained('TheBloke_LlongOrca-13B-16K-GGUF',
+        model_file='llongorca-13b-16k.Q5_K_M.gguf', model_type="llama", gpu_layers=50)
+llm = ctrans_wrapper(model=model)
+
+print(llm(prompt='Write a short birthday greeting for my star employee', max_new_tokens=100))
+```
+
 For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo)
 
 ## A bit more explanation
 
-Many self-hosted AI large language models are now astonishingly good, even running on consumer-grade hardware, which provides an alternative for those of us who would rather not be sending all our data out over the network to the likes of ChatGPT & Bard. OgbujiPT provides a toolkit for using and experimenting with LLMs via [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba), a popular tool for self-hosting such models. OgbujiPT can invoke these to complete prompted tasks on self-hosted LLMs. It can also be used for
-building front end to ChatGPT and Bard, if these are suitable for you.
+Many self-hosted AI large language models are now astonishingly good, even running on consumer-grade hardware, which provides an alternative for those of us who would rather not be sending all our data out over the network to the likes of ChatGPT & Bard. OgbujiPT provides a toolkit for using and experimenting with LLMs as loaded into memory via or via OpenAI API-compatible network servers such as:
+
+* [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
+* [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba)
+
+OgbujiPT can invoke these to complete prompted tasks on self-hosted LLMs. It can also be used for building front ends to ChatGPT and Bard, if these are suitable for you.
 
 * [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
 * [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
@@ -86,13 +101,14 @@ experiments, adapt to and adopt other models.
 
 # Contributions
 
-For reasons I'm still investigating (some of the more recent developments and issues in Python packaging are [quite esoteric](https://chriswarrick.com/blog/2023/01/15/how-to-improve-python-packaging/)), some of the hatch tools such as `hatch run` are problematic. I suspect they might not like the way I rename directories during build, but I won't be compromising on that. So, for example, to run tests, just stick to:
+If you want to run the test suite, a quick recipe is as follows:
 
 ```shell
+pip install ruff pytest pytest-mock pytest-asyncio respx pgvector asyncpg pytest-asyncio
 pytest test
 ```
 
-More [notes for contributors in the wiki](https://github.com/uogbuji/OgbujiPT/wiki/Notes-for-contributors).
+If you want to make contributions to the project, please [read these notes](https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors).
 
 # License
 

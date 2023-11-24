@@ -56,16 +56,16 @@ def test_separator_chunk_size_too_large(BASIC_EVEN_BLOCK):
     assert len(chunks) == 1
     assert len(chunks[0]) == len(BASIC_EVEN_BLOCK)
 
-def test_zero_chunk_overlap(LOREM_IPSUM):
-    chunks = text_splitter(LOREM_IPSUM, chunk_size=100, chunk_overlap=0, separator=' ')
-    assert len(chunks) == 9
-    # chunks should end on the word that takes it over the chunk size
-    assert chunks[0] == 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada,'
-    assert chunks[1] == 'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius'
-    assert chunks[2] == 'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis,'
-    assert chunks[3] == 'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget'
-    assert chunks[4] == 'elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id dignissim'
-    assert chunks[5] == 'risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat malesuada'
-    assert chunks[6] == 'finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere eleifend,'
-    assert chunks[7] == 'libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum euismod, felis'
-    assert chunks[8] == 'libero blandit lorem, nec ullamcorper quam justo at elit.'
+# def test_zero_overlap(LOREM_IPSUM):
+#     chunks = text_splitter(LOREM_IPSUM, chunk_size=100, chunk_overlap=0, separator=' ')
+#     assert len(chunks) == 9
+#     # chunks should end on the word that takes it over the chunk size
+#     assert chunks[0] == 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada,'
+#     assert chunks[1] == 'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius'
+#     assert chunks[2] == 'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis,'
+#     assert chunks[3] == 'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget'
+#     assert chunks[4] == 'elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id dignissim'
+#     assert chunks[5] == 'risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat malesuada'
+#     assert chunks[6] == 'finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere eleifend,'
+#     assert chunks[7] == 'libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum euismod, felis'
+#     assert chunks[8] == 'libero blandit lorem, nec ullamcorper quam justo at elit.'
