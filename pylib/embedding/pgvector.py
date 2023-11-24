@@ -9,7 +9,7 @@ Vector databases embeddings using PGVector
 # import warnings
 # import itertools
 import json
-from typing   import Sequence
+from typing   import Iterable
 from uuid     import UUID
 from datetime import datetime, timezone
 
@@ -76,7 +76,7 @@ TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default simila
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator\n'
 
-TAGS_WHERE_CLAUSE = 'tags && {query_tags}  -- Overlap operator\n'
+TAGS_WHERE_CLAUSE = 'tags  @> ARRAY{query_tags}  -- Overlap operator\n'
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
@@ -328,7 +328,7 @@ class DocDB(PGVectorHelper):
 
     async def insert_many(
             self,
-            content_list: Sequence[tuple[str, str | None, list[int], list[str]]]
+            content_list: Iterable[tuple[str, str | None,  str | None, list[int], list[str]]]
     ) -> None:
         '''
         Update a table with one or more embedded documents
@@ -340,12 +340,10 @@ class DocDB(PGVectorHelper):
         '''
         await self.conn.executemany(
             INSERT_DOCS.format(table_name=self.table_name),
-            [
-                (
-                    self._embedding_model.encode(content).tolist(), content, title, page_numbers, tags
-                )
+            (
+                (self._embedding_model.encode(content), content, title, page_numbers, tags)
                 for content, title, page_numbers, tags in content_list
-            ]
+            )
         )
 
     async def search(
