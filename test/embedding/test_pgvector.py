@@ -113,12 +113,12 @@ async def test_PGv_embed_many_pacer():
 
     # Insert data using insert_many()
     documents = (
-        {
-            'content': text,
-            'title': f'Pacer Copypasta line {index}',
-            'page_numbers': [1, 2, 3],
-            'tags': ['fitness', 'pacer', 'copypasta']
-        }
+        (
+            text,
+            f'Pacer Copypasta line {index}',
+            [1, 2, 3],
+            ['fitness', 'pacer', 'copypasta']
+        )
         for index, text in enumerate(pacer_copypasta)
     )
     await vDB.insert_many(documents)
