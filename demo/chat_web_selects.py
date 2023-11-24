@@ -164,9 +164,9 @@ If you cannot answer with the given context, just say so.\n\n'''
 # Command line arguments defined in click decorators
 @click.command()
 @click.option('--verbose/--no-verbose', default=False)
-@click.option('--chunk-size', default=EMBED_CHUNK_SIZE, type=int, default=200,
+@click.option('--chunk-size', type=int, default=200,
               help='Number of characters to include per chunk')
-@click.option('--chunk-overlap', default=EMBED_CHUNK_OVERLAP, type=int, default=20,
+@click.option('--chunk-overlap', type=int, default=20,
               help='Number of characters to overlap at the edges of chunks')
 @click.option('--limit', default=4, type=int,
               help='Maximum number of chunks matched against the posed question to use as context for the LLM')
