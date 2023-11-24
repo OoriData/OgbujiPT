@@ -112,7 +112,7 @@ async def test_PGv_embed_many_pacer():
     assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
 
     # Insert data using insert_many()
-    documents = [
+    documents = (
         {
             'content': text,
             'title': f'Pacer Copypasta line {index}',
@@ -120,7 +120,7 @@ async def test_PGv_embed_many_pacer():
             'tags': ['fitness', 'pacer', 'copypasta']
         }
         for index, text in enumerate(pacer_copypasta)
-    ]
+    )
     await vDB.insert_many(documents)
 
     assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
