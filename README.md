@@ -66,7 +66,19 @@ llm = ctrans_wrapper(model=model)
 print(llm(prompt='Write a short birthday greeting for my star employee', max_new_tokens=100))
 ```
 
-For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo)
+For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo). Demos include:
+
+* Basics:
+  * Use of basic LLM text completion to correct a data format (XML)
+  * Multiple simultaneous LLM queries via multiprocessing
+* Chatbots/agents:
+  * Simple Discord bot
+* Advanced LLM API features:
+  * OpenAI-style function calling
+* Retrieval Augmented Generation (RAG):
+  * Ask LLM questions based on web site contents, on the command line
+  * Ask LLM questions based on uploaded PDF, via Streamlit interactive UI
+  * Use PostgreSQL/PGVector for extracting context which can be fed to LLMs
 
 ## A bit more explanation
 

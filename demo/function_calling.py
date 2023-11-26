@@ -1,14 +1,16 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt/demo/function_calling.py
+# demo/function_calling.py
 '''
 Demonstrate the use of OpenAI-style function calling with OgbujiPT
 
+python demo/function_calling.py
 
-python demo/function_calling.py --apibase=http://localhost:8000
+Requires `OPENAI_API_KEY` in the environment
 
-You can alternatively use OpenAI by using the --openai param
+Hard-codes the function spec, but you can generate it from a PyDantic schema
 
+```py
 from typing import List
 from pydantic import BaseModel
 
@@ -19,6 +21,11 @@ class ExecuteStepByStepPlan(BaseModel):
 
 # Generate the function spec
 FUNC_SPEC = ExecuteStepByStepPlan.schema()
+```
+
+What about non-OpenAI LLM hosts? There is ongoing work in several areas.
+It requires properly fine-tuned models, the right systems prompts and also suppot by the host code
+Useful discussion re llama-cpp-python: https://github.com/abetlen/llama-cpp-python/discussions/397
 '''
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
@@ -33,9 +40,10 @@ FUNC_SPEC = {
     'required': ['headline', 'steps'],
 }
 
-llm_api = openai_chat_api(model='gpt-4')
+# Requires OPENAI_API_KEY in environment
+llm_api = openai_chat_api(model='gpt-3.5-turbo')
 
-messages = prompt_to_chat('Explain how to poach an egg')
+messages = prompt_to_chat('Explain how to poach an egg, step by step')
 
 functions=[
         {
@@ -48,7 +56,10 @@ functions=[
 function_call={'name': 'handle_steps_from_user_query'}
 
 resp = llm_api(messages=messages, functions=functions, function_call=function_call)
-# print(resp.choices[0].message.function_call)
+fc = resp.choices[0].message.function_call
 
-print('Function to be called: ' + resp.choices[0].message.function_call.name)
-print('Function call arguments: ' + resp.choices[0].message.function_call.arguments)
+if fc:
+    print('Function to be called: ' + fc.name)
+    print('Function call arguments: ' + fc.arguments)
+else:
+    print('No function call issued')
