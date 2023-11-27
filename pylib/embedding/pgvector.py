@@ -329,7 +329,7 @@ class DocDB(PGVectorHelper):
 
     async def insert_many(
             self,
-            content_list: Iterable[tuple[str, str | None,  str | None, list[int], list[str]]]
+            content_list: Iterable[tuple[str, str | None, list[int], list[str]]]
     ) -> None:
         '''
         Update a table with one or more embedded documents
