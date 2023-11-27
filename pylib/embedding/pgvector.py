@@ -76,7 +76,8 @@ TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default simila
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator\n'
 
-TAGS_WHERE_CLAUSE = 'tags  @> ARRAY{query_tags}  -- Overlap operator\n'
+TAGS_WHERE_CLAUSE_CONJ = 'tags @> ARRAY{query_tags}  -- Overlap operator\n'
+TAGS_WHERE_CLAUSE_DISJ = 'tags && {query_tags}  -- Overlap operator\n'
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
@@ -352,22 +353,25 @@ class DocDB(PGVectorHelper):
             query_title: str | None = None,
             query_page_numbers: list[int] | None = None,
             query_tags: list[str] | None = None,
-            limit: int = 1
+            limit: int = 1,
+            conjunctive: bool = True
     ) -> list[asyncpg.Record]:
         '''
         Similarity search documents using a query string
 
         Args:
-            query_string (str): string to compare against items in the table
+            query_string (str): string to compare against items in the table. This will be a vector/fuzzy/nearest-neighbor type search
 
-            query_title (str, optional): title of the document to compare against items in the table (mildly fuzzy)
+            query_title (str, optional): title of the document to compare against items in the table (uses a less fuzzy matching operator than query_string)
 
             query_page_numbers (list[int], optional): page number of the document that the chunk is found in to compare 
                 against items in the table
 
-            query_tags (list[str], optional): tags associated with the document to compare against items in the table
+            query_tags (list[str], optional): tags associated with the document to compare against items in the table. Each individual tag must match exactly, but see the conjunctive parameter for how multiple tags are interpreted.
 
             limit (int, optional): maximum number of results to return (useful for top-k query)
+
+            conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching in the case of multiple tags
         Returns:
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
@@ -377,6 +381,8 @@ class DocDB(PGVectorHelper):
 
         # Get the embedding of the query string as a PGvector compatible list
         query_embedding = list(self._embedding_model.encode(query_string))
+
+        tags_where_clause = TAGS_WHERE_CLAUSE_CONJ if conjunctive else TAGS_WHERE_CLAUSE_DISJ
 
         # Build where clauses
         if (query_title is None) and (query_page_numbers is None) and (query_tags is None):
@@ -389,7 +395,7 @@ class DocDB(PGVectorHelper):
             if query_page_numbers is not None:
                 clauses.append(PAGE_NUMBERS_WHERE_CLAUSE.format(query_page_numbers=query_page_numbers))
             if query_tags is not None:
-                clauses.append(TAGS_WHERE_CLAUSE.format(query_tags=query_tags))
+                clauses.append(tags_where_clause.format(query_tags=query_tags))
             clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
             where_clauses = f'WHERE\n{clauses}'  # Add the WHERE keyword
 
