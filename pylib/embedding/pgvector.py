@@ -360,18 +360,22 @@ class DocDB(PGVectorHelper):
         Similarity search documents using a query string
 
         Args:
-            query_string (str): string to compare against items in the table. This will be a vector/fuzzy/nearest-neighbor type search
+            query_string (str): string to compare against items in the table.
+                This will be a vector/fuzzy/nearest-neighbor type search.
 
-            query_title (str, optional): title of the document to compare against items in the table (uses a less fuzzy matching operator than query_string)
+            query_title (str, optional): title of the document to compare against items in the table
+                (uses a less fuzzy matching operator than query_string)
 
-            query_page_numbers (list[int], optional): page number of the document that the chunk is found in to compare 
-                against items in the table
+            query_page_numbers (list[int], optional): target page number in the document for query string comparison
 
-            query_tags (list[str], optional): tags associated with the document to compare against items in the table. Each individual tag must match exactly, but see the conjunctive parameter for how multiple tags are interpreted.
+            query_tags (list[str], optional): tags associated with the document to compare against items in the table.
+                Each individual tag must match exactly, but see the conjunctive param
+                for how multiple tags are interpreted.
 
             limit (int, optional): maximum number of results to return (useful for top-k query)
 
-            conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching in the case of multiple tags
+            conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching
+                in the case of multiple tags.
         Returns:
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
