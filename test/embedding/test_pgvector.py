@@ -131,3 +131,48 @@ async def test_PGv_embed_many_pacer():
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     await vDB.drop_table()
+
+
+@pytest.mark.asyncio
+async def test_PGv_embed_pacer():
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+    print(f'EMODEL: {dummy_model}')
+    TABLE_NAME = 'embedding_test'
+    try:
+        vDB = await DocDB.from_conn_params(
+            embedding_model=dummy_model,
+            table_name=TABLE_NAME,
+            db_name=DB_NAME,
+            host=HOST,
+            port=int(PORT),
+            user=USER,
+            password=PASSWORD)
+    except ConnectionRefusedError:
+        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
+    
+    assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
+    
+    # Create tables
+    await vDB.drop_table()
+    assert await vDB.table_exists() is False, Exception("Table exists before creation")
+    await vDB.create_table()
+    assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
+
+    # Insert data
+    for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
+        await vDB.insert(                            # Insert the line into the table
+            content=text,                            # The text to be embedded
+            title=f'Pacer Copypasta line {index}',   # Title metadata
+            page_numbers=[index],                    # Page number metadata
+            tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
+        )
+
+    assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
+
+    # search table with perfect match
+    search_string = '[beep] A single lap should be completed each time you hear this sound.'
+    sim_search = await vDB.search(query_string=search_string, page_numbers=[3], conjunctive=False)
+    assert sim_search is not None, Exception("No results returned from perfect search")
+
+    await vDB.drop_table()

@@ -72,12 +72,12 @@ ORDER BY
 LIMIT {limit};
 '''
 
-TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default similarity threshold is 0.3)\n'
+TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default similarity threshold is 0.3) \n'
 
-PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator\n'
+PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator \n'
 
-TAGS_WHERE_CLAUSE_CONJ = 'tags @> ARRAY{query_tags}  -- Overlap operator\n'
-TAGS_WHERE_CLAUSE_DISJ = 'tags && {query_tags}  -- Overlap operator\n'
+TAGS_WHERE_CLAUSE_CONJ = 'tags @> ARRAY{query_tags}  -- Contains operator \n'
+TAGS_WHERE_CLAUSE_DISJ = 'tags && {query_tags}  -- Overlap operator \n'
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
@@ -375,7 +375,7 @@ class DocDB(PGVectorHelper):
             limit (int, optional): maximum number of results to return (useful for top-k query)
 
             conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching
-                in the case of multiple tags.
+                in the case of multiple tags. Defaults to True.
         Returns:
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
@@ -392,16 +392,25 @@ class DocDB(PGVectorHelper):
         if (query_title is None) and (query_page_numbers is None) and (query_tags is None):
             # No where clauses, so don't bother with the WHERE keyword
             where_clauses = ''
+            query_args = []
         else:  # construct where clauses
+            param_count = 0
             clauses = []
+            query_args = []
             if query_title is not None:
-                clauses.append(TITLE_WHERE_CLAUSE.format(query_title=query_title))
+                param_count += 1
+                query_args.append(query_title)
+                clauses.append(TITLE_WHERE_CLAUSE.format(query_title=f'${param_count}'))
             if query_page_numbers is not None:
-                clauses.append(PAGE_NUMBERS_WHERE_CLAUSE.format(query_page_numbers=query_page_numbers))
+                param_count += 1
+                query_args.append(query_page_numbers)
+                clauses.append(PAGE_NUMBERS_WHERE_CLAUSE.format(query_page_numbers=f'${param_count}'))
             if query_tags is not None:
-                clauses.append(tags_where_clause.format(query_tags=query_tags))
+                param_count += 1
+                query_args.append(query_tags)
+                clauses.append(tags_where_clause.format(query_tags=f'${param_count}'))
             clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
-            where_clauses = f'WHERE\n{clauses}'  # Add the WHERE keyword
+            where_clauses = f'WHERE\n{clauses}'
 
         # Search the table
         search_results = await self.conn.fetch(
@@ -410,7 +419,8 @@ class DocDB(PGVectorHelper):
                 query_embedding=query_embedding,
                 where_clauses=where_clauses,
                 limit=limit
-            )
+            ),
+            *query_args
         )
         return search_results
     
