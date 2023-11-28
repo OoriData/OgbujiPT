@@ -25,8 +25,7 @@ PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
 PORT = os.environ.get('PG_PORT', 5432)
 
 pacer_copypasta = [  # Demo document
-    (
-'The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it'
+    ('The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it'
     ' continues.'), 
     'The 20 meter pacer test will begin in 30 seconds. Line up at the start.', 
     'The running speed starts slowly, but gets faster each minute after you hear this signal.', 
@@ -163,7 +162,7 @@ async def test_PGv_search_filtered():
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
         await vDB.insert(                            # Insert the line into the table
             content=text,                            # The text to be embedded
-            title=f'Pacer Copypasta line {index}',   # Title metadata
+            title='Pacer Copypasta',   # Title metadata
             page_numbers=[index],                    # Page number metadata
             tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
         )
@@ -174,7 +173,7 @@ async def test_PGv_search_filtered():
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
     sim_search = await vDB.search(
         query_string=search_string,
-        query_title='Pacer Copypasta line 3',
+        query_title='Pacer Copypasta',
         query_page_numbers=[3],
         query_tags=['pacer'],
         conjunctive=False
