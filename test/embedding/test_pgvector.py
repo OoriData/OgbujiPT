@@ -174,6 +174,7 @@ async def test_PGv_search_specific():
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
     sim_search = await vDB.search(
         query_string=search_string,
+        query_title='Pacer Copypasta line 3',
         query_page_numbers=[3],
         query_tags=['pacer'],
         conjunctive=False
