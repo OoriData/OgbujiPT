@@ -72,7 +72,7 @@ ORDER BY
 LIMIT {limit};
 '''
 
-TITLE_WHERE_CLAUSE = 'title % {query_title}  -- Trigram operator (default similarity threshold is 0.3) \n'
+TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator \n'
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator \n'
 
@@ -363,10 +363,9 @@ class DocDB(PGVectorHelper):
             query_string (str): string to compare against items in the table.
                 This will be a vector/fuzzy/nearest-neighbor type search.
 
-            query_title (str, optional): title of the document to compare against items in the table
-                (uses a less fuzzy matching operator than query_string)
+            query_title (str, optional): title of the document to compare against items in the table.
 
-            query_page_numbers (list[int], optional): target page number in the document for query string comparison
+            query_page_numbers (list[int], optional): target page number in the document for query string comparison.
 
             query_tags (list[str], optional): tags associated with the document to compare against items in the table.
                 Each individual tag must match exactly, but see the conjunctive param
