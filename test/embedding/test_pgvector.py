@@ -172,7 +172,12 @@ async def test_PGv_search_specific():
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(query_string=search_string, query_page_numbers=[3], query_tags=['pacer'], conjunctive=False)
+    sim_search = await vDB.search(
+        query_string=search_string,
+        query_page_numbers=[3],
+        query_tags=['pacer'],
+        conjunctive=False
+    )
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     await vDB.drop_table()
