@@ -134,7 +134,7 @@ async def test_PGv_embed_many_pacer():
 
 
 @pytest.mark.asyncio
-async def test_PGv_embed_pacer():
+async def test_PGv_search_specific():
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
     print(f'EMODEL: {dummy_model}')
@@ -172,7 +172,7 @@ async def test_PGv_embed_pacer():
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(query_string=search_string, page_numbers=[3], conjunctive=False)
+    sim_search = await vDB.search(query_string=search_string, query_page_numbers=[3], query_tags=['pacer'], conjunctive=False)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     await vDB.drop_table()
