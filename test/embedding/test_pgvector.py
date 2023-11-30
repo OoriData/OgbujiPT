@@ -180,4 +180,17 @@ async def test_PGv_search_filtered():
     )
     assert sim_search is not None, Exception("No results returned from filtered search")
 
+    #Test conjunctive semantics
+    await vDB.insert(content='Foo', title='Some text', page_numbers=[1], tags=['tag1'])
+    await vDB.insert(content='Baz', title='Some mo text', page_numbers=[1], tags=['tag2', 'tag3'])
+    await vDB.insert(content='Bar', title='Even mo text', page_numbers=[1], tags=['tag3'])
+
+    sim_search = await vDB.search(query_string='text', query_tags=['tag1', 'tag3'], conjunctive=False)
+    assert sim_search is not None, Exception("No results returned from filtered search")
+    assert len(sim_search) == 3, Exception("There should be 3 results")
+
+    sim_search = await vDB.search(query_string='text', query_tags=['tag1'], conjunctive=False)
+    assert sim_search is not None, Exception("No results returned from filtered search")
+    assert len(sim_search) == 1, Exception("There should be 1 result")
+
     await vDB.drop_table()
