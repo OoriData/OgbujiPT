@@ -16,7 +16,7 @@ jobs:
           POSTGRES_USER: mock_user
           POSTGRES_PASSWORD: mock_password
           POSTGRES_DB: mock_db
-        ports: # give multiple ports for each python versionto avoid conflicts
+        ports: # give multiple ports for each python version to avoid conflicts
           - 5433:5432
           - 5432:5432
 

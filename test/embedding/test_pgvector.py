@@ -1,4 +1,12 @@
 '''
+Set up a mock Postgres instance with the following commands 
+(make sure you don't have anything running on port 0.0.0.0:5432))):
+docker pull ankane/pgvector
+docker run --name mock-postgres -p 5432:5432 \
+    -e POSTGRES_USER=mock_user -e POSTGRES_PASSWORD=mock_password -e POSTGRES_DB=mock_db \
+    -d ankane/pgvector
+
+Then run the tests with:
 pytest test
 
 or
