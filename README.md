@@ -41,7 +41,7 @@ llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your L
 prompt = 'Write a short birthday greeting for my star employee'
 
 # You can set model params as needed
-resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=100)
+resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=256)
 # Extract just the response text, but the entire structure is available
 print(llm_api.first_choice_message(resp))
 ```

@@ -15,14 +15,15 @@ Text to vector (embedding) model:
 Needs access to an OpenAI-like service. Default assumption is self-hosted
 via e.g. llama-cpp-python or text-generation-webui
 
-Assume for the following it's at host my-llm-host, port 8000
+Assume for the following it's at host localhost, port 8000.
+MAKE SURE YOU USE A WORKING SERVER BECAUSE THIS IS A DEMO & THE ERROR HANDLING IS SIMPLISTIC
 
 pip install prerequisites, in addition to OgbujiPT cloned dir:
 
 click sentence_transformers qdrant-client httpx html2text amara3.xml
 
 ```sh
-python demo/chat_web_selects.py --apibase http://my-llm-host:8000 "www.newworldencyclopedia.org/entry/Igbo_People"
+python demo/chat_web_selects.py --apibase http://localhost:8000 "www.newworldencyclopedia.org/entry/Igbo_People"
 ```
 
 An example question might be "Who are the neighbors of the Igbo people?"

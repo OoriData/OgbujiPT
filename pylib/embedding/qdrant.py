@@ -136,7 +136,10 @@ class collection:
             # The inline prints actually turn into a cool progress indicator in jupyter 😁
             embeddings = list(map(float, self._embedding_model.encode(text)))
 
-            payload = dict(_text=text, **meta)
+            try:
+                payload = dict(_text=text, **meta)
+            except TypeError:
+                raise TypeError('metas must be a list of mappings (dicts)')
 
             # Upsert the embedded chunk and its payload into the collection
             self.db.upsert(
