@@ -14,6 +14,19 @@ Intermediate demo asking an LLM multiple simultaneous riddles on various topics,
 running a separate, progress indicator task in the background, using asyncio.
 Works even if the LLM framework suport asyncio, thanks to ogbujipt.async_helper 
 
+## function_calling.py
+
+[OpenAI-style function calling](https://openai.com/blog/function-calling-and-other-api-updates) allows the LLM to specify a structured response to a user's query in the form of details of a function to be called to complete the response, or take an action. Though developed by OpenAI, function calling can be made available through other LLM tools, though progress on this
+is just emerging.
+
+* [In llama-cpp-python](https://llama-cpp-python.readthedocs.io/en/latest/server/#function-calling)
+
+You might also be interested in the reAct approach, which Oori has covered in their blog:
+
+* [reAct (reasoning Action)](https://www.oori.dev/blog/2023/10/react/)
+
+See also: [Low-level experiments for agent/tool interaction with locally-hosted LLMs #42](https://github.com/OoriData/OgbujiPT/discussions/42)
+
 # Advanced
 
 ## qa_discord.py
