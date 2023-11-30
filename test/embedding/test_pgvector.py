@@ -185,7 +185,7 @@ async def test_PGv_search_filtered():
     await vDB.insert(content='Text', title='Some mo text', page_numbers=[1], tags=['tag2', 'tag3'])
     await vDB.insert(content='Text', title='Even mo text', page_numbers=[1], tags=['tag3'])
 
-    sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False)
+    sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
 

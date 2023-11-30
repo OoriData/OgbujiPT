@@ -76,7 +76,7 @@ TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator \n'
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator \n'
 
-TAGS_WHERE_CLAUSE_CONJ = 'tags @> ARRAY{query_tags}  -- Contains operator \n'
+TAGS_WHERE_CLAUSE_CONJ = 'tags @> {query_tags}  -- Contains operator \n'
 TAGS_WHERE_CLAUSE_DISJ = 'tags && {query_tags}  -- Overlap operator \n'
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
@@ -411,7 +411,7 @@ class DocDB(PGVectorHelper):
             clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
             where_clauses = f'WHERE\n{clauses}'
 
-        # Search the table
+        # Execute the search via SQL
         search_results = await self.conn.fetch(
             QUERY_DOC_TABLE.format(
                 table_name=self.table_name,
