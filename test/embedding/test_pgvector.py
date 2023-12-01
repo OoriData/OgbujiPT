@@ -26,7 +26,7 @@ from ogbujipt.embedding.pgvector import DocDB
 import numpy as np
 
 # XXX: This stanza to go away once mocking is complete - Kai
-HOST = os.environ.get('PG_HOST', '0.0.0.0')
+HOST = os.environ.get('PG_HOST', 'localhost')
 DB_NAME = os.environ.get('PG_DATABASE', 'mock_db')
 USER = os.environ.get('PG_USER', 'mock_user')
 PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')

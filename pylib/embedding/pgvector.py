@@ -59,7 +59,7 @@ INSERT INTO {table_name} (
 
 QUERY_DOC_TABLE = '''-- Semantic search a document
 SELECT
-    (embedding <=> '{query_embedding}') AS cosine_similarity,
+    1 - (embedding <=> '{query_embedding}') AS cosine_similarity,
     title,
     content,
     page_numbers,
@@ -68,7 +68,7 @@ FROM
     {table_name}
 {where_clauses}\
 ORDER BY
-    cosine_similarity ASC
+    cosine_similarity DESC
 LIMIT {limit};
 '''
 
@@ -118,7 +118,7 @@ ORDER BY
 
 SEMANTIC_QUERY_CHATLOG_TABLE = '''-- Semantic search a chatlog
 SELECT
-    (embedding <=> '{query_embedding}') AS cosine_similarity,
+    1 - (embedding <=> '{query_embedding}') AS cosine_similarity,
     ts,
     role,
     content,
@@ -128,7 +128,7 @@ FROM
 WHERE
     history_key = $1
 ORDER BY
-    cosine_similarity
+    cosine_similarity DESC
 LIMIT $2;
 '''
 # ======================================================================================================================
@@ -244,6 +244,7 @@ class PGVectorHelper:
         # print('PGvector extension created and loaded.')
         return cls(embedding_model, table_name, conn)
 
+    # Hmm. Just called count in the qdrant version
     async def count_items(self) -> int:
         '''
         Count the number of documents in the table
