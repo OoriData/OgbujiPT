@@ -19,7 +19,7 @@ Uses fixtures from ../conftest.py
 
 import pytest
 # from unittest.mock import MagicMock, patch
-from unittest.mock import MagicMock, DEFAULT
+from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
 import os
 from ogbujipt.embedding.pgvector import DocDB
