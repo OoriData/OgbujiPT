@@ -19,7 +19,7 @@ Uses fixtures from ../conftest.py
 
 import pytest
 # from unittest.mock import MagicMock, patch
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, DEFAULT
 
 import os
 from ogbujipt.embedding.pgvector import DocDB
@@ -48,11 +48,12 @@ class SentenceTransformer(object):
     def __init__(self, model_name_or_path):
         self.encode = MagicMock()
 
+
 @pytest.mark.asyncio
 async def test_PGv_embed_pacer():
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
-    print(f'EMODEL: {dummy_model}')
+    # print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
     try:
         vDB = await DocDB.from_conn_params(
@@ -96,7 +97,7 @@ async def test_PGv_embed_pacer():
 async def test_PGv_embed_many_pacer():
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
-    print(f'EMODEL: {dummy_model}')
+    # print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
     try:
         vDB = await DocDB.from_conn_params(
@@ -143,8 +144,14 @@ async def test_PGv_embed_many_pacer():
 @pytest.mark.asyncio
 async def test_PGv_search_filtered():
     dummy_model = SentenceTransformer('mock_transformer')
-    dummy_model.encode.return_value = np.array([1, 2, 3])
-    print(f'EMODEL: {dummy_model}')
+    def encode_tweaker(*args, **kwargs):
+        if args[0].startswith('Text'):
+            return np.array([1, 2, 3])
+        else:
+            return np.array([100, 300, 500])
+
+    dummy_model.encode.side_effect = encode_tweaker
+    # print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
     try:
         vDB = await DocDB.from_conn_params(
@@ -193,8 +200,28 @@ async def test_PGv_search_filtered():
     await vDB.insert(content='Text', title='Some mo text', page_numbers=[1], tags=['tag2', 'tag3'])
     await vDB.insert(content='Text', title='Even mo text', page_numbers=[1], tags=['tag3'])
 
+    # Using limit default
+    sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False)
+    assert sim_search is not None, Exception("No results returned from filtered search")
+    assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
+
     sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
+
+    texts = ['Hello world', 'Hello Dolly', 'Good-Bye to All That']
+    authors = ['Brian Kernighan', 'Louis Armstrong', 'Robert Graves']
+    metas = [[f'author={a}'] for a in authors]
+    count = len(texts)
+    records = zip(texts, ['']*count, [None]*count, metas)
+    await vDB.insert_many(records)
+
+    sim_search = await vDB.search(query_string='Hi there!', threshold=0.999, limit=0)
+    assert sim_search is not None, Exception("No results returned from filtered search")
+    assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
+
+    sim_search = await vDB.search(query_string='Hi there!', threshold=0.999, limit=2)
+    assert sim_search is not None, Exception("No results returned from filtered search")
+    assert len(sim_search) == 2, Exception(f"There should be 2 results, received {sim_search}")
 
     await vDB.drop_table()

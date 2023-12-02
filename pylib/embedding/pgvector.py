@@ -58,18 +58,22 @@ INSERT INTO {table_name} (
 '''
 
 QUERY_DOC_TABLE = '''-- Semantic search a document
-SELECT
-    1 - (embedding <=> '{query_embedding}') AS cosine_similarity,
-    title,
-    content,
-    page_numbers,
-    tags
-FROM
-    {table_name}
-{where_clauses}\
+SELECT * FROM
+-- Subquery to calculate cosine similarity, required to use the alias in the WHERE clause
+(
+    SELECT
+        1 - (embedding <=> $1) AS cosine_similarity,
+        title,
+        content,
+        page_numbers,
+        tags
+    FROM
+        {table_name}
+) subquery
+{where_clauses}
 ORDER BY
     cosine_similarity DESC
-LIMIT {limit};
+{limit_clause};
 '''
 
 TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator \n'
@@ -78,6 +82,9 @@ PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap op
 
 TAGS_WHERE_CLAUSE_CONJ = 'tags @> {query_tags}  -- Contains operator \n'
 TAGS_WHERE_CLAUSE_DISJ = 'tags && {query_tags}  -- Overlap operator \n'
+
+THRESHOLD_WHERE_CLAUSE = '{query_threshold} >= cosine_similarity\n'
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
@@ -118,7 +125,7 @@ ORDER BY
 
 SEMANTIC_QUERY_CHATLOG_TABLE = '''-- Semantic search a chatlog
 SELECT
-    1 - (embedding <=> '{query_embedding}') AS cosine_similarity,
+    1 - (embedding <=> $1) AS cosine_similarity,
     ts,
     role,
     content,
@@ -354,7 +361,8 @@ class DocDB(PGVectorHelper):
             query_title: str | None = None,
             query_page_numbers: list[int] | None = None,
             query_tags: list[str] | None = None,
-            limit: int = 1,
+            threshold: float | None = None,
+            limit: int = 0,
             conjunctive: bool = True
     ) -> list[asyncpg.Record]:
         '''
@@ -373,6 +381,7 @@ class DocDB(PGVectorHelper):
                 for how multiple tags are interpreted.
 
             limit (int, optional): maximum number of results to return (useful for top-k query)
+                Default is no limit
 
             conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching
                 in the case of multiple tags. Defaults to True.
@@ -380,8 +389,14 @@ class DocDB(PGVectorHelper):
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
+        if threshold is not None:
+            if not isinstance(threshold, float):
+                raise TypeError('threshold must be a float')
+            if (threshold < 0) or (threshold > 1):
+                raise ValueError('threshold must be between 0 and 1')
+
         if not isinstance(limit, int):
-            raise TypeError('limit must be an integer')
+            raise TypeError('limit must be an integer')  # Guard against injection
 
         # Get the embedding of the query string as a PGvector compatible list
         query_embedding = list(self._embedding_model.encode(query_string))
@@ -389,14 +404,14 @@ class DocDB(PGVectorHelper):
         tags_where_clause = TAGS_WHERE_CLAUSE_CONJ if conjunctive else TAGS_WHERE_CLAUSE_DISJ
 
         # Build where clauses
-        if (query_title is None) and (query_page_numbers is None) and (query_tags is None):
+        if (query_title is None) and (query_page_numbers is None) and (query_tags is None) and (threshold is None):
             # No where clauses, so don't bother with the WHERE keyword
             where_clauses = ''
-            query_args = []
+            query_args = [query_embedding]
         else:  # construct where clauses
-            param_count = 0
+            param_count = 1
             clauses = []
-            query_args = []
+            query_args = [query_embedding]
             if query_title is not None:
                 param_count += 1
                 query_args.append(query_title)
@@ -409,16 +424,24 @@ class DocDB(PGVectorHelper):
                 param_count += 1
                 query_args.append(query_tags)
                 clauses.append(tags_where_clause.format(query_tags=f'${param_count}'))
+            if threshold is not None:
+                param_count += 1
+                query_args.append(threshold)
+                clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${param_count}'))
             clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
             where_clauses = f'WHERE\n{clauses}'
+
+        if limit:
+            limit_clause = f'LIMIT {limit}\n'
+        else:
+            limit_clause = ''
 
         # Execute the search via SQL
         search_results = await self.conn.fetch(
             QUERY_DOC_TABLE.format(
                 table_name=self.table_name,
-                query_embedding=query_embedding,
                 where_clauses=where_clauses,
-                limit=limit
+                limit_clause=limit_clause,
             ),
             *query_args
         )
