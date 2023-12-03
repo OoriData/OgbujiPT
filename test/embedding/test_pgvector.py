@@ -88,7 +88,7 @@ async def test_PGv_embed_pacer():
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(query_string=search_string, limit=3)
+    sim_search = await vDB.search(text=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     await vDB.drop_table()
@@ -123,9 +123,9 @@ async def test_PGv_embed_many_pacer():
     documents = (
         (
             text,
+            ['fitness', 'pacer', 'copypasta'],
             f'Pacer Copypasta line {index}',
-            [1, 2, 3],
-            ['fitness', 'pacer', 'copypasta']
+            [1, 2, 3]
         )
         for index, text in enumerate(pacer_copypasta)
     )
@@ -135,7 +135,7 @@ async def test_PGv_embed_many_pacer():
 
     # Search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(query_string=search_string, limit=3)
+    sim_search = await vDB.search(text=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
     await vDB.drop_table()
@@ -187,10 +187,10 @@ async def test_PGv_search_filtered():
     # search table with filtered match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
     sim_search = await vDB.search(
-        query_string=search_string,
+        text=search_string,
         query_title='Pacer Copypasta',
         query_page_numbers=[3],
-        query_tags=['pacer'],
+        tags=['pacer'],
         conjunctive=False
     )
     assert sim_search is not None, Exception("No results returned from filtered search")
@@ -201,11 +201,11 @@ async def test_PGv_search_filtered():
     await vDB.insert(content='Text', title='Even mo text', page_numbers=[1], tags=['tag3'])
 
     # Using limit default
-    sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False)
+    sim_search = await vDB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
-    sim_search = await vDB.search(query_string='Text', query_tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
+    sim_search = await vDB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
@@ -213,14 +213,14 @@ async def test_PGv_search_filtered():
     authors = ['Brian Kernighan', 'Louis Armstrong', 'Robert Graves']
     metas = [[f'author={a}'] for a in authors]
     count = len(texts)
-    records = zip(texts, ['']*count, [None]*count, metas)
+    records = zip(texts, metas, ['']*count, [None]*count)
     await vDB.insert_many(records)
 
-    sim_search = await vDB.search(query_string='Hi there!', threshold=0.999, limit=0)
+    sim_search = await vDB.search(text='Hi there!', threshold=0.999, limit=0)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
-    sim_search = await vDB.search(query_string='Hi there!', threshold=0.999, limit=2)
+    sim_search = await vDB.search(text='Hi there!', threshold=0.999, limit=2)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(sim_search) == 2, Exception(f"There should be 2 results, received {sim_search}")
 
