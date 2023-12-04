@@ -4,6 +4,8 @@ Common tools & resources for test cases
 # ruff: noqa: E501
 
 import pytest
+from openai.types.completion import Completion, CompletionChoice, CompletionUsage
+from openai.types.chat.chat_completion import ChatCompletion, Choice, ChatCompletionMessage
 
 
 @pytest.fixture
@@ -15,36 +17,25 @@ def PROMPTING_USER_QUERY():
 def PROMPTING_CONTEXT():
     return 'The entirety of "Principia Mathematica" by Isaac Newton'
 
+
 @pytest.fixture
 def PROMPTING_CONTEXT_LIST():
     return [
         (
-            'author: Isaac Newton\n'
-            'title: Principia Mathematica Volume 1\n'
-            'date: 1910\n'
-            'ISBN-13: 978-0521626063',
-            'All mathematical propositions\' are of the form S is P\'; S\' is the subject, P\' the predicate.'
+            'author: Isaac Newton\n' 'title: Principia Mathematica Volume 1\n' 'date: 1910\n' 'ISBN-13: 978-0521626063',
+            'All mathematical propositions\' are of the form S is P\'; S\' is the subject, P\' the predicate.',
         ),
         (
-            'author: Isaac Newton\n'
-            'title: Principia Mathematica Volume 2\n'
-            'date: 1912\n'
-            'ISBN-13: 978-0521626070',
-            'It is desirable to find some convenient phrase which shall denote the whole collection of values of a function, or the whole collection of entities of a given type.'
+            'author: Isaac Newton\n' 'title: Principia Mathematica Volume 2\n' 'date: 1912\n' 'ISBN-13: 978-0521626070',
+            'It is desirable to find some convenient phrase which shall denote the whole collection of values of a function, or the whole collection of entities of a given type.',
         ),
         (
-            'author: Isaac Newton\n'
-            'title: Principia Mathematica Volume 3\n'
-            'date: 1913\n'
-            'ISBN-13: 978-0521626087',
-            'In this volume we shall define the arithmetical relations between finite cardinal numbers and also their addition and multiplication.'
+            'author: Isaac Newton\n' 'title: Principia Mathematica Volume 3\n' 'date: 1913\n' 'ISBN-13: 978-0521626087',
+            'In this volume we shall define the arithmetical relations between finite cardinal numbers and also their addition and multiplication.',
         ),
         (
-            'author: Isaac Newton\n'
-            'title: Principia Mathematica Volume 4\n'
-            'date: 1915\n'
-            'ISBN-13: 978-6969696969',
-            'Finally, we can get onto the real purpose of this work; to explain why 9 + 10 = 21'
+            'author: Isaac Newton\n' 'title: Principia Mathematica Volume 4\n' 'date: 1915\n' 'ISBN-13: 978-6969696969',
+            'Finally, we can get onto the real purpose of this work; to explain why 9 + 10 = 21',
         ),
     ]
 
@@ -93,8 +84,8 @@ def COME_THUNDER_POEM_CHUNKS():
         'Now that the triumphant march has entered the last street corners,\nRemember, O dancers, the thunder among the clouds…\n\nNow that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…',
         'Now that the triumphant march has entered the last street corners,\nRemember, O dancers, the thunder among the clouds…\n\nNow that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…\n\nThe smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.',
         'Now that the laughter, broken in two, hangs tremulous between the teeth,\nRemember, O Dancers, the lightning beyond the earth…\n\nThe smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.\n\nThe drowsy heads of the pods in barren farmlands witness it,\nThe homesteads abandoned in this century’s brush fire witness it:\nThe myriad eyes of deserted corn cobs in burning barns witness it:\nMagic birds with the miracle of lightning flash on their feathers…',
-        'The smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.\n\nThe drowsy heads of the pods in barren farmlands witness it,\nThe homesteads abandoned in this century’s brush fire witness it:\nThe myriad eyes of deserted corn cobs in burning barns witness it:\nMagic birds with the miracle of lightning flash on their feathers…\n\nThe arrows of God tremble at the gates of light,\nThe drums of curfew pander to a dance of death;'
-        ]
+        'The smell of blood already floats in the lavender-mist of the afternoon.\nThe death sentence lies in ambush along the corridors of power;\nAnd a great fearful thing already tugs at the cables of the open air,\nA nebula immense and immeasurable, a night of deep waters —\nAn iron dream unnamed and unprintable, a path of stone.\n\nThe drowsy heads of the pods in barren farmlands witness it,\nThe homesteads abandoned in this century’s brush fire witness it:\nThe myriad eyes of deserted corn cobs in burning barns witness it:\nMagic birds with the miracle of lightning flash on their feathers…\n\nThe arrows of God tremble at the gates of light,\nThe drums of curfew pander to a dance of death;',
+    ]
 
 
 @pytest.fixture
@@ -110,49 +101,61 @@ klmnopqrst'''
 @pytest.fixture
 def LOREM_IPSUM():
     # Lorem ipsum text
-    return ('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada, '
-            'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius '
-            'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis, '
-            'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget '
-            'elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id '
-            'dignissim risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat '
-            'malesuada finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere '
-            'eleifend, libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum '
-            'euismod, felis libero blandit lorem, nec ullamcorper quam justo at elit.')
+    return (
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada, '
+        'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius '
+        'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis, '
+        'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget '
+        'elit aliquam tempus. Sed at tortor at tortor congue dictum. Nulla varius erat at libero lacinia, id '
+        'dignissim risus auctor. Ut eu odio vehicula, tincidunt justo ac, viverra erat. Sed nec sem sit amet erat '
+        'malesuada finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere '
+        'eleifend, libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum '
+        'euismod, felis libero blandit lorem, nec ullamcorper quam justo at elit.'
+    )
 
 
 @pytest.fixture
-def OPENAI_RESPONSE_OBJECT():
+def OPENAI_TEXT_RESPONSE_OBJECT():
     # Example of OpenAI response object
     # Response generated by prompting with "Recite the Fitness Gram Pacer Test script."
-    return {
-        "id": "cmpl-abc123",
-        "object": "text_completion",
-        "created": 1677858242,
-        "model": "text-davinci-003",
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 128,
-            "total_tokens": 138
-            },
-        'choices': [
-            {
-                'text': 'The fitness gram pacer test is a multi stage aerobic capacity test that progressively gets more difficult as it continues. The 20 meter pacer test will begin in 30 seconds. Line up at the start.',
-                'index': 0,
-                "logprobs": None,
-                'finish_reason': 'stop'
-                },
-            {
-                'text': 'The running speed starts slowly, but gets faster each minute after you hear this signal. [beep] A single lap should be completed each time you hear this sound. [ding] Remember to run in a straight line, and run as long as possible.',
-                'index': 1,
-                "logprobs": None,
-                'finish_reason': 'stop'
-                },
-            {
-                'text': 'The second time you fail to complete a lap before the sound, your test is over. The test will begin on the word start. On your mark, get ready, start.',
-                'index': 2,
-                "logprobs": None,
-                'finish_reason': 'stop'
-                }
-            ]
-        }
+    return Completion(
+        id='cmpl-13ca5e85-a890-4c70-bbbf-9f4825728f23',
+        choices=[
+            CompletionChoice(
+                finish_reason='length',
+                index=0,
+                logprobs=None,
+                text='…is an exceptional employee who has made significant contributions to our company.',
+            )
+        ],
+        created=1701544442,
+        model='.local/share/models/TheBloke_Llama-2-7B-32K-Instruct-GGUF/llama-2-7b-32k-instruct.Q5_K_M.gguf',
+        object='text_completion',
+        system_fingerprint=None,
+        usage=CompletionUsage(completion_tokens=256, prompt_tokens=12, total_tokens=268),
+    )
+
+
+# TODO: Finish up, then enable test in test/test_ogbujipt.py
+@pytest.fixture
+def OPENAI_MSG_RESPONSE_OBJECT():
+    return ChatCompletion(
+        id='chatcmpl-923076c2-d1d5-473b-bdc6-6e803037357a',
+        choices=[
+            Choice(
+                finish_reason='length',
+                index=0,
+                message=ChatCompletionMessage(
+                    content='…is an exceptional employee who has made significant contributions to our company.',
+                    role='assistant',
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=1701544162,
+        model='.local/share/models/TheBloke_Llama-2-7B-32K-Instruct-GGUF/llama-2-7b-32k-instruct.Q5_K_M.gguf',
+        object='chat.completion',
+        system_fingerprint=None,
+        usage=CompletionUsage(completion_tokens=256, prompt_tokens=22, total_tokens=278),
+    )

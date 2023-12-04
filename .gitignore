@@ -1,4 +1,5 @@
 **/.env
+env.sh
 .DS_Store
 scratch
 .vscode

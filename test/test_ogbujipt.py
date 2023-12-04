@@ -9,8 +9,12 @@ pytest test/test_ogbujipt.py
 
 # import pytest
 
-from ogbujipt import oapi_first_choice_text
+from ogbujipt.llm_wrapper import openai_chat_api
 
-def test_oapi_first_choice_text(OPENAI_RESPONSE_OBJECT):
-    text1 = oapi_first_choice_text(OPENAI_RESPONSE_OBJECT)
-    assert text1 == 'The fitness gram pacer test is a multi stage aerobic capacity test that progressively gets more difficult as it continues. The 20 meter pacer test will begin in 30 seconds. Line up at the start.'
+def test_oapi_first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT):
+    text1 = openai_chat_api.first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT)
+    assert text1 == '…is an exceptional employee who has made significant contributions to our company.'
+
+def test_oapi_first_choice_message(OPENAI_MSG_RESPONSE_OBJECT):
+    msg1 = openai_chat_api.first_choice_message(OPENAI_MSG_RESPONSE_OBJECT)
+    assert msg1 == '…is an exceptional employee who has made significant contributions to our company.'
