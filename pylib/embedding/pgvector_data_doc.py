@@ -9,7 +9,7 @@ Vector databases embeddings using PGVector
 import warnings
 from typing   import Iterable
 
-from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg
+from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
 
 __all__ = ['DocDB']
 
@@ -165,9 +165,9 @@ class DataDB(PGVectorHelper):
 
             conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching
                 in the case of multiple tags. Defaults to True.
+
         Returns:
-            list[asyncpg.Record]: list of search results
-                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
+            generator which yields the rows os the query results ass attributable dicts
         '''
         if query_tags is not None:
             warnings.warn('query_tags is deprecated. Use tags instead.', DeprecationWarning)
@@ -225,7 +225,7 @@ class DataDB(PGVectorHelper):
             ),
             *query_args
         )
-        return search_results
+        return process_search_response(search_results)
 
 
 class DocDB(PGVectorHelper):
@@ -327,9 +327,9 @@ class DocDB(PGVectorHelper):
 
             conjunctive (bool, optional): whether to use conjunctive (AND) or disjunctive (OR) matching
                 in the case of multiple tags. Defaults to True.
+        
         Returns:
-            list[asyncpg.Record]: list of search results
-                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
+            generator which yields the rows os the query results ass attributable dicts
         '''
         if query_tags is not None:
             warnings.warn('query_tags is deprecated. Use tags instead.', DeprecationWarning)
@@ -390,4 +390,4 @@ class DocDB(PGVectorHelper):
             ),
             *query_args
         )
-        return search_results
+        return process_search_response(search_results)

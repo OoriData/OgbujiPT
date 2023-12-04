@@ -9,7 +9,8 @@ Vector databases embeddings using PGVector
 from uuid     import UUID
 from datetime import datetime, timezone
 
-from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg
+from ogbujipt.config import attr_dict
+from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
 
 __all__ = ['MessageDB']
 
@@ -61,10 +62,10 @@ SELECT
 FROM
     {table_name}
 WHERE
-    history_key = $1
+    history_key = $2
 ORDER BY
     cosine_similarity DESC
-LIMIT $2;
+LIMIT $3;
 '''
 
 # ======================================================================================================================
@@ -129,6 +130,9 @@ class MessageDB(PGVectorHelper):
             timestamp (datetime, optional): timestamp of the message, defaults to current time
 
             metadata (dict[str, str], optional): additional metadata of the message
+
+        Returns:
+            generator which yields the rows os the query results ass attributable dicts
         '''
         if not timestamp:
             timestamp = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -170,12 +174,12 @@ class MessageDB(PGVectorHelper):
         )
 
         chatlog = [
-            {
+            attr_dict({
                 'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
                 'metadata': record['metadata_json']
-            }
+            })
             for record in chatlog_records
         ]
 
@@ -184,14 +188,14 @@ class MessageDB(PGVectorHelper):
     async def search(
             self,
             history_key: UUID,
-            query_string: str,
+            text: str,
             limit: int = 1
     ) -> list[asyncpg.Record]:
         '''
         Similarity search documents using a query string
 
         Args:
-            query_string (str): string to compare against items in the table
+            text (str): string to compare against items in the table
 
             k (int, optional): maximum number of results to return (useful for top-k query)
         Returns:
@@ -202,14 +206,14 @@ class MessageDB(PGVectorHelper):
             raise TypeError('limit must be an integer')
 
         # Get the embedding of the query string as a PGvector compatible list
-        query_embedding = list(self._embedding_model.encode(query_string))
+        query_embedding = list(self._embedding_model.encode(text))
 
         # Search the table
         records = await self.conn.fetch(
             SEMANTIC_QUERY_CHATLOG_TABLE.format(
-                table_name=self.table_name,
-                query_embedding=query_embedding
+                table_name=self.table_name
             ),
+            query_embedding,
             history_key,
             limit
         )
@@ -225,4 +229,4 @@ class MessageDB(PGVectorHelper):
             for record in records
         ]
 
-        return search_results
+        return process_search_response(search_results)

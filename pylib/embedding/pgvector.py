@@ -8,6 +8,8 @@ Vector databases embeddings using PGVector
 
 import json
 
+from ogbujipt.config import attr_dict
+
 # Handle key imports
 try:
     import asyncpg
@@ -157,6 +159,37 @@ class PGVectorHelper:
         await self.conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
 
 
+def process_search_response(qresponse):
+    '''
+    Convert a query response to an attributable dict
+
+    Args:
+        query_response (asyncpg.Record): asyncpg.Record object to be converted to a dict
+
+    Returns:
+        list[dict]: List with a dict representation for each result row
+
+    >>> await mydb.search(text='Hello')
+    >>> results = process_search_response()
+    >>> row = next(results)  # Assume there's at least one result
+    >>> c = r.content
+    >>> t = r.tags
+
+    If a row does not have a title or page_numbers field, these will be set to None
+
+    Other reasons for this conversion: asyncpg.Record objects are not JSON serializable,
+    and don't support attribute-style access
+    '''
+    for row in qresponse:
+        # Actually, this is otiose; just let missing attributes fail
+        # if 'title' not in row:
+        #     row['title'] = None
+        # if 'page_numbers' not in row:
+        #     row['page_numbers'] = None
+        # print(row, row.items())
+        yield attr_dict(row)
+
+
 # Down here to avoid circular imports
-from ogbujipt.embedding.pgvector_doc import DocDB  # noqa: E402 F401
+from ogbujipt.embedding.pgvector_data_doc import DataDB, DocDB  # noqa: E402 F401
 from ogbujipt.embedding.pgvector_chat import MessageDB  # noqa: E402 F401

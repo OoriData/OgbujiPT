@@ -20,8 +20,13 @@ OPENAI_KEY_DUMMY = 'OPENAI_DUMMY'
 
 class attr_dict(dict):
     # XXX: Should unknown attr access return None rather than raise?
-    # If so, this line should be: __getattr__ = dict.get
-    __getattr__ = dict.__getitem__
+    # If so, can just do: __getattr__ = dict.get
+    # __getattr__ = dict.__getitem__
+    def __getattr__(self, attr):
+        try:
+            return self[attr]
+        except KeyError:
+            # Substitute with more normally expected exception
+            raise AttributeError(attr)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
-
