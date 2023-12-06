@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector_doc
+# ogbujipt.embedding.pgvector_data_doc
 
 '''
 Vector databases embeddings using PGVector
@@ -91,11 +91,12 @@ class DataDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        await self.conn.execute(
-            CREATE_DATA_TABLE.format(
-                table_name=self.table_name,
-                embed_dimension=self._embed_dimension)
-            )
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                CREATE_DATA_TABLE.format(
+                    table_name=self.table_name,
+                    embed_dimension=self._embed_dimension)
+                )
     
     async def insert(
             self,
@@ -117,12 +118,13 @@ class DataDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        await self.conn.execute(
-            INSERT_DATA.format(table_name=self.table_name),
-            content_embedding.tolist(),
-            content,
-            tags
-        )
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                INSERT_DATA.format(table_name=self.table_name),
+                content_embedding.tolist(),
+                content,
+                tags
+            )
 
     async def insert_many(
             self,
@@ -136,13 +138,14 @@ class DataDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, title, page_numbers, tags)
         '''
-        await self.conn.executemany(
-            INSERT_DOCS.format(table_name=self.table_name),
-            (
-                (self._embedding_model.encode(content), content, tags)
-                for content, tags in content_list
+        async with self.conn_pool.acquire() as conn:
+            await conn.executemany(
+                INSERT_DOCS.format(table_name=self.table_name),
+                (
+                    (self._embedding_model.encode(content), content, tags)
+                    for content, tags in content_list
+                )
             )
-        )
 
     async def search(
             self,
@@ -221,14 +224,15 @@ class DataDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        search_results = await self.conn.fetch(
-            QUERY_DATA_TABLE.format(
-                table_name=self.table_name,
-                where_clauses=where_clauses,
-                limit_clause=limit_clause,
-            ),
-            *query_args
-        )
+        async with self.conn_pool.acquire() as conn:
+            search_results = await conn.fetch(
+                QUERY_DATA_TABLE.format(
+                    table_name=self.table_name,
+                    where_clauses=where_clauses,
+                    limit_clause=limit_clause,
+                ),
+                *query_args
+            )
         return process_search_response(search_results)
 
 
@@ -238,16 +242,12 @@ class DocDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        # Check that the connection is still alive
-        # if self.conn.is_closed():
-        #     raise ConnectionError('Connection to database is closed')
-
-        # Create the table
-        await self.conn.execute(
-            CREATE_DOC_TABLE.format(
-                table_name=self.table_name,
-                embed_dimension=self._embed_dimension)
-            )
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                CREATE_DOC_TABLE.format(
+                    table_name=self.table_name,
+                    embed_dimension=self._embed_dimension)
+                )
     
     async def insert(
             self,
@@ -271,14 +271,15 @@ class DocDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        await self.conn.execute(
-            INSERT_DOCS.format(table_name=self.table_name),
-            content_embedding.tolist(),
-            content,
-            tags,
-            title,
-            page_numbers
-        )
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                INSERT_DOCS.format(table_name=self.table_name),
+                content_embedding.tolist(),
+                content,
+                tags,
+                title,
+                page_numbers
+            )
 
     async def insert_many(
             self,
@@ -292,13 +293,14 @@ class DocDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, tags, title, page_numbers)
         '''
-        await self.conn.executemany(
-            INSERT_DOCS.format(table_name=self.table_name),
-            (
-                (self._embedding_model.encode(content), content, tags, title, page_numbers)
-                for content, tags, title, page_numbers in content_list
+        async with self.conn_pool.acquire() as conn:
+            await conn.executemany(
+                INSERT_DOCS.format(table_name=self.table_name),
+                (
+                    (self._embedding_model.encode(content), content, tags, title, page_numbers)
+                    for content, tags, title, page_numbers in content_list
+                )
             )
-        )
 
     async def search(
             self,
@@ -386,12 +388,13 @@ class DocDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        search_results = await self.conn.fetch(
-            QUERY_DOC_TABLE.format(
-                table_name=self.table_name,
-                where_clauses=where_clauses,
-                limit_clause=limit_clause,
-            ),
-            *query_args
-        )
+        async with self.conn_pool.acquire() as conn:
+            search_results = await conn.fetch(
+                QUERY_DOC_TABLE.format(
+                    table_name=self.table_name,
+                    where_clauses=where_clauses,
+                    limit_clause=limit_clause,
+                ),
+                *query_args
+            )
         return process_search_response(search_results)

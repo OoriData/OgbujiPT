@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector
+# ogbujipt.embedding.pgvector_chat
 
 '''
 Vector databases embeddings using PGVector
@@ -98,17 +98,13 @@ class MessageDB(PGVectorHelper):
         '''
         Create the table to hold chatlogs
         '''
-        # Check that the connection is still alive
-        # if self.conn.is_closed():
-        #     raise ConnectionError('Connection to database is closed')
-
-        # Create the table
-        await self.conn.execute(
-            CREATE_CHATLOG_TABLE.format(
-                table_name=self.table_name,
-                embed_dimension=self._embed_dimension
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                CREATE_CHATLOG_TABLE.format(
+                    table_name=self.table_name,
+                    embed_dimension=self._embed_dimension
+                )
             )
-        )
 
     async def insert(
             self,
@@ -143,16 +139,18 @@ class MessageDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        await self.conn.execute(
-            INSERT_CHATLOG.format(table_name=self.table_name),
-            timestamp,
-            history_key,
-            role_int,
-            content,
-            content_embedding.tolist(),
-            metadata
-        )   
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(
+                INSERT_CHATLOG.format(table_name=self.table_name),
+                timestamp,
+                history_key,
+                role_int,
+                content,
+                content_embedding.tolist(),
+                metadata
+            )   
     
+    # XXX: Change to a generator
     async def get_table(
             self,
             history_key: UUID
@@ -166,13 +164,13 @@ class MessageDB(PGVectorHelper):
             list[asyncpg.Record]: list of chatlog
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
-        # Get the chatlog
-        chatlog_records = await self.conn.fetch(
-            RETURN_CHATLOG_BY_HISTORY_KEY.format(
-                table_name=self.table_name,
-            ),
-            history_key
-        )
+        async with self.conn_pool.acquire() as conn:
+            chatlog_records = await conn.fetch(
+                RETURN_CHATLOG_BY_HISTORY_KEY.format(
+                    table_name=self.table_name,
+                ),
+                history_key
+            )
 
         chatlog = [
             attr_dict({
@@ -210,14 +208,15 @@ class MessageDB(PGVectorHelper):
         query_embedding = list(self._embedding_model.encode(text))
 
         # Search the table
-        records = await self.conn.fetch(
-            SEMANTIC_QUERY_CHATLOG_TABLE.format(
-                table_name=self.table_name
-            ),
-            query_embedding,
-            history_key,
-            limit
-        )
+        async with self.conn_pool.acquire() as conn:
+            records = await conn.fetch(
+                SEMANTIC_QUERY_CHATLOG_TABLE.format(
+                    table_name=self.table_name
+                ),
+                query_embedding,
+                history_key,
+                limit
+            )
 
         search_results = [
             {

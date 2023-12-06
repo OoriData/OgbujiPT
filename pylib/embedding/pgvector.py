@@ -34,9 +34,13 @@ SELECT EXISTS (
 '''
 # ------ SQL queries ---------------------------------------------------------------------------------------------------
 
+# Default overall PG max is 100.
+# See: https://commandprompt.com/education/how-to-alter-max_connections-parameter-in-postgresql/
+DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
+
 
 class PGVectorHelper:
-    def __init__(self, embedding_model, table_name: str, apg_conn):
+    def __init__(self, embedding_model, table_name: str, apg_conn_pool):
         '''
         Create a PGvector helper from an asyncpg connection
 
@@ -68,7 +72,7 @@ class PGVectorHelper:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
-        self.conn = apg_conn
+        self.conn_pool = apg_conn_pool
         self.table_name = table_name
 
     @classmethod
@@ -81,6 +85,7 @@ class PGVectorHelper:
             db_name,
             host,
             port,
+            min_max_size=DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE,
             **conn_params
     ) -> 'PGVectorHelper':
         '''
@@ -89,41 +94,45 @@ class PGVectorHelper:
         For details on accepted parameters, See the `pgvector_connection` docstring
             (e.g. run `help(pgvector_connection)`)
         '''
+        min_size, max_size = min_max_size
         try:
-            conn = await asyncpg.connect(
+            conn_pool = await asyncpg.create_pool(
                 host=host,
                 port=port,
                 user=user,
                 password=password,
                 database=db_name,
+                min_size=min_size,
+                max_size=max_size,
                 **conn_params
             )
         except Exception as e:
             # Don't blanket mask the exception. Handle exceptions types in whatever way makes sense
             raise e
-        return await cls.from_connection(embedding_model, table_name, conn)
+        return await cls.from_connection_pool(embedding_model, table_name, conn_pool)
 
     @classmethod
-    async def from_connection(cls, embedding_model, table_name, conn) -> 'PGVectorHelper':
+    async def from_connection_pool(cls, embedding_model, table_name, conn_pool) -> 'PGVectorHelper':
         '''
-        Create a PGvector helper from connection parameters
+        Create a PGvector helper from a connection pool instance
 
         For details on accepted parameters, See the `pgvector_connection` docstring
             (e.g. run `help(pgvector_connection)`)
         '''
         # Ensure the vector extension is installed
-        await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
-        await register_vector(conn)
+        async with conn_pool.acquire() as conn:
+            await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
+            await register_vector(conn)
 
-        await conn.set_type_codec(  # Register a codec for JSON
-            'JSON',
-            encoder=json.dumps,
-            decoder=json.loads,
-            schema='pg_catalog'
-        )
+            await conn.set_type_codec(  # Register a codec for JSON
+                'JSON',
+                encoder=json.dumps,
+                decoder=json.loads,
+                schema='pg_catalog'
+            )
 
         # print('PGvector extension created and loaded.')
-        return cls(embedding_model, table_name, conn)
+        return cls(embedding_model, table_name, conn_pool)
 
     # Hmm. Just called count in the qdrant version
     async def count_items(self) -> int:
@@ -134,7 +143,8 @@ class PGVectorHelper:
             int: number of documents in the table
         '''
         # Count the number of documents in the table
-        count = await self.conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
+        async with self.conn_pool.acquire() as conn:
+            count = await conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
         return count
     
     async def table_exists(self) -> bool:
@@ -145,10 +155,11 @@ class PGVectorHelper:
             bool: True if the table exists, False otherwise
         '''
         # Check if the table exists
-        table_exists = await self.conn.fetchval(
-            CHECK_TABLE_EXISTS,
-            self.table_name
-        )
+        async with self.conn_pool.acquire() as conn:
+            table_exists = await conn.fetchval(
+                CHECK_TABLE_EXISTS,
+                self.table_name
+            )
         return table_exists
 
     async def drop_table(self) -> None:
@@ -158,7 +169,8 @@ class PGVectorHelper:
         Exercise caution!
         '''
         # Delete the table
-        await self.conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
+        async with self.conn_pool.acquire() as conn:
+            await conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
 
 
 def process_search_response(qresponse):

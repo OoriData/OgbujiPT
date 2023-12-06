@@ -2,7 +2,10 @@ import os
 from ogbujipt import config
 from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat # , DUMMY_MODEL
 
-import respx
+try:
+    import respx
+except ImportError:
+    raise RuntimeError('respx not installed. Please see wiki for setup: https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors')  # noqa: E501
 
 from httpx import Response
 
