@@ -32,6 +32,10 @@ SELECT EXISTS (
 );
 '''
 
+# Default overall PG max is 100.
+# See: https://commandprompt.com/education/how-to-alter-max_connections-parameter-in-postgresql/
+DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
+
 
 class PGVectorHelper:
     def __init__(self, embedding_model, table_name: str, apg_conn_pool):
@@ -79,7 +83,7 @@ class PGVectorHelper:
             db_name,
             host,
             port,
-            min_max_size=(50, 100),
+            min_max_size=DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE,
             **conn_params
     ) -> 'PGVectorHelper':
         '''
