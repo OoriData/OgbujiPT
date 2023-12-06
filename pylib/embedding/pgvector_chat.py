@@ -14,8 +14,10 @@ from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_
 
 __all__ = ['MessageDB']
 
-# ----------------------------------------------------------------------------------------------------------------------
-# Generic SQL template for creating a table to hold individual messages from a chatlog and their metadata
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
+# PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
+# Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
+
 CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
 CREATE TABLE IF NOT EXISTS {table_name} (
     ts TIMESTAMP WITH TIME ZONE PRIMARY KEY,  -- timestamp of the message
@@ -67,8 +69,7 @@ ORDER BY
     cosine_similarity DESC
 LIMIT $3;
 '''
-
-# ======================================================================================================================
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
 
 ROLE_INTS = {
     'system': 0,

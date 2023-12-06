@@ -13,19 +13,22 @@ from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_
 
 __all__ = ['DocDB']
 
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
+# PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
+# Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
 
 CREATE_TABLE_BASE = '''-- Create a table to hold embedded documents or data
 CREATE TABLE IF NOT EXISTS {{table_name}} (
     id BIGSERIAL PRIMARY KEY,
     embedding VECTOR({{embed_dimension}}),  -- embedding vectors (array dimension)
-    content TEXT NOT NULL,                -- text content of the chunk
-    tags TEXT[]                           -- tags associated with the chunk
+    content TEXT NOT NULL,                  -- text content of the chunk
+    tags TEXT[]                             -- tags associated with the chunk
 {extra_fields});
 '''
 
 CREATE_DOC_TABLE = CREATE_TABLE_BASE.format(extra_fields='''\
-,    title TEXT,                           -- title of file
-    page_numbers INTEGER[]               -- page number of the document that the chunk is found in
+,    title TEXT,                            -- title of file
+    page_numbers INTEGER[]                  -- page number of the document that the chunk is found in
 ''')
 
 CREATE_DATA_TABLE = CREATE_TABLE_BASE.format(extra_fields='')
@@ -77,7 +80,8 @@ PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap op
 TAGS_WHERE_CLAUSE_CONJ = 'tags @> {tags}  -- Contains operator \n'
 TAGS_WHERE_CLAUSE_DISJ = 'tags && {tags}  -- Overlap operator \n'
 
-THRESHOLD_WHERE_CLAUSE = '{query_threshold} >= cosine_similarity\n'
+THRESHOLD_WHERE_CLAUSE = '{query_threshold} >= cosine_similarity \n'
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
 
 
 # XXX: Data vs doc DB can probably be modularized further, but this will do for now

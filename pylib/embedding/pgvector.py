@@ -20,9 +20,10 @@ except ImportError:
     asyncpg = None
     register_vector = object()  # Set up a dummy to satisfy the type hints
 
-# ======================================================================================================================
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
 # Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
+
 CREATE_VECTOR_EXTENSION = 'CREATE EXTENSION IF NOT EXISTS vector;'
 
 CHECK_TABLE_EXISTS = '''-- Check if a table exists
@@ -31,6 +32,7 @@ SELECT EXISTS (
     WHERE tablename = $1
 );
 '''
+# ------ SQL queries ---------------------------------------------------------------------------------------------------
 
 
 class PGVectorHelper:
