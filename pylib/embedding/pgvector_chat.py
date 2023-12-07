@@ -98,7 +98,7 @@ class MessageDB(PGVectorHelper):
         '''
         Create the table to hold chatlogs
         '''
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_CHATLOG_TABLE.format(
@@ -140,7 +140,7 @@ class MessageDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     INSERT_CHATLOG.format(table_name=self.table_name),
@@ -166,7 +166,7 @@ class MessageDB(PGVectorHelper):
             list[asyncpg.Record]: list of chatlog
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             chatlog_records = await conn.fetch(
                 RETURN_CHATLOG_BY_HISTORY_KEY.format(
                     table_name=self.table_name,
@@ -210,7 +210,7 @@ class MessageDB(PGVectorHelper):
         query_embedding = list(self._embedding_model.encode(text))
 
         # Search the table
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             records = await conn.fetch(
                 SEMANTIC_QUERY_CHATLOG_TABLE.format(
                     table_name=self.table_name

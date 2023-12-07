@@ -7,6 +7,7 @@ Vector databases embeddings using PGVector
 '''
 
 import json
+import asyncio
 
 from ogbujipt.config import attr_dict
 
@@ -40,7 +41,7 @@ DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
 
 
 class PGVectorHelper:
-    def __init__(self, embedding_model, table_name: str, apg_conn_pool):
+    def __init__(self, embedding_model, table_name: str, pool_params: dict = None):
         '''
         Create a PGvector helper from an asyncpg connection
 
@@ -72,8 +73,10 @@ class PGVectorHelper:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
-        self.conn_pool = apg_conn_pool
         self.table_name = table_name
+        self.pool_params = pool_params
+        # asyncpg doesn't allow use of the same pool in different event loops
+        self.pool_per_loop = {}
 
     @classmethod
     async def from_conn_params(
@@ -100,7 +103,7 @@ class PGVectorHelper:
         # import logging
         # logging.critical(f'Connecting to {host}:{port} as {user} to {db_name}')
         # logging.critical(str(conn_params))
-        conn_pool = await asyncpg.create_pool(
+        pool_params = dict(
             host=host,
             port=port,
             user=user,
@@ -113,18 +116,12 @@ class PGVectorHelper:
         # except Exception as e:
             # Don't blanket mask the exception. Handle exceptions types in whatever way makes sense
             # raise e
-        return await cls.from_connection_pool(embedding_model, table_name, conn_pool)
 
-    @classmethod
-    async def from_connection_pool(cls, embedding_model, table_name, conn_pool) -> 'PGVectorHelper':
-        '''
-        Create a PGvector helper from a connection pool instance
+        obj = cls(embedding_model, table_name, pool_params)
+        pool = await obj.connection_pool()
 
-        For details on accepted parameters, See the `pgvector_connection` docstring
-            (e.g. run `help(pgvector_connection)`)
-        '''
         # Ensure the vector extension is installed
-        async with conn_pool.acquire() as conn:
+        async with pool.acquire() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
             await register_vector(conn)
 
@@ -136,7 +133,28 @@ class PGVectorHelper:
             )
 
         # print('PGvector extension created and loaded.')
-        return cls(embedding_model, table_name, conn_pool)
+        return obj
+
+    async def connection_pool(self):
+        '''
+        '''
+        # conn_pool = await asyncpg.create_pool(
+        #     host=host,
+        #     port=port,
+        #     user=user,
+        #     password=password,
+        #     database=db_name,
+        #     min_size=min_size,
+        #     max_size=max_size,
+        #     **conn_params
+        # )
+        loop = asyncio.get_event_loop()
+        if loop in self.pool_per_loop:
+            pool = self.pool_per_loop[loop]
+        else:
+            pool = await asyncpg.create_pool(**self.pool_params)
+            self.pool_per_loop[loop] = pool
+        return pool
 
     # Hmm. Just called count in the qdrant version
     async def count_items(self) -> int:
@@ -146,8 +164,8 @@ class PGVectorHelper:
         Returns:
             int: number of documents in the table
         '''
-        # Count the number of documents in the table
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
+            # Count the number of documents in the table
             count = await conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
         return count
     
@@ -159,7 +177,7 @@ class PGVectorHelper:
             bool: True if the table exists, False otherwise
         '''
         # Check if the table exists
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             table_exists = await conn.fetchval(
                 CHECK_TABLE_EXISTS,
                 self.table_name
@@ -173,7 +191,7 @@ class PGVectorHelper:
         Exercise caution!
         '''
         # Delete the table
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             await conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
 
 
