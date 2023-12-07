@@ -92,11 +92,12 @@ class DataDB(PGVectorHelper):
         Create the table to hold embedded documents
         '''
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                CREATE_DATA_TABLE.format(
-                    table_name=self.table_name,
-                    embed_dimension=self._embed_dimension)
-                )
+            async with conn.transaction():
+                await conn.execute(
+                    CREATE_DATA_TABLE.format(
+                        table_name=self.table_name,
+                        embed_dimension=self._embed_dimension)
+                    )
     
     async def insert(
             self,
@@ -119,12 +120,13 @@ class DataDB(PGVectorHelper):
         content_embedding = self._embedding_model.encode(content)
 
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                INSERT_DATA.format(table_name=self.table_name),
-                content_embedding.tolist(),
-                content,
-                tags
-            )
+            async with conn.transaction():
+                await conn.execute(
+                    INSERT_DATA.format(table_name=self.table_name),
+                    content_embedding.tolist(),
+                    content,
+                    tags
+                )
 
     async def insert_many(
             self,
@@ -139,13 +141,14 @@ class DataDB(PGVectorHelper):
             content_list: List of tuples, each of the form: (content, title, page_numbers, tags)
         '''
         async with self.conn_pool.acquire() as conn:
-            await conn.executemany(
-                INSERT_DOCS.format(table_name=self.table_name),
-                (
-                    (self._embedding_model.encode(content), content, tags)
-                    for content, tags in content_list
+            async with conn.transaction():
+                await conn.executemany(
+                    INSERT_DOCS.format(table_name=self.table_name),
+                    (
+                        (self._embedding_model.encode(content), content, tags)
+                        for content, tags in content_list
+                    )
                 )
-            )
 
     async def search(
             self,
@@ -243,11 +246,12 @@ class DocDB(PGVectorHelper):
         Create the table to hold embedded documents
         '''
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                CREATE_DOC_TABLE.format(
-                    table_name=self.table_name,
-                    embed_dimension=self._embed_dimension)
-                )
+            async with conn.transaction():
+                await conn.execute(
+                    CREATE_DOC_TABLE.format(
+                        table_name=self.table_name,
+                        embed_dimension=self._embed_dimension)
+                    )
     
     async def insert(
             self,
@@ -272,14 +276,15 @@ class DocDB(PGVectorHelper):
         content_embedding = self._embedding_model.encode(content)
 
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                INSERT_DOCS.format(table_name=self.table_name),
-                content_embedding.tolist(),
-                content,
-                tags,
-                title,
-                page_numbers
-            )
+            async with conn.transaction():
+                await conn.execute(
+                    INSERT_DOCS.format(table_name=self.table_name),
+                    content_embedding.tolist(),
+                    content,
+                    tags,
+                    title,
+                    page_numbers
+                )
 
     async def insert_many(
             self,
@@ -294,13 +299,14 @@ class DocDB(PGVectorHelper):
             content_list: List of tuples, each of the form: (content, tags, title, page_numbers)
         '''
         async with self.conn_pool.acquire() as conn:
-            await conn.executemany(
-                INSERT_DOCS.format(table_name=self.table_name),
-                (
-                    (self._embedding_model.encode(content), content, tags, title, page_numbers)
-                    for content, tags, title, page_numbers in content_list
+            async with conn.transaction():
+                await conn.executemany(
+                    INSERT_DOCS.format(table_name=self.table_name),
+                    (
+                        (self._embedding_model.encode(content), content, tags, title, page_numbers)
+                        for content, tags, title, page_numbers in content_list
+                    )
                 )
-            )
 
     async def search(
             self,

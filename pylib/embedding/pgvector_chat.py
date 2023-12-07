@@ -99,12 +99,13 @@ class MessageDB(PGVectorHelper):
         Create the table to hold chatlogs
         '''
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                CREATE_CHATLOG_TABLE.format(
-                    table_name=self.table_name,
-                    embed_dimension=self._embed_dimension
+            async with conn.transaction():
+                await conn.execute(
+                    CREATE_CHATLOG_TABLE.format(
+                        table_name=self.table_name,
+                        embed_dimension=self._embed_dimension
+                    )
                 )
-            )
 
     async def insert(
             self,
@@ -140,15 +141,16 @@ class MessageDB(PGVectorHelper):
         content_embedding = self._embedding_model.encode(content)
 
         async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                INSERT_CHATLOG.format(table_name=self.table_name),
-                timestamp,
-                history_key,
-                role_int,
-                content,
-                content_embedding.tolist(),
-                metadata
-            )   
+            async with conn.transaction():
+                await conn.execute(
+                    INSERT_CHATLOG.format(table_name=self.table_name),
+                    timestamp,
+                    history_key,
+                    role_int,
+                    content,
+                    content_embedding.tolist(),
+                    metadata
+                )   
     
     # XXX: Change to a generator
     async def get_table(

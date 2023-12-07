@@ -95,20 +95,24 @@ class PGVectorHelper:
             (e.g. run `help(pgvector_connection)`)
         '''
         min_size, max_size = min_max_size
-        try:
-            conn_pool = await asyncpg.create_pool(
-                host=host,
-                port=port,
-                user=user,
-                password=password,
-                database=db_name,
-                min_size=min_size,
-                max_size=max_size,
-                **conn_params
-            )
-        except Exception as e:
+        # FIXME: Clean up this exception handling
+        # try:
+        # import logging
+        # logging.critical(f'Connecting to {host}:{port} as {user} to {db_name}')
+        # logging.critical(str(conn_params))
+        conn_pool = await asyncpg.create_pool(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db_name,
+            min_size=min_size,
+            max_size=max_size,
+            **conn_params
+        )
+        # except Exception as e:
             # Don't blanket mask the exception. Handle exceptions types in whatever way makes sense
-            raise e
+            # raise e
         return await cls.from_connection_pool(embedding_model, table_name, conn_pool)
 
     @classmethod
