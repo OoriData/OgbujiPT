@@ -143,9 +143,10 @@ class DataDB(PGVectorHelper):
         async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
-                    INSERT_DOCS.format(table_name=self.table_name),
+                    INSERT_DATA.format(table_name=self.table_name),
                     (
-                        (self._embedding_model.encode(content), content, tags)
+                        # Does this need to be .tolist()?
+                        (self._embedding_model.encode(content).tolist(), content, tags)
                         for content, tags in content_list
                     )
                 )
