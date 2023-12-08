@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# test/embedding/test_pgvector.py
 '''
 Set up a mock Postgres instance with the following commands 
 (make sure you don't have anything running on port 0.0.0.0:5432))):

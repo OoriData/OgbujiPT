@@ -110,10 +110,6 @@ class DataDB(PGVectorHelper):
         Args:
             content (str): text content of the document
 
-            title (str, optional): title of the document
-
-            page_numbers (list[int], optional): page number of the document that the chunk is found in
-
             tags (list[str], optional): tags associated with the document
         '''
         # Get the embedding of the content as a PGvector compatible list
@@ -138,7 +134,7 @@ class DataDB(PGVectorHelper):
         Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
 
         Args:
-            content_list: List of tuples, each of the form: (content, title, page_numbers, tags)
+            content_list: List of tuples, each of the form: (content, tags)
         '''
         async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
