@@ -119,7 +119,7 @@ class DataDB(PGVectorHelper):
             async with conn.transaction():
                 await conn.execute(
                     INSERT_DATA.format(table_name=self.table_name),
-                    content_embedding.tolist(),
+                    content_embedding,
                     content,
                     tags
                 )
@@ -142,7 +142,7 @@ class DataDB(PGVectorHelper):
                     INSERT_DATA.format(table_name=self.table_name),
                     (
                         # Does this need to be .tolist()?
-                        (self._embedding_model.encode(content).tolist(), content, tags)
+                        (self._embedding_model.encode(content), content, tags)
                         for content, tags in content_list
                     )
                 )
