@@ -91,12 +91,13 @@ class DataDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                CREATE_DATA_TABLE.format(
-                    table_name=self.table_name,
-                    embed_dimension=self._embed_dimension)
-                )
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    CREATE_DATA_TABLE.format(
+                        table_name=self.table_name,
+                        embed_dimension=self._embed_dimension)
+                    )
     
     async def insert(
             self,
@@ -109,22 +110,19 @@ class DataDB(PGVectorHelper):
         Args:
             content (str): text content of the document
 
-            title (str, optional): title of the document
-
-            page_numbers (list[int], optional): page number of the document that the chunk is found in
-
             tags (list[str], optional): tags associated with the document
         '''
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                INSERT_DATA.format(table_name=self.table_name),
-                content_embedding.tolist(),
-                content,
-                tags
-            )
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    INSERT_DATA.format(table_name=self.table_name),
+                    content_embedding.tolist(),
+                    content,
+                    tags
+                )
 
     async def insert_many(
             self,
@@ -136,16 +134,18 @@ class DataDB(PGVectorHelper):
         Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
 
         Args:
-            content_list: List of tuples, each of the form: (content, title, page_numbers, tags)
+            content_list: List of tuples, each of the form: (content, tags)
         '''
-        async with self.conn_pool.acquire() as conn:
-            await conn.executemany(
-                INSERT_DOCS.format(table_name=self.table_name),
-                (
-                    (self._embedding_model.encode(content), content, tags)
-                    for content, tags in content_list
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.executemany(
+                    INSERT_DATA.format(table_name=self.table_name),
+                    (
+                        # Does this need to be .tolist()?
+                        (self._embedding_model.encode(content).tolist(), content, tags)
+                        for content, tags in content_list
+                    )
                 )
-            )
 
     async def search(
             self,
@@ -224,7 +224,7 @@ class DataDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             search_results = await conn.fetch(
                 QUERY_DATA_TABLE.format(
                     table_name=self.table_name,
@@ -242,12 +242,13 @@ class DocDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                CREATE_DOC_TABLE.format(
-                    table_name=self.table_name,
-                    embed_dimension=self._embed_dimension)
-                )
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    CREATE_DOC_TABLE.format(
+                        table_name=self.table_name,
+                        embed_dimension=self._embed_dimension)
+                    )
     
     async def insert(
             self,
@@ -271,15 +272,16 @@ class DocDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with self.conn_pool.acquire() as conn:
-            await conn.execute(
-                INSERT_DOCS.format(table_name=self.table_name),
-                content_embedding.tolist(),
-                content,
-                tags,
-                title,
-                page_numbers
-            )
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    INSERT_DOCS.format(table_name=self.table_name),
+                    content_embedding.tolist(),
+                    content,
+                    tags,
+                    title,
+                    page_numbers
+                )
 
     async def insert_many(
             self,
@@ -293,14 +295,15 @@ class DocDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, tags, title, page_numbers)
         '''
-        async with self.conn_pool.acquire() as conn:
-            await conn.executemany(
-                INSERT_DOCS.format(table_name=self.table_name),
-                (
-                    (self._embedding_model.encode(content), content, tags, title, page_numbers)
-                    for content, tags, title, page_numbers in content_list
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.executemany(
+                    INSERT_DOCS.format(table_name=self.table_name),
+                    (
+                        (self._embedding_model.encode(content), content, tags, title, page_numbers)
+                        for content, tags, title, page_numbers in content_list
+                    )
                 )
-            )
 
     async def search(
             self,
@@ -388,7 +391,7 @@ class DocDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        async with self.conn_pool.acquire() as conn:
+        async with (await self.connection_pool()).acquire() as conn:
             search_results = await conn.fetch(
                 QUERY_DOC_TABLE.format(
                     table_name=self.table_name,

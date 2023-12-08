@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
+# SPDX-License-Identifier: Apache-2.0
+# test/test_model_style.py
 # FIXME: For consistency let's migrate this to pytest
 from unittest.mock import patch, Mock
 
