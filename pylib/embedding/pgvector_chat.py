@@ -44,6 +44,12 @@ ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata o
     metadata_JSON = EXCLUDED.metadata_JSON;
 '''
 
+CLEAR_CHATLOG = '''-- Deletes all messages from a chatlog while keeping the chatlog table itself
+DELETE FROM {table_name}
+WHERE
+    history_key = $1
+'''
+
 RETURN_CHATLOG_BY_HISTORY_KEY = '''-- Get entire chatlog of a history key
 SELECT
     ts,
@@ -155,6 +161,25 @@ class MessageDB(PGVectorHelper):
                     content_embedding.tolist(),
                     metadata
                 )   
+
+    async def clear_chatlog(
+            self,
+            history_key: UUID
+    ) -> None:
+        '''
+        Remove all entries from a chatlog while keeping the chatlog table itself
+
+        Args:
+            history_key (str): history key (unique identifier) of the chatlog this message belongs to
+        '''
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    CLEAR_CHATLOG.format(
+                        table_name=self.table_name,
+                    ),
+                    history_key
+                )
     
     # XXX: Change to a generator
     async def get_table(
