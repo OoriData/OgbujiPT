@@ -37,7 +37,11 @@ INSERT INTO {table_name} (
     content,
     embedding,
     metadata_JSON
-) VALUES ($1, $2, $3, $4, $5, $6);
+) VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata of the message if it already exists
+    content = EXCLUDED.content,
+    embedding = EXCLUDED.embedding,
+    metadata_JSON = EXCLUDED.metadata_JSON;
 '''
 
 RETURN_CHATLOG_BY_HISTORY_KEY = '''-- Get entire chatlog of a history key
