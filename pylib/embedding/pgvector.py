@@ -123,9 +123,9 @@ class PGVectorHelper:
         # Ensure the vector extension is installed
         async with pool.acquire() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
-            # We actually have to do this per pool
+            # We actually ALSO have to do this per pool
             # https://github.com/pgvector/pgvector-python?tab=readme-ov-file#asyncpg
-            # await register_vector(conn)
+            await register_vector(conn)
 
             await conn.set_type_codec(  # Register a codec for JSON
                 'JSON',
@@ -154,16 +154,22 @@ class PGVectorHelper:
         if loop in self.pool_per_loop:
             pool = self.pool_per_loop[loop]
         else:
-            pool = await asyncpg.create_pool(init=PGVectorHelper.init_vector, **self.pool_params)
+            pool = await asyncpg.create_pool(init=PGVectorHelper.init_pool, **self.pool_params)
             self.pool_per_loop[loop] = pool
         return pool
 
     @staticmethod
-    async def init_vector(conn):
+    async def init_pool(conn):
         '''
         Initialize the vector extension for a connection from a pool
         '''
         await register_vector(conn)
+        await conn.set_type_codec(  # Register a codec for JSON
+            'JSON',
+            encoder=json.dumps,
+            decoder=json.loads,
+            schema='pg_catalog'
+        )
 
     # Hmm. Just called count in the qdrant version
     async def count_items(self) -> int:
