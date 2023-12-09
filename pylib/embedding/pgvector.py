@@ -124,6 +124,7 @@ class PGVectorHelper:
         async with pool.acquire() as conn:
             await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
             # We actually have to do this per pool
+            # https://github.com/pgvector/pgvector-python?tab=readme-ov-file#asyncpg
             # await register_vector(conn)
 
             await conn.set_type_codec(  # Register a codec for JSON
@@ -149,14 +150,12 @@ class PGVectorHelper:
         #     max_size=max_size,
         #     **conn_params
         # )
-        import logging; logging.critical('Getting connection pool')
         loop = asyncio.get_event_loop()
         if loop in self.pool_per_loop:
             pool = self.pool_per_loop[loop]
         else:
             pool = await asyncpg.create_pool(init=PGVectorHelper.init_vector, **self.pool_params)
             self.pool_per_loop[loop] = pool
-        import logging; logging.critical('Connection pool retrieved')
         return pool
 
     @staticmethod
