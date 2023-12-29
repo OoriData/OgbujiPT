@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS {table_name} (
     role INT,                                 -- role of the message
     content TEXT NOT NULL,                    -- text content of the message
     embedding VECTOR({embed_dimension}),      -- embedding vectors (array dimension)
-    metadata_JSON JSON                        -- additional metadata of the message
+    metadata JSON                             -- additional metadata of the message
 );
 '''
 
@@ -36,12 +36,12 @@ INSERT INTO {table_name} (
     role,
     content,
     embedding,
-    metadata_JSON
+    metadata
 ) VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata of the message if it already exists
     content = EXCLUDED.content,
     embedding = EXCLUDED.embedding,
-    metadata_JSON = EXCLUDED.metadata_JSON;
+    metadata = EXCLUDED.metadata;
 '''
 
 CLEAR_CHATLOG = '''-- Deletes all messages from a chatlog while keeping the chatlog table itself
@@ -55,7 +55,7 @@ SELECT
     ts,
     role,
     content,
-    metadata_JSON
+    metadata
 FROM
     {table_name}
 WHERE
@@ -70,7 +70,7 @@ SELECT
     ts,
     role,
     content,
-    metadata_JSON
+    metadata
 FROM
     {table_name}
 WHERE
@@ -208,7 +208,7 @@ class MessageDB(PGVectorHelper):
                 'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
-                'metadata': record['metadata_json']
+                'metadata': record['metadata']
             })
             for record in chatlog_records
         ]
@@ -254,7 +254,7 @@ class MessageDB(PGVectorHelper):
                 'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
-                'metadata': record['metadata_json'],
+                'metadata': record['metadata'],
                 'cosine_similarity': record['cosine_similarity']
             }
             for record in records
