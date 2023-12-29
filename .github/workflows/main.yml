@@ -13,9 +13,9 @@ jobs:
       mockdb:
         image: ankane/pgvector
         env:
-          POSTGRES_USER: mock_user
-          POSTGRES_PASSWORD: mock_password
-          POSTGRES_DB: mock_db
+          PG_DB: mock_db
+          PG_USER: mock_user
+          PG_PASSWORD: mock_password
         ports: # give multiple ports for each python version to avoid conflicts
           - 5433:5432
           - 5432:5432
