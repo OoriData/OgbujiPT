@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# test/embedding/test_pgvector_data.py
+# test/embedding/test_pgvector_message.py
 '''
 See test/embedding/test_pgvector.py for important notes on running these tests
 '''
@@ -9,7 +9,7 @@ import pytest
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
 import os
-from ogbujipt.embedding.pgvector import DataDB
+from ogbujipt.embedding.pgvector import MessageDB
 import numpy as np
 
 # XXX: This stanza to go away once mocking is complete - Kai
@@ -19,13 +19,16 @@ USER = os.environ.get('PG_USER', 'mock_user')
 PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
 PORT = os.environ.get('PG_PORT', 5432)
 
-KG_STATEMENTS = [  # Demo data
-    ("👤 Alikiba `releases_single` 💿 'Yalaiti'", {'url': 'https://notjustok.com/lyrics/yalaiti-lyrics-by-alikiba-ft-sabah-salum/'}),
-    ("👤 Sabah Salum `featured_in` 💿 'Yalaiti'", {'url': 'https://notjustok.com/lyrics/yalaiti-lyrics-by-alikiba-ft-sabah-salum/'}),
-    ('👤 Kukbeatz `collaborates_with` 👤 Ruger', {'url': 'https://notjustok.com/lyrics/all-of-us-lyrics-by-kukbeatz-ft-ruger/'}),
-    ('💿 All of Us `is_a_song_by` 👤 Kukbeatz and Ruger', {'url': 'https://notjustok.com/lyrics/all-of-us-lyrics-by-kukbeatz-ft-ruger/'}),
-    ('👤 Blaqbonez `collaborates_with` 👤 Fireboy DML', {'url': 'https://notjustok.com/news/snippet-of-fireboy-dmls-collaboration-with-blaqbonez/'})
-]
+MESSAGES = [  # Test data: timetsamp, history_key, role, content, metadata
+    ('2021-10-01 00:00:00+00:00', '00000000-0000-0000-0000-000000000000', 'ama', 'Hello Eme!', {'1': 'a'}),
+    ('2021-10-01 00:00:01+00:00', '00000000-0000-0000-0000-000000000001', 'ugo', 'Greetings Ego', {'2': 'b'}),
+    ('2021-10-01 00:00:02+00:00', '00000000-0000-0000-0000-000000000000', 'eme', 'How you dey, Ama!', {'3': 'c'}),
+    ('2021-10-01 00:00:03+00:00', '00000000-0000-0000-0000-000000000001', 'ego', 'What a pleasant surprise', {'4': 'd'}),
+    ('2021-10-01 00:00:04+00:00', '00000000-0000-0000-0000-000000000000', 'ama', 'Not bad, not bad at all', {'5': 'e'}),
+    ('2021-10-01 00:00:05+00:00', '00000000-0000-0000-0000-000000000001', 'ugo', 'Glad you think so. I was planning to drop by later', {'6': 'f'}),  # noqa: E501
+    ('2021-10-01 00:00:06+00:00', '00000000-0000-0000-0000-000000000000', 'eme', 'Very good. Say hello to your family for me.', {'7': 'g'}),  # noqa: E501
+    ('2021-10-01 00:00:07+00:00', '00000000-0000-0000-0000-000000000001', 'ugo', 'An even better surprise, I hope!', {'8': 'h'})  # noqa: E501
+    ]
 
 
 # XXX: Move to a fixture?
@@ -39,9 +42,9 @@ class SentenceTransformer(object):
 async def test_insert_data_vector():
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
-    TABLE_NAME = 'embedding_data_test'
+    TABLE_NAME = 'embedding_msg_test'
     try:
-        vDB = await DataDB.from_conn_params(
+        vDB = await MessageDB.from_conn_params(
             embedding_model=dummy_model,
             table_name=TABLE_NAME,
             db_name=DB_NAME,
@@ -91,7 +94,7 @@ async def test_insertmany_data_vector():
     # print(f'EMODEL: {dummy_model}')
     TABLE_NAME = 'embedding_test'
     try:
-        vDB = await DataDB.from_conn_params(
+        vDB = await MessageDB.from_conn_params(
             embedding_model=dummy_model,
             table_name=TABLE_NAME,
             db_name=DB_NAME,

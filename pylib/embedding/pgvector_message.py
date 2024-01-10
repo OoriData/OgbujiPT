@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector_chat
+# ogbujipt.embedding.pgvector_message
 
 '''
-Vector databases embeddings using PGVector
+Vector embeddings DB feature for messaging (chai, etc.) using PGVector
 '''
 
-from uuid     import UUID
+from uuid import UUID
 from datetime import datetime, timezone
+from typing import Iterable
 
 from ogbujipt.config import attr_dict
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
@@ -18,18 +19,18 @@ __all__ = ['MessageDB']
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
 # Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
 
-CREATE_CHATLOG_TABLE = '''-- Create a table to hold individual messages from a chatlog and their metadata
+CREATE_MESSAGE_TABLE = '''-- Create a table to hold individual messages (e.g. from a chatlog) and their metadata
 CREATE TABLE IF NOT EXISTS {table_name} (
     ts TIMESTAMP WITH TIME ZONE PRIMARY KEY,  -- timestamp of the message
-    history_key UUID,                         -- history key (unique identifier) of the chatlog this message belongs to
-    role INT,                                 -- role of the message
+    history_key UUID,                         -- uunique identifier for contextual message history
+    role INT,                                 -- role of the message (generally an ID associated with the sender)
     content TEXT NOT NULL,                    -- text content of the message
     embedding VECTOR({embed_dimension}),      -- embedding vectors (array dimension)
     metadata JSON                             -- additional metadata of the message
 );
 '''
 
-INSERT_CHATLOG = '''-- Insert a message into a chatlog
+INSERT_MESSAGE = '''-- Insert a message into a chatlog
 INSERT INTO {table_name} (
     ts,
     history_key,
@@ -44,13 +45,13 @@ ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata o
     metadata = EXCLUDED.metadata;
 '''
 
-CLEAR_CHATLOG = '''-- Deletes all messages from a chatlog while keeping the chatlog table itself
+CLEAR_MESSAGE = '''-- Deletes matching messages
 DELETE FROM {table_name}
 WHERE
     history_key = $1
 '''
 
-RETURN_CHATLOG_BY_HISTORY_KEY = '''-- Get entire chatlog of a history key
+RETURN_MESSAGE_BY_HISTORY_KEY = '''-- Get entire chatlog by history key
 SELECT
     ts,
     role,
@@ -64,7 +65,7 @@ ORDER BY
     ts;
 '''
 
-SEMANTIC_QUERY_CHATLOG_TABLE = '''-- Semantic search a chatlog
+SEMANTIC_QUERY_MESSAGE_TABLE = '''-- Find messages with closest semantic similarity
 SELECT
     1 - (embedding <=> $1) AS cosine_similarity,
     ts,
@@ -103,15 +104,12 @@ def int_to_role(role_int):
 
 
 class MessageDB(PGVectorHelper):
-    ''' Specialize PGvectorHelper for chatlogs '''
+    ''' Specialize PGvectorHelper for messages, e.g. chatlogs '''
     async def create_table(self):
-        '''
-        Create the table to hold chatlogs
-        '''
         async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
-                    CREATE_CHATLOG_TABLE.format(
+                    CREATE_MESSAGE_TABLE.format(
                         table_name=self.table_name,
                         embed_dimension=self._embed_dimension
                     )
@@ -153,7 +151,7 @@ class MessageDB(PGVectorHelper):
         async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
-                    INSERT_CHATLOG.format(table_name=self.table_name),
+                    INSERT_MESSAGE.format(table_name=self.table_name),
                     timestamp,
                     history_key,
                     role_int,
@@ -162,20 +160,42 @@ class MessageDB(PGVectorHelper):
                     metadata
                 )   
 
-    async def clear_chatlog(
+    async def insert_many(
+            self,
+            content_list: Iterable[tuple[str, list[str]]]
+    ) -> None:
+        '''
+        Update a table with one or more embedded messages
+
+        Semantically equivalent to multiple insert calls, but uses executemany for efficiency
+
+        Args:
+            content_list: List of tuples, each of the form: (history_key, role, text, timestamp, metadata)
+        '''
+        async with (await self.connection_pool()).acquire() as conn:
+            async with conn.transaction():
+                await conn.executemany(
+                    INSERT_MESSAGE.format(table_name=self.table_name),
+                    (
+                        (ts, hk, role, text, self._embedding_model.encode(text), metadata)
+                        for ts, hk, role, text, metadata in content_list
+                    )
+                )
+
+    async def clear(
             self,
             history_key: UUID
     ) -> None:
         '''
-        Remove all entries from a chatlog while keeping the chatlog table itself
+        Remove all entries in a message history entries
 
         Args:
-            history_key (str): history key (unique identifier) of the chatlog this message belongs to
+            history_key (str): history key (unique identifier) to match
         '''
         async with (await self.connection_pool()).acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
-                    CLEAR_CHATLOG.format(
+                    CLEAR_MESSAGE.format(
                         table_name=self.table_name,
                     ),
                     history_key
@@ -187,33 +207,33 @@ class MessageDB(PGVectorHelper):
             history_key: UUID
     ) -> list[asyncpg.Record]:
         '''
-        Get the entire chatlog of a history key
+        Retrieve all entries in a message history
 
         Args:
-            history_key (str): history key of the chatlog
+            history_key (str): history key (unique identifier) to match
         Returns:
-            list[asyncpg.Record]: list of chatlog
+            list[asyncpg.Record]: list of message entries
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
         async with (await self.connection_pool()).acquire() as conn:
-            chatlog_records = await conn.fetch(
-                RETURN_CHATLOG_BY_HISTORY_KEY.format(
+            message_records = await conn.fetch(
+                RETURN_MESSAGE_BY_HISTORY_KEY.format(
                     table_name=self.table_name,
                 ),
                 history_key
             )
 
-        chatlog = [
+        messages = [
             attr_dict({
                 'ts': record['ts'],
                 'role': int_to_role(record['role']),
                 'content': record['content'],
                 'metadata': record['metadata']
             })
-            for record in chatlog_records
+            for record in message_records
         ]
 
-        return chatlog
+        return messages
     
     async def search(
             self,
@@ -241,7 +261,7 @@ class MessageDB(PGVectorHelper):
         # Search the table
         async with (await self.connection_pool()).acquire() as conn:
             records = await conn.fetch(
-                SEMANTIC_QUERY_CHATLOG_TABLE.format(
+                SEMANTIC_QUERY_MESSAGE_TABLE.format(
                     table_name=self.table_name
                 ),
                 query_embedding,
