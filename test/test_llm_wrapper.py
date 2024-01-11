@@ -67,3 +67,7 @@ def test_openai_llm_wrapper():
 def test_prompt_to_chat():
     chatified = prompt_to_chat('test')
     assert chatified == [{'content': 'test', 'role': 'user'}]
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

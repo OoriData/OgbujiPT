@@ -13,6 +13,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - Command line options for `demo/chat_web_selects.py`
 - Helper for folks installing on Apple Silicon: `constraints-apple-silicon.txt`
 - Function calling demo
+- `ogbujipt.embedding.pgvector_message.insert_many()`
 
 ### Changed
 
@@ -24,6 +25,8 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - Separated data-style PGVector DBs from doc-style. tags is no longer the final param for PGVector docs helper methods & some params renamed.
 - PGVector helper method results now as `attr_dict`
 - PGVector helper now uses connection pooling & is more multiprocess safe
+- `ogbujipt.embedding.pgvector_chat` renamed to `ogbujipt.embedding.pgvector_message`
+- DB MIGRATION REQUIRED - `ogbujipt.embedding.pgvector_message` table schema
 
 ### Fixed
 

@@ -131,3 +131,6 @@ async def test_insertmany_data_vector():
 
     await vDB.drop_table()
 
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

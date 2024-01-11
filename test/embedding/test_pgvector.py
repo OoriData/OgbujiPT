@@ -228,3 +228,7 @@ async def test_PGv_search_filtered():
     assert len(list(sim_search)) == 2, Exception(f"There should be 2 results, received {sim_search}")
 
     await vDB.drop_table()
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

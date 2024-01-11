@@ -129,7 +129,7 @@ class DataDB(PGVectorHelper):
             content_list: Iterable[tuple[str, list[str]]]
     ) -> None:
         '''
-        Update a table with one or more embedded documents
+        Update a table with one or (presumably) more embedded documents
 
         Semantically equivalent to multiple insert calls, but uses executemany for efficiency
 

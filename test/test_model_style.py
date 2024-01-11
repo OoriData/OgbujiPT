@@ -43,4 +43,4 @@ class Test_hosted_model_openAI(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    raise SystemExit("Attention! Run with pytest")

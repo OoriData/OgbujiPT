@@ -72,3 +72,7 @@ def test_separator_chunk_size_too_large(BASIC_EVEN_BLOCK):
 #     assert chunks[6] == 'finibus. Nulla sit amet diam nec dolor tristique dignissim. Sed vehicula, justo nec posuere eleifend,'
 #     assert chunks[7] == 'libero ligula interdum neque, at lacinia arcu quam non est. Integer aliquet, erat id dictum euismod, felis'
 #     assert chunks[8] == 'libero blandit lorem, nec ullamcorper quam justo at elit.'
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

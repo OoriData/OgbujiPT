@@ -3,7 +3,7 @@
 # ogbujipt.embedding.pgvector_message
 
 '''
-Vector embeddings DB feature for messaging (chai, etc.) using PGVector
+Vector embeddings DB feature for messaging (chat, etc.) using PGVector
 '''
 
 from uuid import UUID
@@ -23,7 +23,8 @@ CREATE_MESSAGE_TABLE = '''-- Create a table to hold individual messages (e.g. fr
 CREATE TABLE IF NOT EXISTS {table_name} (
     ts TIMESTAMP WITH TIME ZONE PRIMARY KEY,  -- timestamp of the message
     history_key UUID,                         -- uunique identifier for contextual message history
-    role INT,                                 -- role of the message (generally an ID associated with the sender)
+    role TEXT,                                -- role of the message (meta ID such as 'system' or user,
+                                              -- or an ID associated with the sender)
     content TEXT NOT NULL,                    -- text content of the message
     embedding VECTOR({embed_dimension}),      -- embedding vectors (array dimension)
     metadata JSON                             -- additional metadata of the message
@@ -32,11 +33,11 @@ CREATE TABLE IF NOT EXISTS {table_name} (
 
 INSERT_MESSAGE = '''-- Insert a message into a chatlog
 INSERT INTO {table_name} (
-    ts,
     history_key,
     role,
     content,
     embedding,
+    ts,
     metadata
 ) VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata of the message if it already exists
@@ -82,27 +83,6 @@ LIMIT $3;
 '''
 # ------ SQL queries ---------------------------------------------------------------------------------------------------
 
-ROLE_INTS = {
-    'system': 0,
-    'user': 1,
-    'assistant': 2,
-    'tool': 3  # formerly 'function'
-}
-
-INT_ROLES = {v: k for k, v in ROLE_INTS.items()}
-
-
-# Client code could avoid the function call overheads by just doing the dict lookups directly
-def role_to_int(role):
-    ''' Convert OpenAI style message role from strings to integers for faster DB ops '''
-    return ROLE_INTS.get(role, -1)
-
-
-def int_to_role(role_int):
-    ''' Convert OpenAI style message role from integers to strings for faster DB ops '''
-    return INT_ROLES.get(role_int, 'unknown')
-
-
 class MessageDB(PGVectorHelper):
     ''' Specialize PGvectorHelper for messages, e.g. chatlogs '''
     async def create_table(self):
@@ -120,16 +100,17 @@ class MessageDB(PGVectorHelper):
             history_key: UUID,
             role: str,
             content: str,
+            # Timestamp later in order than SQL might suggest because of the defaulting
             timestamp: datetime | None = None,
             metadata: dict | None = None
     ) -> None:
         '''
-        Update a table with one embedded document
+        Update a table with one message's embedding
 
         Args:
             history_key (str): history key (unique identifier) of the chatlog this message belongs to
 
-            role (str): role of the message (system, user, assistant, tool (formerly 'function'))
+            role (str): role of the message (e.g. system, user, assistant, tool)
 
             content (str): text content of the message
 
@@ -143,8 +124,6 @@ class MessageDB(PGVectorHelper):
         if not timestamp:
             timestamp = datetime.utcnow().replace(tzinfo=timezone.utc)
 
-        role_int = role_to_int(role)  # Convert from string roles to integer roles
-
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
@@ -152,11 +131,11 @@ class MessageDB(PGVectorHelper):
             async with conn.transaction():
                 await conn.execute(
                     INSERT_MESSAGE.format(table_name=self.table_name),
-                    timestamp,
                     history_key,
-                    role_int,
+                    role,
                     content,
                     content_embedding.tolist(),
+                    timestamp,
                     metadata
                 )   
 
@@ -165,7 +144,7 @@ class MessageDB(PGVectorHelper):
             content_list: Iterable[tuple[str, list[str]]]
     ) -> None:
         '''
-        Update a table with one or more embedded messages
+        Update table with one or (presumably) more message embedding
 
         Semantically equivalent to multiple insert calls, but uses executemany for efficiency
 
@@ -177,8 +156,8 @@ class MessageDB(PGVectorHelper):
                 await conn.executemany(
                     INSERT_MESSAGE.format(table_name=self.table_name),
                     (
-                        (ts, hk, role, text, self._embedding_model.encode(text), metadata)
-                        for ts, hk, role, text, metadata in content_list
+                        (hk, role, text, self._embedding_model.encode(text), ts, metadata)
+                        for hk, role, text, ts, metadata in content_list
                     )
                 )
 
@@ -226,7 +205,7 @@ class MessageDB(PGVectorHelper):
         messages = [
             attr_dict({
                 'ts': record['ts'],
-                'role': int_to_role(record['role']),
+                'role': record['role'],
                 'content': record['content'],
                 'metadata': record['metadata']
             })
@@ -272,7 +251,7 @@ class MessageDB(PGVectorHelper):
         search_results = [
             {
                 'ts': record['ts'],
-                'role': int_to_role(record['role']),
+                'role': record['role'],
                 'content': record['content'],
                 'metadata': record['metadata'],
                 'cosine_similarity': record['cosine_similarity']

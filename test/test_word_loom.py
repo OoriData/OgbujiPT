@@ -63,3 +63,7 @@ def test_sample_texts_check(SAMPLE_TOML_STR):
     assert list(sorted([v[:20] for v in loom.values()])) == ['Comment dit-on en an', 'pomme de terre']
     assert [v.markers or [] for v in loom.values()] == [['hardcoded_food'], []]
     assert loom['hardcoded_food'].lang == 'fr'
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")
