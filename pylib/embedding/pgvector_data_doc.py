@@ -7,7 +7,7 @@ Vector databases embeddings using PGVector
 '''
 
 import warnings
-from typing   import Iterable
+from typing import Iterable
 
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
 
@@ -129,9 +129,9 @@ class DataDB(PGVectorHelper):
             content_list: Iterable[tuple[str, list[str]]]
     ) -> None:
         '''
-        Update a table with one or more embedded documents
+        Update a table with one or (presumably) more embedded documents
 
-        Semantically equivalent to multiple insert_doc calls, but uses executemany for efficiency
+        Semantically equivalent to multiple insert calls, but uses executemany for efficiency
 
         Args:
             content_list: List of tuples, each of the form: (content, tags)

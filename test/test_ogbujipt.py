@@ -21,3 +21,7 @@ def test_oapi_first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT):
 def test_oapi_first_choice_message(OPENAI_MSG_RESPONSE_OBJECT):
     msg1 = openai_chat_api.first_choice_message(OPENAI_MSG_RESPONSE_OBJECT)
     assert msg1 == '…is an exceptional employee who has made significant contributions to our company.'
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

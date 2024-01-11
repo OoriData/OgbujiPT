@@ -151,6 +151,7 @@ def OPENAI_MSG_RESPONSE_OBJECT():
                     function_call=None,
                     tool_calls=None,
                 ),
+                logprobs=None
             )
         ],
         created=1701544162,

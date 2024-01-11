@@ -86,3 +86,7 @@ def test_qdrant_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
         collection_name=collection_name,
         points=[mock_pstruct]
         )
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

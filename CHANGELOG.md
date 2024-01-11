@@ -6,6 +6,34 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
+## [0.7.0] - 20240110
+
+### Added
+
+- Command line options for `demo/chat_web_selects.py`
+- Helper for folks installing on Apple Silicon: `constraints-apple-silicon.txt`
+- Function calling demo
+- `ogbujipt.embedding.pgvector_message.insert_many()`
+
+### Changed
+
+- Improved use of PGVector helper SQL query parameters
+- PGVector helper `search(query_tags=[..])` now uses contains operator (filters by existence in tag sets), not the same as where tags are OR
+- PGVector helper `search` can now be set to work conjunctively or disjunctively
+- PGVector helper `query` now has threshold arg based on degree of similarity. `limit` default now unlimited. Use SQL query args for query_embedding.
+- `embedding.pgvector` split into a couple of modules.
+- Separated data-style PGVector DBs from doc-style. tags is no longer the final param for PGVector docs helper methods & some params renamed.
+- PGVector helper method results now as `attr_dict`
+- PGVector helper now uses connection pooling & is more multiprocess safe
+- `ogbujipt.embedding.pgvector_chat` renamed to `ogbujipt.embedding.pgvector_message`
+- DB MIGRATION REQUIRED - `ogbujipt.embedding.pgvector_message` table schema
+
+### Fixed
+
+- `insert_many` PGVector helper method; semantics & performance
+- `demo/chat_web_selects.py` & `demo/chat_pdf_streamlit_ui.py` (formerly non-functional)
+- Tests & CI for PGVector helper
+
 ## [0.6.1] - 20231114
 
 ### Changed

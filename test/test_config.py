@@ -10,3 +10,7 @@ def test_attr_dict():
     assert d.b == 2
     assert d['a'] == 1
     assert d['b'] == 2
+
+
+if __name__ == '__main__':
+    raise SystemExit("Attention! Run with pytest")

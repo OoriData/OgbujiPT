@@ -41,6 +41,8 @@ DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
 
 
 class PGVectorHelper:
+    # XXX: Should pool_params just be required? Can't really construct without going through *something*
+    # async such as from_conn_params anyway, which will handle ensuring we've been provided pool_params
     def __init__(self, embedding_model, table_name: str, pool_params: dict = None):
         '''
         Create a PGvector helper from an asyncpg connection
@@ -74,7 +76,7 @@ class PGVectorHelper:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
         self.table_name = table_name
-        self.pool_params = pool_params
+        self.pool_params = pool_params or {}
         # asyncpg doesn't allow use of the same pool in different event loops
         self.pool_per_loop = {}
 
@@ -120,10 +122,11 @@ class PGVectorHelper:
         obj = cls(embedding_model, table_name, pool_params)
         pool = await obj.connection_pool()
 
-        # Ensure the vector extension is installed
+        # Set up DB extension & type handling
         async with pool.acquire() as conn:
+            # Is this also required per pool? (duplicated from init_pool)
             await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
-            # We actually ALSO have to do this per pool
+            # Actually ALSO have to register_vector per pool (duplicated from init_pool)
             # https://github.com/pgvector/pgvector-python?tab=readme-ov-file#asyncpg
             await register_vector(conn)
 
@@ -163,6 +166,7 @@ class PGVectorHelper:
         '''
         Initialize the vector extension for a connection from a pool
         '''
+        await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
         await register_vector(conn)
         await conn.set_type_codec(  # Register a codec for JSON
             'JSON',
@@ -243,4 +247,4 @@ def process_search_response(qresponse):
 
 # Down here to avoid circular imports
 from ogbujipt.embedding.pgvector_data_doc import DataDB, DocDB  # noqa: E402 F401
-from ogbujipt.embedding.pgvector_chat import MessageDB  # noqa: E402 F401
+from ogbujipt.embedding.pgvector_message import MessageDB  # noqa: E402 F401

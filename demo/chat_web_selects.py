@@ -156,7 +156,6 @@ If you cannot answer with the given context, just say so.\n\n'''
             if verbose:
                 print('\nFull response data from LLM:\n', retval)
 
-            # response is a json-like object; 
             # just get back the text of the response
             response_text = oapi.first_choice_message(retval)
             print('\nResponse text from LLM:\n\n', response_text)
