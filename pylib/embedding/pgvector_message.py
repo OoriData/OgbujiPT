@@ -9,6 +9,7 @@ Vector embeddings DB feature for messaging (chat, etc.) using PGVector
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Iterable
+import warnings
 
 from ogbujipt.config import attr_dict
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
@@ -21,7 +22,7 @@ __all__ = ['MessageDB']
 
 CREATE_MESSAGE_TABLE = '''-- Create a table to hold individual messages (e.g. from a chatlog) and their metadata
 CREATE TABLE IF NOT EXISTS {table_name} (
-    ts TIMESTAMP WITH TIME ZONE PRIMARY KEY,  -- timestamp of the message
+    ts TIMESTAMP WITH TIME ZONE,              -- timestamp of the message
     history_key UUID,                         -- uunique identifier for contextual message history
     role TEXT,                                -- role of the message (meta ID such as 'system' or user,
                                               -- or an ID associated with the sender)
@@ -39,11 +40,7 @@ INSERT INTO {table_name} (
     embedding,
     ts,
     metadata
-) VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (ts) DO UPDATE SET  -- Update the content, embedding, and metadata of the message if it already exists
-    content = EXCLUDED.content,
-    embedding = EXCLUDED.embedding,
-    metadata = EXCLUDED.metadata;
+) VALUES ($1, $2, $3, $4, $5, $6);
 '''
 
 CLEAR_MESSAGE = '''-- Deletes matching messages
@@ -52,7 +49,7 @@ WHERE
     history_key = $1
 '''
 
-RETURN_MESSAGE_BY_HISTORY_KEY = '''-- Get entire chatlog by history key
+RETURN_MESSAGES_BY_HISTORY_KEY = '''-- Get entire chatlog by history key
 SELECT
     ts,
     role,
@@ -62,8 +59,10 @@ FROM
     {table_name}
 WHERE
     history_key = $1
+{since_clause}
 ORDER BY
-    ts;
+    ts
+{limit_clause};
 '''
 
 SEMANTIC_QUERY_MESSAGE_TABLE = '''-- Find messages with closest semantic similarity
@@ -179,54 +178,88 @@ class MessageDB(PGVectorHelper):
                     ),
                     history_key
                 )
-    
+
     # XXX: Change to a generator
-    async def get_table(
+    async def get_chatlog(
             self,
-            history_key: UUID
-    ) -> list[asyncpg.Record]:
+            history_key: UUID | str,
+            since: datetime | None = None,
+            limit: int = 0
+    ): # -> list[asyncpg.Record]:
         '''
-        Retrieve all entries in a message history
+        Retrieve entries in a message history
 
         Args:
-            history_key (str): history key (unique identifier) to match
+            history_key (str): history key (unique identifier) to match; string or object
+            since (datetime, optional): only return messages after this timestamp
+            limit (int, optional): maximum number of messages to return. Default is all messages
         Returns:
-            list[asyncpg.Record]: list of message entries
-                (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
+            generates asyncpg.Record instances of resulting messages
         '''
+        qparams = [history_key]
         async with (await self.connection_pool()).acquire() as conn:
+            if not isinstance(history_key, UUID):
+                history_key = UUID(history_key)
+                # msg = f'history_key must be a UUID, not {type(history_key)} ({history_key}))'
+                # raise TypeError(msg)
+            if not isinstance(since, datetime) and since is not None:
+                msg = 'since must be a datetime or None'
+                raise TypeError(msg)
+            if since:
+                # Really don't need the ${len(qparams) + 1} trick here, but used for consistency
+                since_clause = f' AND ts > ${len(qparams) + 1}'
+                qparams.append(since)
+            else:
+                since_clause = ''
+            if limit:
+                limit_clause = f'LIMIT ${len(qparams) + 1}'
+                qparams.append(limit)
+            else:
+                limit_clause = ''
             message_records = await conn.fetch(
-                RETURN_MESSAGE_BY_HISTORY_KEY.format(
+                RETURN_MESSAGES_BY_HISTORY_KEY.format(
                     table_name=self.table_name,
+                    since_clause=since_clause,
+                    limit_clause=limit_clause
                 ),
-                history_key
+                *qparams
             )
 
-        messages = [
-            attr_dict({
+        return (attr_dict({
                 'ts': record['ts'],
                 'role': record['role'],
                 'content': record['content'],
                 'metadata': record['metadata']
-            })
-            for record in message_records
-        ]
+            }) for record in message_records)
 
-        return messages
+        # async for record in message_records:
+        #     yield attr_dict({
+        #         'ts': record['ts'],
+        #         'role': record['role'],
+        #         'content': record['content'],
+        #         'metadata': record['metadata']
+        #     })
     
+    async def get_table(self, history_key):
+        # Deprecated
+        warnings.warn('pgvector_message.get_table() is deprecated. Use get_chatlog().', DeprecationWarning)
+        return list(await self.get_chatlog(history_key))
+
     async def search(
             self,
             history_key: UUID,
             text: str,
+            since: datetime | None = None,
             limit: int = 1
     ) -> list[asyncpg.Record]:
         '''
         Similarity search documents using a query string
 
         Args:
+            history_key (str): history key for the conversation to query
             text (str): string to compare against items in the table
-
-            k (int, optional): maximum number of results to return (useful for top-k query)
+            since (datetime, optional): only return results after this timestamp
+            limit (int, optional): maximum number of messages to return; for top-k type query. Default is 1
         Returns:
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)

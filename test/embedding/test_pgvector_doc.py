@@ -24,16 +24,8 @@ import pytest
 # from unittest.mock import MagicMock, patch
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
-import os
 from ogbujipt.embedding.pgvector import DocDB
 import numpy as np
-
-# XXX: This stanza to go away once mocking is complete - Kai
-HOST = os.environ.get('PG_HOST', 'localhost')
-DB_NAME = os.environ.get('PG_DATABASE', 'mock_db')
-USER = os.environ.get('PG_USER', 'mock_user')
-PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
-PORT = os.environ.get('PG_PORT', 5432)
 
 pacer_copypasta = [  # Demo document
     ('The FitnessGram™ Pacer Test is a multistage aerobic capacity test that progressively gets more difficult as it'
@@ -53,75 +45,31 @@ class SentenceTransformer(object):
 
 
 @pytest.mark.asyncio
-async def test_PGv_embed_pacer():
+async def test_PGv_embed_pacer(DB):
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
-    # print(f'EMODEL: {dummy_model}')
-    TABLE_NAME = 'embedding_test'
-    try:
-        vDB = await DocDB.from_conn_params(
-            embedding_model=dummy_model,
-            table_name=TABLE_NAME,
-            db_name=DB_NAME,
-            host=HOST,
-            port=int(PORT),
-            user=USER,
-            password=PASSWORD)
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    
-    assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
-    
-    # Create tables
-    await vDB.drop_table()
-    assert await vDB.table_exists() is False, Exception("Table exists before creation")
-    await vDB.create_table()
-    assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
-
     # Insert data
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
-        await vDB.insert(                            # Insert the line into the table
+        await DB.insert(                            # Insert the line into the table
             content=text,                            # The text to be embedded
             title=f'Pacer Copypasta line {index}',   # Title metadata
             page_numbers=[1, 2, 3],                  # Page number metadata
             tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
         )
 
-    assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
+    assert await DB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
 
     # search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(text=search_string, limit=3)
+    sim_search = await DB.search(text=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
-    await vDB.drop_table()
+    await DB.drop_table()
 
 @pytest.mark.asyncio
-async def test_PGv_embed_many_pacer():
+async def test_PGv_embed_many_pacer(DB):
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
-    # print(f'EMODEL: {dummy_model}')
-    TABLE_NAME = 'embedding_test'
-    try:
-        vDB = await DocDB.from_conn_params(
-            embedding_model=dummy_model,
-            table_name=TABLE_NAME,
-            db_name=DB_NAME,
-            host=HOST,
-            port=int(PORT),
-            user=USER,
-            password=PASSWORD)
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    
-    assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
-    
-    # Create tables
-    await vDB.drop_table()
-    assert await vDB.table_exists() is False, Exception("Table exists before creation")
-    await vDB.create_table()
-    assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
-
     # Insert data using insert_many()
     documents = (
         (
@@ -132,20 +80,20 @@ async def test_PGv_embed_many_pacer():
         )
         for index, text in enumerate(pacer_copypasta)
     )
-    await vDB.insert_many(documents)
+    await DB.insert_many(documents)
 
-    assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
+    assert await DB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
 
     # Search table with perfect match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(text=search_string, limit=3)
+    sim_search = await DB.search(text=search_string, limit=3)
     assert sim_search is not None, Exception("No results returned from perfect search")
 
-    await vDB.drop_table()
+    await DB.drop_table()
 
 
 @pytest.mark.asyncio
-async def test_PGv_search_filtered():
+async def test_PGv_search_filtered(DB):
     dummy_model = SentenceTransformer('mock_transformer')
     def encode_tweaker(*args, **kwargs):
         if args[0].startswith('Text'):
@@ -154,42 +102,22 @@ async def test_PGv_search_filtered():
             return np.array([100, 300, 500])
 
     dummy_model.encode.side_effect = encode_tweaker
-    # print(f'EMODEL: {dummy_model}')
-    TABLE_NAME = 'embedding_test'
-    try:
-        vDB = await DocDB.from_conn_params(
-            embedding_model=dummy_model,
-            table_name=TABLE_NAME,
-            db_name=DB_NAME,
-            host=HOST,
-            port=int(PORT),
-            user=USER,
-            password=PASSWORD)
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    
-    assert vDB is not None, ConnectionError("Postgres docker instance not available for testing PG code")
-    
-    # Create tables
-    await vDB.drop_table()
-    assert await vDB.table_exists() is False, Exception("Table exists before creation")
-    await vDB.create_table()
-    assert await vDB.table_exists() is True, Exception("Table does not exist after creation")
-
+    # Need to replace the default encoder set up by the fixture
+    DB._embedding_model = dummy_model
     # Insert data
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
-        await vDB.insert(                            # Insert the line into the table
+        await DB.insert(                            # Insert the line into the table
             content=text,                            # The text to be embedded
             title='Pacer Copypasta',   # Title metadata
             page_numbers=[index],                    # Page number metadata
             tags=['fitness', 'pacer', 'copypasta'],  # Tag metadata
         )
 
-    assert await vDB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
+    assert await DB.count_items() == len(pacer_copypasta), Exception("Not all documents inserted")
 
     # search table with filtered match
     search_string = '[beep] A single lap should be completed each time you hear this sound.'
-    sim_search = await vDB.search(
+    sim_search = await DB.search(
         text=search_string,
         query_title='Pacer Copypasta',
         query_page_numbers=[3],
@@ -199,16 +127,16 @@ async def test_PGv_search_filtered():
     assert sim_search is not None, Exception("No results returned from filtered search")
 
     #Test conjunctive semantics
-    await vDB.insert(content='Text', title='Some text', page_numbers=[1], tags=['tag1'])
-    await vDB.insert(content='Text', title='Some mo text', page_numbers=[1], tags=['tag2', 'tag3'])
-    await vDB.insert(content='Text', title='Even mo text', page_numbers=[1], tags=['tag3'])
+    await DB.insert(content='Text', title='Some text', page_numbers=[1], tags=['tag1'])
+    await DB.insert(content='Text', title='Some mo text', page_numbers=[1], tags=['tag2', 'tag3'])
+    await DB.insert(content='Text', title='Even mo text', page_numbers=[1], tags=['tag3'])
 
     # Using limit default
-    sim_search = await vDB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False)
+    sim_search = await DB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(list(sim_search)) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
-    sim_search = await vDB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
+    sim_search = await DB.search(text='Text', tags=['tag1', 'tag3'], conjunctive=False, limit=1000)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(list(sim_search)) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
@@ -217,17 +145,17 @@ async def test_PGv_search_filtered():
     metas = [[f'author={a}'] for a in authors]
     count = len(texts)
     records = zip(texts, metas, ['']*count, [None]*count)
-    await vDB.insert_many(records)
+    await DB.insert_many(records)
 
-    sim_search = await vDB.search(text='Hi there!', threshold=0.999, limit=0)
+    sim_search = await DB.search(text='Hi there!', threshold=0.999, limit=0)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(list(sim_search)) == 3, Exception(f"There should be 3 results, received {sim_search}")
 
-    sim_search = await vDB.search(text='Hi there!', threshold=0.999, limit=2)
+    sim_search = await DB.search(text='Hi there!', threshold=0.999, limit=2)
     assert sim_search is not None, Exception("No results returned from filtered search")
     assert len(list(sim_search)) == 2, Exception(f"There should be 2 results, received {sim_search}")
 
-    await vDB.drop_table()
+    await DB.drop_table()
 
 
 if __name__ == '__main__':

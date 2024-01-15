@@ -187,7 +187,7 @@ class PGVectorHelper:
             # Count the number of documents in the table
             count = await conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
         return count
-    
+
     async def table_exists(self) -> bool:
         '''
         Check if the table exists
@@ -197,11 +197,11 @@ class PGVectorHelper:
         '''
         # Check if the table exists
         async with (await self.connection_pool()).acquire() as conn:
-            table_exists = await conn.fetchval(
+            exists = await conn.fetchval(
                 CHECK_TABLE_EXISTS,
                 self.table_name
             )
-        return table_exists
+        return exists
 
     async def drop_table(self) -> None:
         '''
