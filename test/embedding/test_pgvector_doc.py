@@ -24,7 +24,7 @@ import pytest
 # from unittest.mock import MagicMock, patch
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
-from ogbujipt.embedding.pgvector import DocDB
+# from ogbujipt.embedding.pgvector import DocDB
 import numpy as np
 
 pacer_copypasta = [  # Demo document

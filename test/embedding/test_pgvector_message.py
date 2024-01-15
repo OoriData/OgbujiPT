@@ -10,7 +10,7 @@ from datetime import datetime
 import pytest
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
-import numpy as np
+# import numpy as np
 
 # XXX: Move to a fixture?
 # Definitely don't want to even import SentenceTransformer class due to massive side-effects
