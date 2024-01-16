@@ -180,7 +180,7 @@ class MessageDB(PGVectorHelper):
                 )
 
     # XXX: Change to a generator
-    async def get_chatlog(
+    async def get_messages(
             self,
             history_key: UUID | str,
             since: datetime | None = None,
@@ -242,8 +242,8 @@ class MessageDB(PGVectorHelper):
     
     async def get_table(self, history_key):
         # Deprecated
-        warnings.warn('pgvector_message.get_table() is deprecated. Use get_chatlog().', DeprecationWarning)
-        return list(await self.get_chatlog(history_key))
+        warnings.warn('pgvector_message.get_table() is deprecated. Use get_messages().', DeprecationWarning)
+        return list(await self.get_messages(history_key))
 
     async def search(
             self,

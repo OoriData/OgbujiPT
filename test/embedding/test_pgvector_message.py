@@ -76,31 +76,31 @@ async def test_insertmany_message_vector(DB, MESSAGES):
 
 
 @pytest.mark.asyncio
-async def test_get_chatlog_all_limit(DB, MESSAGES):
+async def test_get_messages_all_limit(DB, MESSAGES):
     # Insert data using insert_many()
     await DB.insert_many(MESSAGES)
 
     history_key, role, content, timestamp, metadata = MESSAGES[0]
 
-    results = await DB.get_chatlog(history_key=history_key)
+    results = await DB.get_messages(history_key=history_key)
     assert len(list(results)) == 4, Exception('Incorrect number of messages returned from chatlog')
 
-    results = await DB.get_chatlog(history_key=history_key, limit=3)
+    results = await DB.get_messages(history_key=history_key, limit=3)
     assert len(list(results)) == 3, Exception('Incorrect number of messages returned from chatlog')
 
 
 @pytest.mark.asyncio
-async def test_get_chatlog_since(DB, MESSAGES):
+async def test_get_messages_since(DB, MESSAGES):
     await DB.insert_many(MESSAGES)
 
     history_key, role, content, timestamp, metadata = MESSAGES[0]
 
     since_ts = datetime.fromisoformat('2021-10-01 00:00:03+00:00')
-    results = list(await DB.get_chatlog(history_key=history_key, since=since_ts))
+    results = list(await DB.get_messages(history_key=history_key, since=since_ts))
     assert len(results) == 2, Exception('Incorrect number of messages returned from chatlog')
 
     since_ts = datetime.fromisoformat('2021-10-01 00:00:04+00:00')
-    results = list(await DB.get_chatlog(history_key=history_key, since=since_ts))
+    results = list(await DB.get_messages(history_key=history_key, since=since_ts))
     assert len(results) == 1, Exception('Incorrect number of messages returned from chatlog')
 
 if __name__ == '__main__':
