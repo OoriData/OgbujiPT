@@ -88,6 +88,13 @@ async def test_get_messages_all_limit(DB, MESSAGES):
     results = await DB.get_messages(history_key=history_key, limit=3)
     assert len(list(results)) == 3, Exception('Incorrect number of messages returned from chatlog')
 
+    # With limit, should return the most recent messages
+    history_key, role, content, timestamp, metadata = MESSAGES[-1]
+
+    results = list(await DB.get_messages(history_key=history_key, limit=1))
+    assert len(results) == 1, Exception('Incorrect number of messages returned from chatlog')
+    assert results[0].content == content, Exception('Incorrect message returned from chatlog')
+
 
 @pytest.mark.asyncio
 async def test_get_messages_since(DB, MESSAGES):
@@ -102,6 +109,7 @@ async def test_get_messages_since(DB, MESSAGES):
     since_ts = datetime.fromisoformat('2021-10-01 00:00:04+00:00')
     results = list(await DB.get_messages(history_key=history_key, since=since_ts))
     assert len(results) == 1, Exception('Incorrect number of messages returned from chatlog')
+
 
 if __name__ == '__main__':
     raise SystemExit("Attention! Run with pytest")
