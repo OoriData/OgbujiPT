@@ -61,7 +61,7 @@ WHERE
     history_key = $1
 {since_clause}
 ORDER BY
-    ts
+    ts DESC
 {limit_clause};
 '''
 
