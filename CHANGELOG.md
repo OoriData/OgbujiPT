@@ -6,6 +6,17 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
+## [0.7.1] - 20240122
+
+### Added
+
+- MessageDB.get_messages() options: `since` (for retrieving messages aftter a timestamp) and `limit` (for limiting the number of messages returned, selecting the most recent)
+
+### Changed
+
+- Better modularization of embeddings test cases; using `conftest.py` more
+- `pgvector_message.py` PG table timstamp column no longer a primary key
+
 ## [0.7.0] - 20240110
 
 ### Added
