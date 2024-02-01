@@ -102,6 +102,11 @@ MISTRAL_INSTRUCTION_DELIMITERS = {
     pdelim.POST_ALL_CONTEXT: '\n[/INST]',
 }
 
+MISTRAL_INSTRUCTION_DELIMITERS_NO_BOS = {
+    pdelim.PRE_ALL_CONTEXT: '[INST]',
+    pdelim.POST_ALL_CONTEXT: '\n[/INST]',
+}
+
 CHATML_DELIMITERS = {
     pdelim.PRE_PREAMBLE: '<|im_start|>system\n',
     pdelim.PREQUERY: '<|im_end|>\n<|im_start|>user\n',
