@@ -98,13 +98,13 @@ AIROBOROS_OBEDIENT_DELIMITERS = {
 }
 
 MISTRAL_INSTRUCTION_DELIMITERS = {
-    pdelim.PRE_ALL_CONTEXT: '<s>[INST]',
-    pdelim.POST_ALL_CONTEXT: '\n[/INST]',
+    pdelim.FIXED_PREAMBLE: '<s>[INST]',
+    pdelim.POSTQUERY: '\n[/INST]',
 }
 
 MISTRAL_INSTRUCTION_DELIMITERS_NO_BOS = {
-    pdelim.PRE_ALL_CONTEXT: '[INST]',
-    pdelim.POST_ALL_CONTEXT: '\n[/INST]',
+    pdelim.FIXED_PREAMBLE: '[INST]',
+    pdelim.POSTQUERY: '\n[/INST]',
 }
 
 CHATML_DELIMITERS = {
