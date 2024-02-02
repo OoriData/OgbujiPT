@@ -91,7 +91,7 @@ class DataDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_DATA_TABLE.format(
@@ -115,7 +115,7 @@ class DataDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     INSERT_DATA.format(table_name=self.table_name),
@@ -136,7 +136,7 @@ class DataDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, tags)
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
                     INSERT_DATA.format(table_name=self.table_name),
@@ -224,7 +224,7 @@ class DataDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             search_results = await conn.fetch(
                 QUERY_DATA_TABLE.format(
                     table_name=self.table_name,
@@ -242,7 +242,7 @@ class DocDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_DOC_TABLE.format(
@@ -272,7 +272,7 @@ class DocDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     INSERT_DOCS.format(table_name=self.table_name),
@@ -295,7 +295,7 @@ class DocDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (content, tags, title, page_numbers)
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
                     INSERT_DOCS.format(table_name=self.table_name),
@@ -391,7 +391,7 @@ class DocDB(PGVectorHelper):
             limit_clause = ''
 
         # Execute the search via SQL
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             search_results = await conn.fetch(
                 QUERY_DOC_TABLE.format(
                     table_name=self.table_name,

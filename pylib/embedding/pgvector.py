@@ -7,7 +7,8 @@ Vector databases embeddings using PGVector
 '''
 
 import json
-import asyncio
+# import asyncio
+# from typing import ClassVar
 
 from ogbujipt.config import attr_dict
 
@@ -16,10 +17,12 @@ try:
     import asyncpg
     from pgvector.asyncpg import register_vector
     PREREQS_AVAILABLE = True
+    POOL_TYPE = asyncpg.pool.Pool
 except ImportError:
     PREREQS_AVAILABLE = False
     asyncpg = None
     register_vector = object()  # Set up a dummy to satisfy the type hints
+    POOL_TYPE = object
 
 # ------ SQL queries ---------------------------------------------------------------------------------------------------
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
@@ -41,29 +44,44 @@ DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
 
 
 class PGVectorHelper:
-    # XXX: Should pool_params just be required? Can't really construct without going through *something*
-    # async such as from_conn_params anyway, which will handle ensuring we've been provided pool_params
-    def __init__(self, embedding_model, table_name: str, pool_params: dict = None):
-        '''
-        Create a PGvector helper from an asyncpg connection
+    '''
+    Helper class for PGVector operations
 
-        If you don't yet have a connection, but have all the parameters,
-        you can use the PGvectorHelper.from_conn_params() method instead
+    Construct using PGVectorHelper.from_conn_params() method
+
+    Connection and pool parameters:
+
+    * table_name: PostgresQL table name. Checked to restrict to alphanumeric characters & underscore
+    * host: Hostname or IP address of the PostgreSQL server. Defaults to UNIX socket if not provided.
+    * port: Port number at which the PostgreSQL server is listening. Defaults to 5432 if not provided.
+    * user: User name used to authenticate.
+    * password: Password used to authenticate.
+    * database: Database name to connect to.
+    * min_max_size: Tuple of minimum and maximum number of connections to maintain in the pool.
+        Defaults to (10, 20)
+    '''
+    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool):
+        '''
+        If you don't already have a connection pool, construct using the PGvectorHelper.from_pool_params() method
 
         Args:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
             https://huggingface.co/sentence-transformers
 
-            table_name: PostgresQL table to store the vector embeddings. Will be checked to restrict to
-            alphanumeric characters and underscore
+            table_name: PostgresQL table. Checked to restrict to alphanumeric characters & underscore
 
-            apg_conn: asyncpg connection to the database
+            pool: asyncpg connection pool instance
         '''
         if not PREREQS_AVAILABLE:
             raise RuntimeError('pgvector not installed, you can run `pip install pgvector asyncpg`')
 
         if not table_name.replace('_', '').isalnum():
-            raise ValueError('table_name must be alphanumeric, with underscore also allowed')
+            msg = 'table_name must be alphanumeric, with underscore also allowed'
+            raise ValueError(msg)
+
+        self.table_name = table_name
+        self.embedding_model = embedding_model
+        self.pool = pool
 
         # Check if the provided embedding model is a SentenceTransformer
         if (embedding_model.__class__.__name__ == 'SentenceTransformer') and (not None):
@@ -76,104 +94,34 @@ class PGVectorHelper:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
         self.table_name = table_name
-        self.pool_params = pool_params or {}
-        # asyncpg doesn't allow use of the same pool in different event loops
-        self.pool_per_loop = {}
+        self.pool = pool
 
     @classmethod
-    async def from_conn_params(
-            cls,
-            embedding_model,
-            table_name,
-            user, 
-            password,
-            db_name,
-            host,
-            port,
-            min_max_size=DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE,
-            **conn_params
-    ) -> 'PGVectorHelper':
+    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password) -> 'PGVectorHelper': # noqa: E501
         '''
-        Create a PGvector helper from connection parameters
+        Create PGVectorHelper instance from connection/pool parameters
 
-        For details on accepted parameters, See the `pgvector_connection` docstring
-            (e.g. run `help(pgvector_connection)`)
+        Will create a connection pool for you, with JSON type handling initialized,
+        and set that as a pool attribute on the created object as a user convenience.
+
+        For details on accepted parameters, See the class docstring
+            (e.g. run `help(PGVectorHelper)`)
         '''
-        min_size, max_size = min_max_size
-        # FIXME: Clean up this exception handling
-        # try:
-        # import logging
-        # logging.critical(f'Connecting to {host}:{port} as {user} to {db_name}')
-        # logging.critical(str(conn_params))
-        pool_params = dict(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=db_name,
-            min_size=min_size,
-            max_size=max_size,
-            **conn_params
-        )
-        # except Exception as e:
-            # Don't blanket mask the exception. Handle exceptions types in whatever way makes sense
-            # raise e
+        pool = await asyncpg.create_pool(init=PGVectorHelper.init_pool, host=host, port=port, user=user,
+                                        password=password, database=db_name)
 
-        obj = cls(embedding_model, table_name, pool_params)
-        pool = await obj.connection_pool()
-
-        # Set up DB extension & type handling
-        async with pool.acquire() as conn:
-            # Is this also required per pool? (duplicated from init_pool)
-            await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
-            # Actually ALSO have to register_vector per pool (duplicated from init_pool)
-            # https://github.com/pgvector/pgvector-python?tab=readme-ov-file#asyncpg
-            await register_vector(conn)
-
-            await conn.set_type_codec(  # Register a codec for JSON
-                'JSON',
-                encoder=json.dumps,
-                decoder=json.loads,
-                schema='pg_catalog'
-            )
-
-        # print('PGvector extension created and loaded.')
-        return obj
-
-    async def connection_pool(self):
-        '''
-        '''
-        # conn_pool = await asyncpg.create_pool(
-        #     host=host,
-        #     port=port,
-        #     user=user,
-        #     password=password,
-        #     database=db_name,
-        #     min_size=min_size,
-        #     max_size=max_size,
-        #     **conn_params
-        # )
-        loop = asyncio.get_event_loop()
-        if loop in self.pool_per_loop:
-            pool = self.pool_per_loop[loop]
-        else:
-            pool = await asyncpg.create_pool(init=PGVectorHelper.init_pool, **self.pool_params)
-            self.pool_per_loop[loop] = pool
-        return pool
+        new_obj = cls(embedding_model, table_name, pool)
+        return new_obj
 
     @staticmethod
     async def init_pool(conn):
         '''
-        Initialize the vector extension for a connection from a pool
+        Initialize vector extension for a connection from a pool
         '''
         await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
         await register_vector(conn)
         await conn.set_type_codec(  # Register a codec for JSON
-            'JSON',
-            encoder=json.dumps,
-            decoder=json.loads,
-            schema='pg_catalog'
-        )
+            'JSON', encoder=json.dumps, decoder=json.loads, schema='pg_catalog')
 
     # Hmm. Just called count in the qdrant version
     async def count_items(self) -> int:
@@ -183,7 +131,7 @@ class PGVectorHelper:
         Returns:
             int: number of documents in the table
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             # Count the number of documents in the table
             count = await conn.fetchval(f'SELECT COUNT(*) FROM {self.table_name}')
         return count
@@ -196,7 +144,7 @@ class PGVectorHelper:
             bool: True if the table exists, False otherwise
         '''
         # Check if the table exists
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             exists = await conn.fetchval(
                 CHECK_TABLE_EXISTS,
                 self.table_name
@@ -210,7 +158,7 @@ class PGVectorHelper:
         Exercise caution!
         '''
         # Delete the table
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             await conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
 
 
