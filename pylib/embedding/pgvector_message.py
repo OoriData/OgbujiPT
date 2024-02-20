@@ -85,7 +85,7 @@ LIMIT $3;
 class MessageDB(PGVectorHelper):
     ''' Specialize PGvectorHelper for messages, e.g. chatlogs '''
     async def create_table(self):
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_MESSAGE_TABLE.format(
@@ -126,7 +126,7 @@ class MessageDB(PGVectorHelper):
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     INSERT_MESSAGE.format(table_name=self.table_name),
@@ -150,7 +150,7 @@ class MessageDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (history_key, role, text, timestamp, metadata)
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
                     INSERT_MESSAGE.format(table_name=self.table_name),
@@ -170,7 +170,7 @@ class MessageDB(PGVectorHelper):
         Args:
             history_key (str): history key (unique identifier) to match
         '''
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CLEAR_MESSAGE.format(
@@ -197,7 +197,7 @@ class MessageDB(PGVectorHelper):
             generates asyncpg.Record instances of resulting messages
         '''
         qparams = [history_key]
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             if not isinstance(history_key, UUID):
                 history_key = UUID(history_key)
                 # msg = f'history_key must be a UUID, not {type(history_key)} ({history_key}))'
@@ -271,7 +271,7 @@ class MessageDB(PGVectorHelper):
         query_embedding = list(self._embedding_model.encode(text))
 
         # Search the table
-        async with (await self.connection_pool()).acquire() as conn:
+        async with self.pool.acquire() as conn:
             records = await conn.fetch(
                 SEMANTIC_QUERY_MESSAGE_TABLE.format(
                     table_name=self.table_name
