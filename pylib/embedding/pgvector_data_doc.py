@@ -73,14 +73,14 @@ QUERY_DOC_TABLE = QUERY_TABLE_BASE.format(extra_fields='''\
 
 QUERY_DATA_TABLE = QUERY_TABLE_BASE.format(extra_fields='')
 
-TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator \n'
+TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator\n'
 
 PAGE_NUMBERS_WHERE_CLAUSE = 'page_numbers && {query_page_numbers}  -- Overlap operator \n'
 
-TAGS_WHERE_CLAUSE_CONJ = 'tags @> {tags}  -- Contains operator \n'
-TAGS_WHERE_CLAUSE_DISJ = 'tags && {tags}  -- Overlap operator \n'
+TAGS_WHERE_CLAUSE_CONJ = 'tags @> {tags}  -- Contains operator\n'
+TAGS_WHERE_CLAUSE_DISJ = 'tags && {tags}  -- Overlap operator\n'
 
-THRESHOLD_WHERE_CLAUSE = '{query_threshold} >= cosine_similarity \n'
+THRESHOLD_WHERE_CLAUSE = 'cosine_similarity >= {query_threshold}\n'
 # ------ SQL queries ---------------------------------------------------------------------------------------------------
 
 
