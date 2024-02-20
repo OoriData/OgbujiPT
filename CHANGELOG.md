@@ -6,7 +6,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
-## [0.7.1] - 20240205
+## [0.7.1] - 20240222
 
 ### Added
 
@@ -17,6 +17,10 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - PGVector users now manage their own connection pool by default
 - Better modularization of embeddings test cases; using `conftest.py` more
 - `pgvector_message.py` PG table timstamp column no longer a primary key
+
+### Fixed
+
+- Backward threshold check for ogbujipt.embedding.pgvector_data_doc.DataDB
 
 ## [0.7.0] - 20240110
 
