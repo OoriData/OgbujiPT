@@ -30,6 +30,11 @@ try:
 except ImportError:
     OpenAI = None
 
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
 # In many cases of self-hosted models you just get whatever model is loaded, rather than specifying it in the API
 DUMMY_MODEL = 'DUMMY_MODEL'
 
@@ -171,7 +176,7 @@ class openai_api(llm_wrapper):
 
         >>> from ogbujipt.llm_wrapper import openai_api
         >>> llm_api = openai_api(base_url='http://localhost:8000')
-        >>> print(llm_api.hosted_model())
+        >>> print(llm_api.available_models())
         ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
         '''
         try:
@@ -204,7 +209,7 @@ class openai_chat_api(openai_api):
 
     You need to set an OpenAI API key in your environment, or pass it in, for this next example
 
-        >>> from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+    >>> from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
     >>> llm_api = openai_chat_api(model='gpt-3.5-turbo')
     >>> resp = llm_api(prompt_to_chat('Knock knock!'))
     >>> llm_api.first_choice_message(resp)
@@ -253,6 +258,125 @@ class openai_chat_api(openai_api):
         except AttributeError:
             raise RuntimeError(
                 f'''Response does not appear to be an OpenAI API chat-style completion structure, as expected:
+{repr(response)}''')
+
+
+class llama_cpp_http(llm_wrapper):
+    '''
+    Wrapper for LLM hosted via llama-cpp HTTP API
+    https://github.com/ggerganov/llama.cpp/tree/master/examples/server
+
+    Use this for regular LLMs, not chat-style models, for whcih use llama_cpp_http_chat
+
+    >>> import asyncio
+    >>> from ogbujipt.llm_wrapper import llama_cpp_http
+    >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
+    >>> resp = asyncio.run(llm_api('Knock knock!', min_p=0.05))
+    >>> resp['content']
+    '''
+    def __init__(self, base_url, model=None, **kwargs):
+        '''
+        Args:
+            model (str, optional): Name of model to select form the options available on the endpoint
+
+            base_url (str, optional): Base URL of the API endpoint
+
+            kwargs (dict, optional): Extra parameters via llama.cpp
+        '''
+        if httpx is None:
+            raise ImportError('httpx module not available; Perhaps try: `pip install httpx`')
+        self.model = model
+        self.base_url = base_url
+        super().__init__(model, **kwargs)
+
+    async def __call__(self, prompt, req='/completion', timeout=30.0, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API.
+                See Completions.create in OpenAI API, but in short, these:
+                best_of, echo, frequency_penalty, logit_bias, logprobs, max_tokens, n
+                presence_penalty, seed, stop, stream, suffix, temperature, top_p, user
+            
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        header = {'Content-Type': 'application/json'}
+        async with httpx.AsyncClient() as client:
+            # FIXME: Decide the best way to return result metadata
+            result = await client.post(f'{self.base_url}{req}', json={'prompt': prompt, **kwargs}, headers=header, timeout=timeout)
+            try:
+                return result.json()
+            except ValueError:
+                return result.text
+
+    hosted_model = openai_api.hosted_model  # Borrow method
+
+    def available_models(self) -> List[str]:
+        '''
+        Query the API to find what model is being run for LLM calls
+
+        Also includes model introspection, e.g.:
+
+        >>> from ogbujipt.llm_wrapper import openai_api
+        >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
+        >>> print(llm_api.available_models())
+        ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
+        '''
+        resp = httpx.get(f'{self.base_url}/v1/models').json()
+        if 'data' not in resp:
+            raise RuntimeError(f'Unexpected response from {self.base_url}/v1/models:\n{repr(resp)}')
+        return [ i['id'] for i in resp['data'] ]
+
+
+class llama_cpp_http_chat(llama_cpp_http):
+    '''
+    Wrapper for chat-style LLM hosted via llama-cpp HTTP API
+    https://github.com/ggerganov/llama.cpp/tree/master/examples/server
+
+    Use this for chat-style models, not regular LLMs, for which use llama_cpp_http
+
+    >>> import asyncio
+    >>> from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
+    >>> llm_api = llama_cpp_http_chat(base_url='http://localhost:8000')
+    >>> resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!')))
+    >>> llm_api.first_choice_message(resp)
+    '''
+    async def __call__(self, prompt, req='/v1/chat/completions', timeout=30.0, **kwargs):
+        '''
+        Invoke LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API.
+                See Completions.create in OpenAI API, but in short, these:
+                best_of, echo, frequency_penalty, logit_bias, logprobs, max_tokens, n
+                presence_penalty, seed, stop, stream, suffix, temperature, top_p, user
+            
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        header = {'Content-Type': 'application/json'}
+        async with httpx.AsyncClient() as client:
+            # FIXME: Decide the best way to return result metadata
+            result = await client.post(f'{self.base_url}{req}', json={'messages': prompt, **kwargs}, headers=header, timeout=timeout)
+            # print(result.text)
+            return result.json()
+
+    @staticmethod
+    def first_choice_message(response):
+        '''
+        Given an OpenAI-compatible API chat completion response, return the first choice message content
+        '''
+        try:
+            return response['choices'][0]['message']['content']
+        except (IndexError, KeyError):
+            raise RuntimeError(
+                f'''Response does not appear to be a llama.cpp API chat-style completion structure, as expected:
 {repr(response)}''')
 
 

@@ -7,7 +7,7 @@ Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style
 
 There are some helper functions for common LLM tasks, such as those provided by projects such as langchain, but not meant to be as extensive. The OgbujiPT approach emphasizes simplicity and transparency.
 
-Tested back ends are [llama-cpp-python](https://github.com/abetlen/llama-cpp-python), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we apply these with Nvidia and Apple M1/M2 GPU enabled.
+Tested back ends are [llama.cpp](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md) (custom HTTP API), [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)  (OpenAI HTTP API), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we apply these with Nvidia and Apple M1/M2 GPU enabled.
 
 We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
 
@@ -52,7 +52,7 @@ The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM 
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
 > On this occasion, I want you to know that you are appreciated and valued beyond measure. May your day be filled with joy and laughter.
 
-Here's an example using a model loaded in memory using ctransformers, a LLaMMa-based model (so ultimately via llama.cpp).
+Here's an example using a model loaded in memory using ctransformers.
 
 ```py
 from ctransformers import AutoModelForCausalLM
@@ -64,6 +64,17 @@ model = AutoModelForCausalLM.from_pretrained('TheBloke_LlongOrca-13B-16K-GGUF',
 llm = ctrans_wrapper(model=model)
 
 print(llm(prompt='Write a short birthday greeting for my star employee', max_new_tokens=100))
+```
+
+Here's an example using a model hosted directly by [llama.cpp's server](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md).
+
+```py
+import asyncio
+from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
+
+llm_api = llama_cpp_http_chat('http://localhost:8000')
+resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!'), min_p=0.05))
+print(llm_api.first_choice_message(resp))
 ```
 
 For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo). Demos include:
