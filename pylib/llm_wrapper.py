@@ -307,7 +307,8 @@ class llama_cpp_http(llm_wrapper):
         header = {'Content-Type': 'application/json'}
         async with httpx.AsyncClient() as client:
             # FIXME: Decide the best way to return result metadata
-            result = await client.post(f'{self.base_url}{req}', json={'prompt': prompt, **kwargs}, headers=header, timeout=timeout)
+            result = await client.post(f'{self.base_url}{req}', json={'prompt': prompt, **kwargs},
+                                       headers=header, timeout=timeout)
             try:
                 return result.json()
             except ValueError:
@@ -363,7 +364,8 @@ class llama_cpp_http_chat(llama_cpp_http):
         header = {'Content-Type': 'application/json'}
         async with httpx.AsyncClient() as client:
             # FIXME: Decide the best way to return result metadata
-            result = await client.post(f'{self.base_url}{req}', json={'messages': prompt, **kwargs}, headers=header, timeout=timeout)
+            result = await client.post(f'{self.base_url}{req}', json={'messages': prompt, **kwargs},
+                                       headers=header, timeout=timeout)
             # print(result.text)
             return result.json()
 
