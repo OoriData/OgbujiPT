@@ -321,7 +321,16 @@ class llama_cpp_http(llm_wrapper):
             else:
                 raise RuntimeError(f'Unexpected response from {self.base_url}{req}:\n{repr(result)}')
 
-    hosted_model = openai_api.hosted_model  # Borrow method
+    def hosted_model(self) -> str:
+        '''
+        Model introspection: Query the API to find what model is being run for LLM calls
+
+        >>> from ogbujipt.llm_wrapper import llama_cpp_http
+        >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
+        >>> print(llm_api.hosted_model())
+        '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
+        '''
+        return self.available_models()[0]
 
     def available_models(self) -> List[str]:
         '''
@@ -353,7 +362,7 @@ class llama_cpp_http_chat(llama_cpp_http):
     >>> resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!')))
     >>> llm_api.first_choice_message(resp)
     '''
-    async def __call__(self, prompt, req='/v1/chat/completions', timeout=30.0, apikey=None, **kwargs):
+    async def __call__(self, messages, req='/v1/chat/completions', timeout=30.0, apikey=None, **kwargs):
         '''
         Invoke LLM with a completion request
 
@@ -369,13 +378,12 @@ class llama_cpp_http_chat(llama_cpp_http):
             dict: JSON response from the LLM
         '''
         header = {'Content-Type': 'application/json'}
-        if apikey is None:
-            apikey = self.apikey
+        apikey = apikey or self.apikey
         if apikey:
             header['Authorization'] = f'Bearer {apikey}'
         async with httpx.AsyncClient() as client:
             # FIXME: Decide the best way to return result metadata
-            result = await client.post(f'{self.base_url}{req}', json={'messages': prompt, **kwargs},
+            result = await client.post(f'{self.base_url}{req}', json={'messages': messages, **kwargs},
                                        headers=header, timeout=timeout)
             if result.status_code == HTTP_SUCCESS:
                 return result.json()
