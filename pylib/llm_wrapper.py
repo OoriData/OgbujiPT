@@ -52,7 +52,7 @@ class llm_response(config.attr_dict):
         '''
         # print(f'from_openai_chat: {response =}')
         resp = llm_response(response)
-        if 'usage' in resp: resp['usage'] = llm_response(resp['usage'])
+        if 'usage' in resp: resp['usage'] = llm_response(resp['usage'])  # noqa E701
         if 'choices' in resp and resp['choices']:
             resp['choices'] = [llm_response(c) for c in resp['choices']]
             for c in resp['choices']:
@@ -122,10 +122,6 @@ class openai_api(llm_wrapper):
         '''
         if OpenAI is None:
             raise ImportError('openai module not available; Perhaps try: `pip install openai`')
-        if 'api_base' in kwargs:
-            warnings.warn('api_base is deprecated; use base_url instead', DeprecationWarning, stacklevel=2)
-            base_url = kwargs['api_base']
-            del kwargs['api_base']
         if api_key is None:
             api_key = os.getenv('OPENAI_API_KEY', config.OPENAI_KEY_DUMMY)
 
@@ -242,7 +238,7 @@ q
         '''
         Given an OpenAI-compatible API simple completion response, return the first choice text
         '''
-        warnings.warn('The first_choice_text method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
+        warnings.warn('The first_choice_text method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
         try:
             return response.choices[0].text
         except AttributeError:
@@ -320,7 +316,7 @@ class openai_chat_api(openai_api):
         '''
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''
-        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
+        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
         try:
             return response.choices[0].message.content
         except AttributeError:
@@ -459,7 +455,7 @@ class llama_cpp_http_chat(llama_cpp_http):
         '''
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''
-        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
+        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
         try:
             return response['choices'][0]['message']['content']
         except (IndexError, KeyError):
