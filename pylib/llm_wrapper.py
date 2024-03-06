@@ -41,6 +41,34 @@ HTTP_SUCCESS = 200
 DUMMY_MODEL = 'DUMMY_MODEL'
 
 
+class llm_response(config.attr_dict):
+    '''
+    Uniform interface for LLM responses from Open
+    '''
+    @staticmethod
+    def from_openai_chat(response):
+        '''
+        Convert an OpenAI API ChatCompletion object to an llm_response object
+        '''
+        # print(f'from_openai_chat: {response =}')
+        resp = llm_response(response)
+        if 'usage' in resp: resp['usage'] = llm_response(resp['usage'])
+        if 'choices' in resp and resp['choices']:
+            resp['choices'] = [llm_response(c) for c in resp['choices']]
+            for c in resp['choices']:
+                if 'message' in c:
+                    c['message'] = llm_response(c['message'])
+            rc1 = resp['choices'][0]
+            # print(f'from_openai_chat: {rc1 =}')
+            resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
+        else:
+            resp['first_choice_text'] = resp['content']
+        return resp
+
+    from_llamacpp = from_openai_chat
+    # llama_cpp regular completion endpoint response keys: 'content', 'generation_settings', 'model', 'prompt', 'slot_id', 'stop', 'stopped_eos', 'stopped_limit', 'stopped_word', 'stopping_word', 'timings', 'tokens_cached', 'tokens_evaluated', 'tokens_predicted', 'truncated'  # noqa
+
+
 # FIXME: Should probably be an ABC
 class llm_wrapper:
     '''
@@ -69,10 +97,10 @@ class openai_api(llm_wrapper):
     Designed for models that provide simple completions from prompt.
     For chat-style models (including OpenAI's gpt-3.5-turbo & gpt-4), use openai_chat_api
             
-    >>> from ogbujipt.llm_wrapper import openai_api
+    >>> import asyncio; from ogbujipt.llm_wrapper import openai_api
     >>> llm_api = openai_api(base_url='http://localhost:8000')
-    >>> resp = llm_api('Knock knock!', max_tokens=128)
-    >>> llm_api.first_choice_text(resp)
+    >>> resp = asyncio.run(llm_api('Knock knock!', max_tokens=128))
+    >>> resp.first_choice_text
     '''
     def __init__(self, model=None, base_url=None, api_key=None, **kwargs):
         '''
@@ -113,9 +141,9 @@ class openai_api(llm_wrapper):
         self.original_model = model or None
         self.model = model
 
-    def __call__(self, prompt, api_func=None, **kwargs):
+    def call(self, prompt, api_func=None, **kwargs):
         '''
-        Invoke the LLM with a completion request
+        Non-asynchronous entry to Invoke the LLM with a completion request
 
         Args:
             prompt (str): Prompt to send to the LLM
@@ -140,10 +168,28 @@ class openai_api(llm_wrapper):
             del merged_kwargs['model']
 
         result = api_func(model=self.model, prompt=prompt, **merged_kwargs)
-        # print(result)
+        result = llm_response.from_openai_chat(result)
         if result.model == 'HOSTED_MODEL':
             result.model = self.hosted_model()
         return result
+
+    async def __call__(self, prompt, api_func=None, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API.
+                See Completions.create in OpenAI API, but in short, these:
+                best_of, echo, frequency_penalty, logit_bias, logprobs, max_tokens, n
+                presence_penalty, seed, stop, stream, suffix, temperature, top_p, user
+q
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        # Haven't implemented any OpenAI API calls that are async, so just call the sync version
+        return self.call(prompt, api_func, **kwargs)
 
     def wrap_for_multiproc(self, prompt, **kwargs):
         '''
@@ -163,7 +209,7 @@ class openai_api(llm_wrapper):
 
         >>> from ogbujipt.llm_wrapper import openai_api
         >>> llm_api = openai_api(base_url='http://localhost:8000')
-        >>> print(llm_api.hosted_model())
+        >>> llm_api.hosted_model()
         '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
         '''
         if self.original_model:
@@ -178,7 +224,7 @@ class openai_api(llm_wrapper):
 
         >>> from ogbujipt.llm_wrapper import openai_api
         >>> llm_api = openai_api(base_url='http://localhost:8000')
-        >>> print(llm_api.available_models())
+        >>> llm_api.available_models()
         ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
         '''
         try:
@@ -196,6 +242,7 @@ class openai_api(llm_wrapper):
         '''
         Given an OpenAI-compatible API simple completion response, return the first choice text
         '''
+        warnings.warn('The first_choice_text method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
         try:
             return response.choices[0].text
         except AttributeError:
@@ -214,11 +261,11 @@ class openai_chat_api(openai_api):
     >>> from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
     >>> llm_api = openai_chat_api(model='gpt-3.5-turbo')
     >>> resp = llm_api(prompt_to_chat('Knock knock!'))
-    >>> llm_api.first_choice_message(resp)
+    >>> resp.first_choice_text
     '''
-    def __call__(self, messages, api_func=None, **kwargs):
+    def call(self, messages, api_func=None, **kwargs):
         '''
-        Invoke the LLM with a completion request
+        Non-asynchronous entry to Invoke the LLM with a completion request
 
         Args:
             messages (list): Series of messages representing the chat history
@@ -245,16 +292,35 @@ class openai_chat_api(openai_api):
             del merged_kwargs['model']
 
         result = api_func(model=self.model, messages=messages, **merged_kwargs)
-        # print(result)
+        result = llm_response.from_openai_chat(result)
         if result.model == 'HOSTED_MODEL':
             result.model = self.hosted_model()
         return result
+
+    async def __call__(self, prompt, api_func=None, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API.
+                See Completions.create in OpenAI API, but in short, these:
+                best_of, echo, frequency_penalty, logit_bias, logprobs, max_tokens, n
+                presence_penalty, seed, stop, stream, suffix, temperature, top_p, user
+            
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        # Haven't implemented any OpenAI API calls that are async, so just call the sync version
+        return self.call(prompt, api_func, **kwargs)
 
     @staticmethod
     def first_choice_message(response):
         '''
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''
+        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
         try:
             return response.choices[0].message.content
         except AttributeError:
@@ -270,8 +336,7 @@ class llama_cpp_http(llm_wrapper):
 
     Use this for regular LLMs, not chat-style models, for whcih use llama_cpp_http_chat
 
-    >>> import asyncio
-    >>> from ogbujipt.llm_wrapper import llama_cpp_http
+    >>> import asyncio; from ogbujipt.llm_wrapper import llama_cpp_http
     >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
     >>> resp = asyncio.run(llm_api('Knock knock!', min_p=0.05))
     >>> resp['content']
@@ -317,7 +382,7 @@ class llama_cpp_http(llm_wrapper):
             result = await client.post(f'{self.base_url}{req}', json={'prompt': prompt, **kwargs},
                                        headers=header, timeout=timeout)
             if result.status_code == HTTP_SUCCESS:
-                return result.json()
+                return llm_response.from_llamacpp(result.json())
             else:
                 raise RuntimeError(f'Unexpected response from {self.base_url}{req}:\n{repr(result)}')
 
@@ -327,7 +392,7 @@ class llama_cpp_http(llm_wrapper):
 
         >>> from ogbujipt.llm_wrapper import llama_cpp_http
         >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
-        >>> print(llm_api.hosted_model())
+        >>> llm_api.hosted_model()
         '/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin'
         '''
         return self.available_models()[0]
@@ -340,7 +405,7 @@ class llama_cpp_http(llm_wrapper):
 
         >>> from ogbujipt.llm_wrapper import openai_api
         >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
-        >>> print(llm_api.available_models())
+        >>> llm_api.available_models()
         ['/models/TheBloke_WizardLM-13B-V1.0-Uncensored-GGML/wizardlm-13b-v1.0-uncensored.ggmlv3.q6_K.bin']
         '''
         resp = httpx.get(f'{self.base_url}/v1/models').json()
@@ -356,11 +421,10 @@ class llama_cpp_http_chat(llama_cpp_http):
 
     Use this for chat-style models, not regular LLMs, for which use llama_cpp_http
 
-    >>> import asyncio
-    >>> from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
+    >>> import asyncio; from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
     >>> llm_api = llama_cpp_http_chat(base_url='http://localhost:8000')
     >>> resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!')))
-    >>> llm_api.first_choice_message(resp)
+    >>> resp.first_choice_text
     '''
     async def __call__(self, messages, req='/v1/chat/completions', timeout=30.0, apikey=None, **kwargs):
         '''
@@ -386,7 +450,7 @@ class llama_cpp_http_chat(llama_cpp_http):
             result = await client.post(f'{self.base_url}{req}', json={'messages': messages, **kwargs},
                                        headers=header, timeout=timeout)
             if result.status_code == HTTP_SUCCESS:
-                return result.json()
+                return llm_response.from_llamacpp(result.json())
             else:
                 raise RuntimeError(f'Unexpected response from {self.base_url}{req}:\n{repr(result)}')
 
@@ -395,6 +459,7 @@ class llama_cpp_http_chat(llama_cpp_http):
         '''
         Given an OpenAI-compatible API chat completion response, return the first choice message content
         '''
+        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)
         try:
             return response['choices'][0]['message']['content']
         except (IndexError, KeyError):

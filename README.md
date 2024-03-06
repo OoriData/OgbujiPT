@@ -41,9 +41,9 @@ llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your L
 prompt = 'Write a short birthday greeting for my star employee'
 
 # You can set model params as needed
-resp = llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=256)
+resp = llm_api.call(prompt_to_chat(prompt), temperature=0.1, max_tokens=256)
 # Extract just the response text, but the entire structure is available
-print(llm_api.first_choice_message(resp))
+print(resp.first_choice_text)
 ```
 
 The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:
@@ -52,7 +52,39 @@ The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM 
 > I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
 > On this occasion, I want you to know that you are appreciated and valued beyond measure. May your day be filled with joy and laughter.
 
-Here's an example using a model loaded in memory using ctransformers.
+### Asynchronous by design
+
+The above example shows the synchronous API, provided for dumb convenience, but for most use cases you'll want to use the asynchronous API.
+
+```py
+import asyncio
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+
+llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
+prompt = 'Write a short birthday greeting for my star employee'
+
+# You can set model params as needed
+resp = await asyncio.run(llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=256))
+# Extract just the response text, but the entire structure is available
+print(resp.first_choice_text)
+```
+
+### llama.cpp HTTP API for flexible LLM control
+
+Here's an example using a model hosted directly by [llama.cpp's server](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md).
+
+```py
+import asyncio
+from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
+
+llm_api = llama_cpp_http_chat('http://localhost:8000')
+resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!'), min_p=0.05))
+print(resp.first_choice_text)
+```
+
+### ctransformers for local in-process loaded LLMs
+
+Here's an example using a model loaded in-process using ctransformers.
 
 ```py
 from ctransformers import AutoModelForCausalLM
@@ -66,18 +98,9 @@ llm = ctrans_wrapper(model=model)
 print(llm(prompt='Write a short birthday greeting for my star employee', max_new_tokens=100))
 ```
 
-Here's an example using a model hosted directly by [llama.cpp's server](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md).
+### For more examples…
 
-```py
-import asyncio
-from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
-
-llm_api = llama_cpp_http_chat('http://localhost:8000')
-resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!'), min_p=0.05))
-print(llm_api.first_choice_message(resp))
-```
-
-For more examples see the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo). Demos include:
+See the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo). Demos include:
 
 * Basics:
   * Use of basic LLM text completion to correct a data format (XML)
