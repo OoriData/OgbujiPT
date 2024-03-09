@@ -52,8 +52,20 @@ class llm_response(config.attr_dict):
         '''
         # print(f'from_openai_chat: {response =}')
         resp = llm_response(response)
-        if 'usage' in resp: resp['usage'] = llm_response(resp['usage'])  # noqa E701
-        if 'choices' in resp and resp['choices']:
+        if 'usage' in resp:
+            resp['usage'] = llm_response(resp['usage'])
+            resp['prompt_tokens'] = resp.usage.prompt_tokens
+            resp['generated_tokens'] = resp.usage.completion_tokens
+            print(f'from_openai_chat: {resp =}')
+            # resp['prompt_tps'] = resp.timings.prompt_per_second
+            # resp['generated_tps'] = resp.timings.predicted_per_second
+        elif 'timings' in resp:
+            resp['timings'] = llm_response(resp['timings'])
+            resp['prompt_tokens'] = resp.timings.prompt_n
+            resp['generated_tokens'] = resp.timings.predicted_n
+            resp['prompt_tps'] = resp.timings.prompt_per_second
+            resp['generated_tps'] = resp.timings.predicted_per_second
+        if resp.get('choices', []):
             resp['choices'] = [llm_response(c) for c in resp['choices']]
             for c in resp['choices']:
                 if 'message' in c:
