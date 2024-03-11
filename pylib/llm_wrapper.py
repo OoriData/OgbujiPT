@@ -455,7 +455,7 @@ class llama_cpp_http_chat(llama_cpp_http):
             header['Authorization'] = f'Bearer {apikey}'
         async with httpx.AsyncClient() as client:
             # FIXME: Decide the best way to return result metadata
-            result = await client.post(f'{self.base_url}{req}', json={'messages': messages, **kwargs},
+            result = await client.post(f'{self.base_url.rstrip("/")}{req}', json={'messages': messages, **kwargs},
                                        headers=header, timeout=timeout)
             if result.status_code == HTTP_SUCCESS:
                 return llm_response.from_llamacpp(result.json())
