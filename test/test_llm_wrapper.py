@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
 # test/test_llm_wrapper.py
+
 import os
 import json
 
@@ -81,8 +82,12 @@ async def test_openai_llama_cpp_http():
     #     json={'object':'list','data':[{'id':'model1','object':'model','owned_by':'me','permissions':[]}]})
 
     respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
-    route_chat = respx.post('http://127.0.0.1:8000/v1/chat/completions').mock(return_value=Response(200, text=json.dumps(OPENAI_STYLE_CHAT_RESPONSE)))
-    route_nonchat = respx.post('http://127.0.0.1:8000/completion').mock(return_value=Response(200, text=json.dumps(OPENAI_STYLE_RESPONSE)))
+    route_chat = respx.post(
+        'http://127.0.0.1:8000/v1/chat/completions').mock(
+            return_value=Response(200, text=json.dumps(OPENAI_STYLE_CHAT_RESPONSE)))
+    route_nonchat = respx.post(
+        'http://127.0.0.1:8000/completion').mock(
+            return_value=Response(200, text=json.dumps(OPENAI_STYLE_RESPONSE)))
     # FIXME: Figure out the right patterns for checking the HTTP requests
     # route1 = respx.get('http://127.0.0.1:8000/v1/models').mock(return_value=Response(200))
 
@@ -116,7 +121,7 @@ def test_prompt_to_chat():
 
 OPENAI_STYLE_CHAT_RESPONSE = {'choices': [{'finish_reason': 'stop',
    'index': 0,
-   'message': {'content': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.',
+   'message': {'content': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.',  # noqa: E501
     'role': 'assistant'}}],
  'created': 1710171748,
  'id': 'chatcmpl-YOGhMGqIh3qlkOzOCayFRSU3GYKY6NPJ',
@@ -125,12 +130,12 @@ OPENAI_STYLE_CHAT_RESPONSE = {'choices': [{'finish_reason': 'stop',
  'usage': {'completion_tokens': 24, 'prompt_tokens': 11, 'total_tokens': 35},
  'prompt_tokens': 11,
  'generated_tokens': 24,
- 'first_choice_text': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.'}
+ 'first_choice_text': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.'}  # noqa: E501
 
 OPENAI_STYLE_RESPONSE = {'id': 'chatcmpl-Fvua40LBorK82dyfDD5QTDNl7DmeLggg',
  'choices': [{'finish_reason': 'stop',
    'index': 0,
-   'message': {'content': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.',
+   'message': {'content': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.',  # noqa: E501
     'role': 'assistant',
     'function_call': None,
     'tool_calls': None}}],
@@ -141,7 +146,7 @@ OPENAI_STYLE_RESPONSE = {'id': 'chatcmpl-Fvua40LBorK82dyfDD5QTDNl7DmeLggg',
  'usage': {'completion_tokens': 24, 'prompt_tokens': 11, 'total_tokens': 35},
  'prompt_tokens': 11,
  'generated_tokens': 24,
- 'first_choice_text': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.'}
+ 'first_choice_text': 'Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.'}  # noqa: E501
 
 if __name__ == '__main__':
     raise SystemExit("Attention! Run with pytest")
