@@ -56,7 +56,6 @@ class llm_response(config.attr_dict):
             resp['usage'] = llm_response(resp['usage'])
             resp['prompt_tokens'] = resp.usage.prompt_tokens
             resp['generated_tokens'] = resp.usage.completion_tokens
-            print(f'from_openai_chat: {resp =}')
             # resp['prompt_tps'] = resp.timings.prompt_per_second
             # resp['generated_tps'] = resp.timings.predicted_per_second
         elif 'timings' in resp:
