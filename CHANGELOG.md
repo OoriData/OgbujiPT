@@ -6,7 +6,18 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ## [Unreleased]
 -->
 
-## [0.7.1] - 20240222
+## [0.8.0] - 20240312
+
+### Added
+
+- Implemented `ogbujipt.llm_wrapper.llama_cpp_http_chat` & `ogbujipt.llm_wrapper.llama_cpp_http`; llama.cpp low-level HTTP API support
+- Implemented flexible `ogbujipt.llm_wrapper.llama_response` class
+
+### Changed
+
+- Deprecated `first_choice_text` & `first_choice_message` methods in favor of `first_choice_text` attributes on response objects
+
+## [0.7.1] - 20240229
 
 ### Added
 
