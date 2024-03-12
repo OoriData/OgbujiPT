@@ -176,14 +176,6 @@ class DataDB(PGVectorHelper):
         Returns:
             generator which yields the rows os the query results ass attributable dicts
         '''
-        if query_tags is not None:
-            warnings.warn('query_tags is deprecated. Use tags instead.', DeprecationWarning)
-            tags = query_tags
-        # else:
-        #     if not isinstance(query_tags, list):
-        #         raise TypeError('query_tags must be a list of strings')
-        #     if not all(isinstance(tag, str) for tag in query_tags):
-        #         raise TypeError('query_tags must be a list of strings')
         if threshold is not None:
             if not isinstance(threshold, float):
                 raise TypeError('threshold must be a float')

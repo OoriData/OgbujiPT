@@ -232,19 +232,6 @@ class MessageDB(PGVectorHelper):
                 'metadata': record['metadata']
             }) for record in message_records)
 
-        # async for record in message_records:
-        #     yield attr_dict({
-        #         'ts': record['ts'],
-        #         'role': record['role'],
-        #         'content': record['content'],
-        #         'metadata': record['metadata']
-        #     })
-    
-    async def get_table(self, history_key):
-        # Deprecated
-        warnings.warn('pgvector_message.get_table() is deprecated. Use get_messages().', DeprecationWarning)
-        return list(await self.get_messages(history_key))
-
     async def search(
             self,
             history_key: UUID,

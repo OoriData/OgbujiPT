@@ -191,11 +191,3 @@ class collection:
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         return current_count
 
-
-# Already disambiguated by the module name. Anyone can use import as if that's not enough
-# Deprecating the old name
-class qdrant_collection(collection):
-    def __init__(self, name, embedding_model, db=None,
-                 distance_function=None, **conn_params):
-        warnings.warn('qdrant_collection is deprecated. Use collection instead.', DeprecationWarning)
-        super().__init__(name, embedding_model, db=db, distance_function=distance_function, **conn_params)
