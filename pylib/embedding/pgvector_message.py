@@ -9,7 +9,6 @@ Vector embeddings DB feature for messaging (chat, etc.) using PGVector
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Iterable
-import warnings
 
 from ogbujipt.config import attr_dict
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
