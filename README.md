@@ -54,7 +54,7 @@ The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM 
 
 ### Asynchronous by design
 
-The above example shows the synchronous API, provided for dumb convenience, but for most use cases you'll want to use the asynchronous API.
+Above example shows the synchronous API, provided for dumb convenience, but for most use cases you'll want to use the asynchronous API. This example also adds a system message.
 
 ```py
 import asyncio
@@ -63,8 +63,8 @@ from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
 prompt = 'Write a short birthday greeting for my star employee'
 
-# You can set model params as needed
-resp = await asyncio.run(llm_api(prompt_to_chat(prompt), temperature=0.1, max_tokens=256))
+messages = prompt_to_chat(prompt, system='You are a helpful AI agent…')
+resp = await asyncio.run(llm_api(messages, temperature=0.1, max_tokens=256))
 # Extract just the response text, but the entire structure is available
 print(resp.first_choice_text)
 ```
@@ -166,6 +166,12 @@ Some initial ideas & code were borrowed from these projects, but with heavy refa
 
 * [ChobPT/oobaboogas-webui-langchain_agent](https://github.com/ChobPT/oobaboogas-webui-langchain_agent)
 * [wafflecomposite/langchain-ask-pdf-local](https://github.com/wafflecomposite/langchain-ask-pdf-local)
+
+# Related projects
+
+* [mlx-tuning-fork
+](https://github.com/chimezie/mlx-tuning-fork)—"very basic framework for parameterized Large Language Model (Q)LoRa fine-tuning with MLX. It uses mlx, mlx_lm, and OgbujiPT, and is based primarily on the excellent mlx-example libraries but adds very minimal architecture for systematic running of easily parameterized fine tunes, hyperparameter sweeping, declarative prompt construction, an equivalent of HF's train on completions, and other capabilities."
+* [living-bookmarks](https://github.com/uogbuji/living-bookmarks)—"Uses [OgbujiPT] to Help a user manage their bookmarks in context of various chat, etc."
 
 # FAQ
 
