@@ -475,6 +475,8 @@ class llama_cpp_http_chat(llama_cpp_http):
 {repr(response)}''')
 
 
+# FIXME: Move the non-HTTP ones to a different file, since they have so little code in common
+
 class ctransformer:
     '''
     ctransformers wrapper for LLMs
@@ -520,6 +522,7 @@ class ctransformer:
         self.model = model
         self.parameters = kwargs
 
+    # FIXME: Should be async, no?
     def __call__(self, prompt, **kwargs):
         '''
         Invoke the LLM with a completion request
@@ -535,6 +538,52 @@ class ctransformer:
         # return self.model.generate(prompt, **kwargs)
         # yield from self.model.generate(prompt, **kwargs)
         return self.model(prompt, **kwargs)
+
+
+class llama_cpp_cmdline:
+    '''
+    Command line wrapper for llama.cpp (runs the main llama.cpp executable as a subprocess)
+    '''
+    def __init__(self, cmd=None, **kwargs):
+        '''
+        Args:
+            model (XYZ): Name of the model being wrapped
+
+            kwargs (dict, optional): Extra parameters for the API, the model, etc.
+
+        '''
+        import subprocess  # noqa: F401
+        cmd = cmd or ['main']
+        assert isinstance(cmd, list), 'cmd must be a list'
+
+        self.parameters = kwargs
+
+    async def __call__(self, prompt, **kwargs):
+        '''
+        Invoke the LLM with a completion request
+
+        Args:
+            prompt (str): Prompt to send to the LLM
+
+            kwargs (dict, optional): Extra parameters to pass to the model via API
+
+        Returns:
+            dict: JSON response from the LLM
+        '''
+        # https://docs.python.org/3/library/asyncio-subprocess.html
+        proc = await asyncio.create_subprocess_shell(self.cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+
+        # Probably use proc.wait(), or wait_for() if timeout parameter is needed
+        stdout, stderr = await proc.communicate()
+        # Line by line read example: https://docs.python.org/3/library/asyncio-subprocess.html#asyncio-subprocess-threads
+
+        # print(f'[{self.cmd!r} exited with {proc.returncode}]')
+        # if stdout:
+        #     print(f'[stdout]\n{stdout.decode()}')
+        # if stderr:
+        #     print(f'[stderr]\n{stderr.decode()}')
 
 
 def prompt_to_chat(prompt, system=None):
