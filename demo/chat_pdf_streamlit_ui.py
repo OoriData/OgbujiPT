@@ -173,12 +173,12 @@ If you cannot answer with the given context, just say so.\n\n'''
     # Need to remove old system messages for subsequent queries
     st.session_state['messages'].extend(messages)
     # print(st.session_state['messages'], '\n', '-'*10)
-    response = oapi(st.session_state['messages'], temperature=LLM_TEMP, max_tokens=1024)
+    response = oapi.call(st.session_state['messages'], temperature=LLM_TEMP, max_tokens=1024)
 
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; extract the text
-    response_text = oapi.first_choice_message(response)
+    response_text = response.first_choice_text
     print('\nResponse text from LLM:\n', response_text)
 
     st.session_state['messages'].append({'role': 'assistant', 'content': response})

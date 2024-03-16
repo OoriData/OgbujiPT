@@ -38,7 +38,7 @@ def main(apibase, llmtemp, openai, model):
         assert not apibase, 'Don\'t use --apibase with --openai'
         oapi = openai_api(model=(model or 'gpt-3.5-turbo'))
     else:
-        oapi = openai_api(model=model, api_base=apibase)
+        oapi = openai_api(model=model, base_url=apibase)
 
     BAD_XML_CODE = '''\
 <earth>
@@ -56,7 +56,7 @@ def main(apibase, llmtemp, openai, model):
         delimiters=ALPACA_INSTRUCT_INPUT_DELIMITERS)
     print(prompt, '\n')
 
-    response = oapi(
+    response = oapi.call(
         prompt=prompt,  # Prompt (Required)
         temperature=llmtemp,  # Temp (Default 1)
         max_tokens=100,  # Max Token length of generated text (Default 16)
@@ -72,8 +72,7 @@ def main(apibase, llmtemp, openai, model):
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; just get back the text of the response
-    response_text = oapi.first_choice_text(response)
-    print('\nResponse text from LLM:\n\n', response_text)
+    print('\nResponse text from LLM:\n\n', response.first_choice_text)
 
 
 # CLI entry point

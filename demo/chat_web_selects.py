@@ -143,7 +143,7 @@ If you cannot answer with the given context, just say so.\n\n'''
                 )
 
             indicator_task = asyncio.create_task(indicate_progress())
-            llm_task = oapi.wrap_for_multiproc(messages, **model_params)
+            llm_task = asyncio.Task(oapi(messages, **model_params))
             tasks = [indicator_task, llm_task]
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -157,8 +157,7 @@ If you cannot answer with the given context, just say so.\n\n'''
                 print('\nFull response data from LLM:\n', retval)
 
             # just get back the text of the response
-            response_text = oapi.first_choice_message(retval)
-            print('\nResponse text from LLM:\n\n', response_text)
+            print('\nResponse text from LLM:\n\n', retval.first_choice_text)
 
 
 # Command line arguments defined in click decorators

@@ -37,6 +37,7 @@ For hints on how to modify this to use OpenAI's actual services, see demo/alpaca
 '''
 
 import os
+import asyncio
 
 import discord
 
@@ -56,16 +57,15 @@ async def send_llm_msg(msg):
     '''
     # See demo/alpaca_multitask_fix_xml.py for some important warnings here
     # oapi.parameters
-    response = await oapi.wrap_for_multiproc(prompt_to_chat(msg), max_tokens=512)
+    response = await asyncio.create_task(oapi(prompt_to_chat(msg), max_tokens=512))
     print(response)
 
     print('\nFull response data from LLM:\n', response)
 
     # Response is a json-like object; we just need the message text
-    response_text = oapi.first_choice_message(response)
-    print('\nResponse text from LLM:\n', response_text)
+    print('\nResponse text from LLM:\n', response.first_choice_text)
 
-    return response_text
+    return response.first_choice_text
 
 
 @client.event

@@ -49,7 +49,7 @@ async def async_main(requests_info):
     # is often a better alternative, but waits for all tasks to complete whereas we're done once
     # the LLM generation tasks are complete
     indicator_task = asyncio.create_task(console_progress_indicator())
-    llm_tasks = [llm.wrap_for_multiproc(prompt_to_chat(msg), temperature=temp, max_tokens=1024)
+    llm_tasks = [asyncio.create_task(llm(prompt_to_chat(msg), temperature=temp, max_tokens=1024))
                  for (llm, msg, temp) in requests_info]
     llm_messages = [msg for (llm, msg, temp) in requests_info]
     # Need to gather to make sure all LLM tasks are completed
@@ -63,8 +63,7 @@ async def async_main(requests_info):
         # resp is an instance of openai.openai_object.OpenAIObject, with lots of useful info
         print('\nFull response data from LLM:\n', resp)
         # Just the response text
-        response_text = openai_chat_api.first_choice_message(resp)
-        print('\nResponse text from LLM:\n\n', response_text)
+        print('\nResponse text from LLM:\n\n', resp.first_choice_text)
         print('-'*80)
 
 
@@ -82,7 +81,7 @@ def main(apibase, llmtemp, openai, model):
     if openai:
         oapi = openai_chat_api(model=(model or 'gpt-3.5-turbo'))
     else:
-        oapi = openai_chat_api(model=model, api_base=apibase)
+        oapi = openai_chat_api(model=model, base_url=apibase)
 
     # Separate models or params—e.g. temp—for each LLM request is left as an exercise 😊
     requests_info = [

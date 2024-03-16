@@ -198,6 +198,7 @@ q
         # Haven't implemented any OpenAI API calls that are async, so just call the sync version
         return self.call(prompt, api_func, **kwargs)
 
+    # FIXME: Needs investigation, but we might no longer need this as much
     def wrap_for_multiproc(self, prompt, **kwargs):
         '''
         Wrap the LLM invocation in an asyncio task

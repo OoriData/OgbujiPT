@@ -55,7 +55,7 @@ functions=[
 
 function_call={'name': 'handle_steps_from_user_query'}
 
-resp = llm_api(messages=messages, functions=functions, function_call=function_call)
+resp = llm_api.call(messages=messages, functions=functions, function_call=function_call)
 fc = resp.choices[0].message.function_call
 
 if fc:
