@@ -348,6 +348,7 @@ class llama_cpp_http(llm_wrapper):
     >>> llm_api = llama_cpp_http(base_url='http://localhost:8000')
     >>> resp = asyncio.run(llm_api('Knock knock!', min_p=0.05))
     >>> resp['content']
+
     '''
     def __init__(self, base_url, apikey=None, model=None, **kwargs):
         '''
@@ -368,6 +369,9 @@ class llama_cpp_http(llm_wrapper):
     async def __call__(self, prompt, req='/completion', timeout=30.0, apikey=None, **kwargs):
         '''
         Invoke the LLM with a completion request
+
+        Other endpoints are available vit `req`, e.g. /v1/models, /v1/chat/completions, etc.
+        With `/completion--header`, for a stream of preficted tokens with other token probability
 
         Args:
             prompt (str): Prompt to send to the LLM

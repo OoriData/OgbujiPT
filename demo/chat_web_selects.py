@@ -148,6 +148,9 @@ If you cannot answer with the given context, just say so.\n\n'''
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED)
 
+            # proper cleanup of indicator task, which will still be pending/running
+            indicator_task.cancel()
+
             # Instance of openai.openai_object.OpenAIObject, with lots of useful info
             retval = next(iter(done)).result()
             if verbose:
