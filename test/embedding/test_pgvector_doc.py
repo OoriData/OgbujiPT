@@ -1,23 +1,16 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# test/embedding/test_pgvector.py
+# test/embedding/test_pgvector_doc.py
 '''
-Set up a mock Postgres instance with the following commands 
-(make sure you don't have anything running on port 0.0.0.0:5432))):
-docker pull ankane/pgvector
-docker run --name mock-postgres -p 5432:5432 \
-    -e POSTGRES_USER=mock_user -e POSTGRES_PASSWORD=mock_password -e POSTGRES_DB=mock_db \
-    -d ankane/pgvector
+After setup as described in the README.md for this directory, run the tests with:
 
-Then run the tests with:
 pytest test
 
-or
+or, for just this test module:
 
-pytest test/embedding/test_pgvector.py
+pytest test/embedding/test_pgvector_doc.py
 
-Uses fixtures from ../conftest.py
-
+Uses fixtures from conftest.py in current & parent directories
 '''
 
 import pytest

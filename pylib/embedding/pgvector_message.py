@@ -79,9 +79,55 @@ ORDER BY
     cosine_similarity DESC
 LIMIT $3;
 '''
-# ------ SQL queries ---------------------------------------------------------------------------------------------------
+
+DELETE_OLDEST_MESSAGES = '''-- Delete oldest messages for given history key, such that only the newest N messages remain
+DELETE FROM {table_name} t_outer
+WHERE
+    t_outer.history_key = $1
+AND
+    t_outer.ctid NOT IN (
+        SELECT t_inner.ctid
+        FROM {table_name} t_inner
+        WHERE
+            t_inner.history_key = $1
+        ORDER BY
+            t_inner.ts DESC
+        LIMIT $2
+);
+'''
+
+# Delete after full comfort with windowed implementation
+# TEMPQ = '''
+#         SELECT t_inner.ctid
+#         FROM {table_name} t_inner
+#         WHERE
+#             t_inner.history_key = $1
+#         ORDER BY
+#             t_inner.ts DESC
+#         LIMIT $2;
+# '''
+
+# ------ Class implementations ---------------------------------------------------------------------------------------
 
 class MessageDB(PGVectorHelper):
+    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0):
+        '''
+        Helper class for messages/chatlog storage and retrieval
+
+        Args:
+            embedding (SentenceTransformer): SentenceTransformer object of your choice
+            https://huggingface.co/sentence-transformers
+            window (int, optional): number of messages to maintain in the DB. Default is 0 (all messages)
+        '''
+        super().__init__(embedding_model, table_name, pool)
+        self.window = window
+
+    @classmethod
+    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0) -> 'MessageDB': # noqa: E501
+        obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password)
+        obj.window = window
+        return obj
+
     ''' Specialize PGvectorHelper for messages, e.g. chatlogs '''
     async def create_table(self):
         async with self.pool.acquire() as conn:
@@ -135,7 +181,17 @@ class MessageDB(PGVectorHelper):
                     content_embedding.tolist(),
                     timestamp,
                     metadata
-                )   
+                )
+            # print(f'{self.window=}, Pre-count: {await self.count_items()}')
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                if self.window:
+                    await conn.execute(
+                        DELETE_OLDEST_MESSAGES.format(table_name=self.table_name),
+                        history_key,
+                        self.window)
+        # async with self.pool.acquire() as conn:
+        #     print(f'{self.window=}, Post-count: {await self.count_items()}, {list(await conn.fetch(TEMPQ.format(table_name=self.table_name), history_key, self.window))}')  # noqa E501
 
     async def insert_many(
             self,
@@ -158,6 +214,17 @@ class MessageDB(PGVectorHelper):
                         for hk, role, text, ts, metadata in content_list
                     )
                 )
+            # print(f'{self.window=}, Pre-count: {await self.count_items()}')  # noqa E501
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                if self.window:
+                    # Set uniquifies the history keys
+                    for hk in {hk for hk, _, _, _, _ in content_list}:
+                        await conn.execute(
+                            DELETE_OLDEST_MESSAGES.format(table_name=self.table_name),
+                            hk, self.window)
+        # async with self.pool.acquire() as conn:
+        #     print(f'{self.window=}, {hk=}, Post-count: {await self.count_items()}, {list(await conn.fetch(TEMPQ.format(table_name=self.table_name), hk, self.window))}')  # noqa E501
 
     async def clear(
             self,

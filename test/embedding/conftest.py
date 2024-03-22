@@ -3,6 +3,14 @@
 # test/embedding/conftest.py
 '''
 Fixtures/setup/teardown for embedding tests
+
+General note: After setup as described in the README.md for this directory, run the tests with:
+
+pytest test
+
+or, for just embeddings tests:
+
+pytest test/embedding/
 '''
 
 import sys
@@ -103,6 +111,7 @@ DB_CLASS = {
     'test/embedding/test_pgvector_doc.py': DocDB,
 }
 
+# print(HOST, DB_NAME, USER, PASSWORD, PORT)
 
 @pytest_asyncio.fixture  # Notice the async aware fixture declaration
 async def DB(request):
@@ -123,8 +132,44 @@ async def DB(request):
             password=PASSWORD)
     except ConnectionRefusedError:
         pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    if vDB is None:
+    # Actually we want to propagate the error condition, in this case
+    # if vDB is None:
+    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+
+    # Create table
+    await vDB.drop_table()
+    assert not await vDB.table_exists(), Exception("Table exists before creation")
+    await vDB.create_table()
+    assert await vDB.table_exists(), Exception("Table does not exist after creation")
+    # The test will take control upon the yield
+    yield vDB
+    # Teardown: Drop table
+    await vDB.drop_table()
+
+
+# FIXME: Lots of DRY violations
+@pytest_asyncio.fixture  # Notice the async aware fixture declaration
+async def DB_WINDOWED2(request):
+    testname = request.node.name
+    table_name = testname.lower()
+    print(f'DB setup for test: {testname}. Table name {table_name}', file=sys.stderr)
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+    try:
+        vDB = await MessageDB.from_conn_params(
+            embedding_model=dummy_model,
+            table_name=table_name,
+            db_name=DB_NAME,
+            host=HOST,
+            port=int(PORT),
+            user=USER,
+            password=PASSWORD,
+            window=2)
+    except ConnectionRefusedError:
         pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
+    # Actually we want to propagate the error condition, in this case
+    # if vDB is None:
+    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
 
     # Create table
     await vDB.drop_table()
