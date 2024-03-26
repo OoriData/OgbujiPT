@@ -1,21 +1,23 @@
 # Changelog
 
-Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!--
 ## [Unreleased]
 -->
 
-## [0.8.0] - 20240312
+## [0.8.0] - 20240325
 
 ### Added
 
-- Implemented `ogbujipt.llm_wrapper.llama_cpp_http_chat` & `ogbujipt.llm_wrapper.llama_cpp_http`; llama.cpp low-level HTTP API support
-- Implemented flexible `ogbujipt.llm_wrapper.llama_response` class
+- `llm_wrapper.llama_cpp_http_chat` & `llm_wrapper.llama_cpp_http`; llama.cpp low-level HTTP API support
+- `llm_wrapper.llama_response` class with flexible handling across API specs
+- `window` init param for for `embedding.pgvector.MessageDB`, to limit message storage per history key
 
 ### Changed
 
 - Deprecated `first_choice_text` & `first_choice_message` methods in favor of `first_choice_text` attributes on response objects
+- Clarify set quite setup docs
 
 ## [0.7.1] - 20240229
 
@@ -31,7 +33,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 
 ### Fixed
 
-- Backward threshold check for ogbujipt.embedding.pgvector_data_doc.DataDB
+- Backward threshold check for embedding.pgvector_data_doc.DataDB
 
 ## [0.7.0] - 20240110
 
@@ -40,7 +42,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - Command line options for `demo/chat_web_selects.py`
 - Helper for folks installing on Apple Silicon: `constraints-apple-silicon.txt`
 - Function calling demo
-- `ogbujipt.embedding.pgvector_message.insert_many()`
+- `embedding.pgvector_message.insert_many()`
 
 ### Changed
 
@@ -52,8 +54,8 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 - Separated data-style PGVector DBs from doc-style. tags is no longer the final param for PGVector docs helper methods & some params renamed.
 - PGVector helper method results now as `attr_dict`
 - PGVector helper now uses connection pooling & is more multiprocess safe
-- `ogbujipt.embedding.pgvector_chat` renamed to `ogbujipt.embedding.pgvector_message`
-- DB MIGRATION REQUIRED - `ogbujipt.embedding.pgvector_message` table schema
+- `embedding.pgvector_chat` renamed to `embedding.pgvector_message`
+- DB MIGRATION REQUIRED - `embedding.pgvector_message` table schema
 
 ### Fixed
 
@@ -142,9 +144,9 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 
 ### Added
 
-- `ogbujipt.__version__`
+- `__version__`
 - chat_web_selects.py demo
-- `ogbujipt.async_helper.save_openai_api_params()`
+- `async_helper.save_openai_api_params()`
 
 ### Fixed
 
@@ -155,8 +157,8 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 
 - Renamed demo alpaca_simple_fix_xml.py → simple_fix_xml.py
 - Renamed demo alpaca_multitask_fix_xml.py → multiprocess.py
-- Renamed `ogbujipt.oapi_choice1_text()` → `ogbujipt.oapi_first_choice_text()`
-- Renamed `ogbujipt.async_helper.schedule_llm_call()` → `ogbujipt.async_helper.schedule_callable()`
+- Renamed `oapi_choice1_text()` → `oapi_first_choice_text()`
+- Renamed `async_helper.schedule_llm_call()` → `async_helper.schedule_callable()`
 
 ## [0.1.1] - 20230711
 
@@ -164,8 +166,8 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 
 - GitHub CI workflow
 - Orca model style
-- Convenience function ogbujipt.oapi_choice1_text()
-- Additional conveniences in ogbujipt.prompting.model_style
+- Convenience function oapi_choice1_text()
+- Additional conveniences in prompting.model_style
 
 ### Fixed
 
@@ -174,7 +176,7 @@ Notable changes to OgbujiPT. Format based on [Keep a Changelog](https://keepacha
 ### Changed
 
 - Qdrant embeddings interface
-- Renamed ogbujipt.prompting.context_build() → ogbujipt.prompting.format()
+- Renamed prompting.context_build() → prompting.format()
 
 ## [0.1.0]
 

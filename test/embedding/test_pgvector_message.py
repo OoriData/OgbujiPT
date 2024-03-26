@@ -2,7 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # test/embedding/test_pgvector_message.py
 '''
-See test/embedding/test_pgvector.py for important notes on running these tests
+After setup as described in the README.md for this directory, run the tests with:
+
+pytest test
+
+or, for just this test module:
+
+pytest test/embedding/test_pgvector_message.py
+
+Uses fixtures from conftest.py in current & parent directories
 '''
 
 from datetime import datetime
@@ -53,7 +61,30 @@ async def test_insert_message_vector(DB, MESSAGES):
     # Even though the embedding is mocked, the stored text should be faithful
     row = next(result)
     assert row.content == content
-    assert row.metadata == {'1': 'a'}
+    assert row.metadata == metadata
+
+
+@pytest.mark.asyncio
+async def test_insert_message_vector_windowed(DB_WINDOWED2, MESSAGES):
+    assert await DB_WINDOWED2.count_items() == 0, Exception('Starting with incorrect number of messages')
+    # Insert data
+    for index, (row) in enumerate(MESSAGES):
+        await DB_WINDOWED2.insert(*row)
+
+    # There should be 2 left from each history key
+    assert await DB_WINDOWED2.count_items() == 4, Exception('Incorrect number of messages after insertion')
+
+    # In the windowed case, the oldest 4 messages should have been deleted
+    history_key, role, content, timestamp, metadata = MESSAGES[5]
+
+    # search table with perfect match
+    result = await DB_WINDOWED2.search(text=content, history_key=history_key, limit=2)
+    # assert result is not None, Exception('No results returned from perfect search')
+
+    # Even though the embedding is mocked, the stored text should be faithful
+    row = next(result)
+    assert row.content == content
+    assert row.metadata == metadata
 
 
 @pytest.mark.asyncio
@@ -72,7 +103,29 @@ async def test_insertmany_message_vector(DB, MESSAGES):
     # Even though the embedding is mocked, the stored text should be faithful
     row = next(result)
     assert row.content == content
-    assert row.metadata == {'1': 'a'}
+    assert row.metadata == metadata
+
+
+@pytest.mark.asyncio
+async def test_insertmany_message_vector_windowed(DB_WINDOWED2, MESSAGES):
+    assert await DB_WINDOWED2.count_items() == 0, Exception('Starting with incorrect number of messages')
+    # Insert data using insert_many()
+    await DB_WINDOWED2.insert_many(MESSAGES)
+
+    # There should be 2 left from each history key
+    assert await DB_WINDOWED2.count_items() == 4, Exception('Incorrect number of messages after insertion')
+
+    # In the windowed case, the oldest 4 messages should have been deleted
+    history_key, role, content, timestamp, metadata = MESSAGES[5]
+
+    # search table with perfect match
+    result = await DB_WINDOWED2.search(text=content, history_key=history_key, limit=3)
+    # assert result is not None, Exception('No results returned from perfect search')
+
+    # Even though the embedding is mocked, the stored text should be faithful
+    row = next(result)
+    assert row.content == content
+    assert row.metadata == metadata
 
 
 @pytest.mark.asyncio
