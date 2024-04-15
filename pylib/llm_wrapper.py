@@ -266,9 +266,9 @@ class openai_chat_api(openai_api):
 
     You need to set an OpenAI API key in your environment, or pass it in, for this next example
 
-    >>> from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+    >>> import asyncio; from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
     >>> llm_api = openai_chat_api(model='gpt-3.5-turbo')
-    >>> resp = llm_api(prompt_to_chat('Knock knock!'))
+    >>> resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!')))
     >>> resp.first_choice_text
     '''
     def call(self, messages, api_func=None, **kwargs):

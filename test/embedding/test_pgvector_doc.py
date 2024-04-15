@@ -39,8 +39,6 @@ class SentenceTransformer(object):
 
 @pytest.mark.asyncio
 async def test_PGv_embed_pacer(DB):
-    dummy_model = SentenceTransformer('mock_transformer')
-    dummy_model.encode.return_value = np.array([1, 2, 3])
     # Insert data
     for index, text in enumerate(pacer_copypasta):   # For each line in the copypasta
         await DB.insert(                            # Insert the line into the table
@@ -61,8 +59,6 @@ async def test_PGv_embed_pacer(DB):
 
 @pytest.mark.asyncio
 async def test_PGv_embed_many_pacer(DB):
-    dummy_model = SentenceTransformer('mock_transformer')
-    dummy_model.encode.return_value = np.array([1, 2, 3])
     # Insert data using insert_many()
     documents = (
         (

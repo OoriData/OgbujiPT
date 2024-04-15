@@ -18,7 +18,7 @@ from datetime import datetime
 import pytest
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
-# import numpy as np
+import numpy as np
 
 # XXX: Move to a fixture?
 # Definitely don't want to even import SentenceTransformer class due to massive side-effects
@@ -162,6 +162,31 @@ async def test_get_messages_since(DB, MESSAGES):
     since_ts = datetime.fromisoformat('2021-10-01 00:00:04+00:00')
     results = list(await DB.get_messages(history_key=history_key, since=since_ts))
     assert len(results) == 1, Exception('Incorrect number of messages returned from chatlog')
+
+
+@pytest.mark.asyncio
+async def test_search_threshold(DB, MESSAGES):
+    dummy_model = SentenceTransformer('mock_transformer')
+    def encode_tweaker(*args, **kwargs):
+        # Note: cosine similarity of [1, 2, 3] & [100, 300, 500] appears to be ~ 0.9939
+        if args[0].startswith('Hi'):
+            return np.array([100, 300, 500])
+        else:
+            return np.array([1, 2, 3])
+
+    dummy_model.encode.side_effect = encode_tweaker
+    # Need to replace the default encoder set up by the fixture
+    DB._embedding_model = dummy_model
+
+    await DB.insert_many(MESSAGES)
+
+    history_key, role, content, timestamp, metadata = MESSAGES[0]
+
+    results = list(await DB.search(history_key, 'Hi!', threshold=0.999))
+    assert results is not None and len(results) == 0
+
+    results = list(await DB.search(history_key, 'Hi!', threshold=0.5))
+    assert results is not None and len(results) == 1
 
 
 if __name__ == '__main__':

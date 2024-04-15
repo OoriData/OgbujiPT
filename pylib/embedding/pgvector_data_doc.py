@@ -11,7 +11,7 @@ from typing import Iterable
 
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
 
-__all__ = ['DocDB']
+__all__ = ['DataDB', 'DocDB']
 
 # ------ SQL queries ---------------------------------------------------------------------------------------------------
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
@@ -177,11 +177,8 @@ class DataDB(PGVectorHelper):
             generator which yields the rows os the query results ass attributable dicts
         '''
         if threshold is not None:
-            if not isinstance(threshold, float):
-                raise TypeError('threshold must be a float')
-            if (threshold < 0) or (threshold > 1):
-                raise ValueError('threshold must be between 0 and 1')
-
+            if not isinstance(threshold, float) or (threshold < 0) or (threshold > 1):
+                raise TypeError('threshold must be a float between 0.0 and 1.0')
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')  # Guard against injection
 
@@ -218,10 +215,8 @@ class DataDB(PGVectorHelper):
         # Execute the search via SQL
         async with self.pool.acquire() as conn:
             search_results = await conn.fetch(
-                QUERY_DATA_TABLE.format(
-                    table_name=self.table_name,
-                    where_clauses=where_clauses,
-                    limit_clause=limit_clause,
+                QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses,
+                                        limit_clause=limit_clause,
                 ),
                 *query_args
             )
@@ -237,10 +232,7 @@ class DocDB(PGVectorHelper):
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
-                    CREATE_DOC_TABLE.format(
-                        table_name=self.table_name,
-                        embed_dimension=self._embed_dimension)
-                    )
+                    CREATE_DOC_TABLE.format(table_name=self.table_name, embed_dimension=self._embed_dimension))
     
     async def insert(
             self,
@@ -336,10 +328,8 @@ class DocDB(PGVectorHelper):
             warnings.warn('query_tags is deprecated. Use tags instead.', DeprecationWarning)
             tags = query_tags
         if threshold is not None:
-            if not isinstance(threshold, float):
-                raise TypeError('threshold must be a float')
-            if (threshold < 0) or (threshold > 1):
-                raise ValueError('threshold must be between 0 and 1')
+            if not isinstance(threshold, float) or (threshold < 0) or (threshold > 1):
+                raise TypeError('threshold must be a float between 0.0 and 1.0')
 
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')  # Guard against injection

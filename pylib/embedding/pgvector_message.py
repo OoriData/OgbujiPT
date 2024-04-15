@@ -71,14 +71,34 @@ SELECT
     role,
     content,
     metadata
-FROM
-    {table_name}
-WHERE
-    history_key = $2
+FROM {table_name}
+{where_clauses}
 ORDER BY
     cosine_similarity DESC
-LIMIT $3;
+{limit_clause};
 '''
+
+# The cosine_similarity alias is not available in the WHERE clause, so use a nested SELECT
+SEMANTIC_QUERY_MESSAGE_TABLE = '''-- Find messages with closest semantic similarity
+SELECT
+    cosine_similarity,
+    ts,
+    role,
+    content,
+    metadata
+FROM
+    (SELECT
+        history_key,
+        1 - (embedding <=> $1) AS cosine_similarity,
+        ts,
+        role,
+        content,
+        metadata FROM {table_name}) AS main
+{where_clauses}
+{limit_clause};
+'''
+
+THRESHOLD_WHERE_CLAUSE = 'main.cosine_similarity >= {query_threshold}\n'
 
 DELETE_OLDEST_MESSAGES = '''-- Delete oldest messages for given history key, such that only the newest N messages remain
 DELETE FROM {table_name} t_outer
@@ -262,26 +282,32 @@ class MessageDB(PGVectorHelper):
         Returns:
             generates asyncpg.Record instances of resulting messages
         '''
+        if not isinstance(history_key, UUID):
+            history_key = UUID(history_key)
+            # msg = f'history_key must be a UUID, not {type(history_key)} ({history_key}))'
+            # raise TypeError(msg)
+        if not isinstance(since, datetime) and since is not None:
+            msg = 'since must be a datetime or None'
+            raise TypeError(msg)
+        if not isinstance(limit, int):
+            raise TypeError('limit must be an integer')  # Guard against injection
+
         qparams = [history_key]
+        # Build query
+        if since:
+            # Don't really need the ${len(qparams) + N} thing here (first optional), but used for consistency
+            since_clause = f' AND ts > ${len(qparams) + 1}'
+            qparams.append(since)
+        else:
+            since_clause = ''
+        if limit:
+            limit_clause = f'LIMIT ${len(qparams) + 1}'
+            qparams.append(limit)
+        else:
+            limit_clause = ''
+
+        # Execute
         async with self.pool.acquire() as conn:
-            if not isinstance(history_key, UUID):
-                history_key = UUID(history_key)
-                # msg = f'history_key must be a UUID, not {type(history_key)} ({history_key}))'
-                # raise TypeError(msg)
-            if not isinstance(since, datetime) and since is not None:
-                msg = 'since must be a datetime or None'
-                raise TypeError(msg)
-            if since:
-                # Really don't need the ${len(qparams) + 1} trick here, but used for consistency
-                since_clause = f' AND ts > ${len(qparams) + 1}'
-                qparams.append(since)
-            else:
-                since_clause = ''
-            if limit:
-                limit_clause = f'LIMIT ${len(qparams) + 1}'
-                qparams.append(limit)
-            else:
-                limit_clause = ''
             message_records = await conn.fetch(
                 RETURN_MESSAGES_BY_HISTORY_KEY.format(
                     table_name=self.table_name,
@@ -303,6 +329,7 @@ class MessageDB(PGVectorHelper):
             history_key: UUID,
             text: str,
             since: datetime | None = None,
+            threshold: float | None = None,
             limit: int = 1
     ) -> list[asyncpg.Record]:
         '''
@@ -317,21 +344,45 @@ class MessageDB(PGVectorHelper):
             list[asyncpg.Record]: list of search results
                 (asyncpg.Record objects are similar to dicts, but allow for attribute-style access)
         '''
+        # Type checks
+        if threshold is not None:
+            if not isinstance(threshold, float) or (threshold < 0) or (threshold > 1):
+                raise TypeError('threshold must be a float between 0.0 and 1.0')
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')
+        if not isinstance(history_key, UUID):
+            history_key = UUID(history_key)
+        if not isinstance(since, datetime) and since is not None:
+            msg = 'since must be a datetime or None'
+            raise TypeError(msg)
 
-        # Get the embedding of the query string as a PGvector compatible list
+        # Get embedding of the query string as a PGvector compatible list
         query_embedding = list(self._embedding_model.encode(text))
 
-        # Search the table
+        # Build query
+        clauses = ['main.history_key = $2\n']
+        qparams = [query_embedding, history_key]
+        if since is not None:
+            # Don't really need the ${len(qparams) + N} thing here (first optional), but used for consistency
+            clauses.append(f'ts > ${len(qparams) + 1}')
+            qparams.append(since)
+        if threshold is not None:
+            clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${len(qparams) + 1}'))
+            qparams.append(threshold)
+        clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
+        where_clauses = f'WHERE\n{clauses}'
+        limit_clause = f'LIMIT ${len(qparams) + 1}'
+        qparams.append(limit)
+
+        # Execute
         async with self.pool.acquire() as conn:
-            records = await conn.fetch(
+            message_records = await conn.fetch(
                 SEMANTIC_QUERY_MESSAGE_TABLE.format(
-                    table_name=self.table_name
+                    table_name=self.table_name,
+                    where_clauses=where_clauses,
+                    limit_clause=limit_clause
                 ),
-                query_embedding,
-                history_key,
-                limit
+                *qparams
             )
 
         search_results = [
@@ -342,7 +393,7 @@ class MessageDB(PGVectorHelper):
                 'metadata': record['metadata'],
                 'cosine_similarity': record['cosine_similarity']
             }
-            for record in records
+            for record in message_records
         ]
 
         return process_search_response(search_results)
