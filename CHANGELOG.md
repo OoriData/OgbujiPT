@@ -13,6 +13,7 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 - `llm_wrapper.llama_cpp_http_chat` & `llm_wrapper.llama_cpp_http`; llama.cpp low-level HTTP API support
 - `llm_wrapper.llama_response` class with flexible handling across API specs
 - `window` init param for for `embedding.pgvector.MessageDB`, to limit message storage per history key
+- `threshold` param on `MessageDB.search()`
 
 ### Changed
 
