@@ -3,8 +3,9 @@
 Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!--
-## [Unreleased]
 -->
+## [Unreleased]
+
 
 ## [0.8.0] - 20240325
 
@@ -18,7 +19,7 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 ### Changed
 
 - Deprecated `first_choice_text` & `first_choice_message` methods in favor of `first_choice_text` attributes on response objects
-- Clarify set quite setup docs
+- Clarify test suite setup docs
 
 ## [0.7.1] - 20240229
 
