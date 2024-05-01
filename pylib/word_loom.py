@@ -27,7 +27,7 @@ class text_item(str):
     def __new__(cls, value, deflang, altlangs=None, meta=None, markers=None):
         assert isinstance(value, str)
         self = super(text_item, cls).__new__(cls, value)
-        self.deflang = deflang  # Default language
+        self.lang = deflang  # Default language
         self.meta = meta or {}
         self.markers = markers or {}
         self.altlangs = altlangs or {}
