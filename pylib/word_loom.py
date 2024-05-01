@@ -9,6 +9,7 @@ https://github.com/OoriData/OgbujiPT/wiki/Word-Loom:-A-format-for-managing-langu
 
 import io
 import tomli
+import warnings
 
 
 class text_item(str):
@@ -23,16 +24,20 @@ class text_item(str):
     'en'
     '''
 
-    def __new__(cls, value, lang, meta=None, markers=None):
+    def __new__(cls, value, deflang, altlangs=None, meta=None, markers=None):
         assert isinstance(value, str)
         self = super(text_item, cls).__new__(cls, value)
-        self.lang = lang
-        self.meta = meta
-        self.markers = markers
+        self.deflang = deflang  # Default language
+        self.meta = meta or {}
+        self.markers = markers or {}
+        self.altlangs = altlangs or {}
         return self
 
     def __repr__(self):
         return u'T(' + str(self) + ')'
+
+    def in_lang(self, lang):
+        return self.altlangs.get(lang)
 
 
 T = text_item
@@ -48,8 +53,14 @@ def load(fp_or_str, lang='en'):
     lang - select oly texts in this language (default: 'en')
 
     >>> from ogbujipt import word_loom
-    >>> with open('myprompts.toml', mode='rb') as fp:
+    >>> with open('demo/language.toml', mode='rb') as fp:
     >>>     loom = word_loom.load(fp)
+    >>> loom['test_prompt_joke'].meta
+    {'tag': 'humor', 'updated': '2024-01-01'}
+    >>> str(loom['test_prompt_joke'])
+    'Tell me a funny joke about {topic}\n'
+    >>> loom['test_prompt_joke'].in_lang('fr')
+    'Dites-moi une blague drôle sur {topic}\n'
     '''
     # Ensure we have a file-like object
     if isinstance(fp_or_str, str):
@@ -63,10 +74,24 @@ def load(fp_or_str, lang='en'):
     texts = {}
     default_lang = loom_raw.get('lang', None)
     for k, v in loom_raw.items():
-        if not isinstance(v, dict) or 'text' not in v:
+        if not isinstance(v, dict):
             # Skip top-level items
             continue
+        if 'text' in v:
+            warnings.warn('Deprecated attribute "text". Use "_" instead')
+            text = v['text']
+        else:
+            text = v.get('_')
+        if text is None: # Skip items without text
+            continue
+        markers = v.get('_m')
+        if 'markers' in v:
+            warnings.warn('Deprecated attribute "marker". Use "_m" instead')
+            markers = v['markers']
+        else:
+            markers = v.get('_m')
         if v.get('lang') == lang or ('lang' not in v and lang == default_lang):
+            altlangs = {kk.lstrip('_'): vv for kk, vv in v.items() if (kk.startswith('_') and kk not in ('_', '_m'))}
             meta = {kk: vv for kk, vv in v.items() if (not kk.startswith('_') and kk not in ('text', 'markers'))}
-            texts[k] = T(v['text'], lang, meta=meta, markers=v.get('markers'))
+            texts[k] = T(text, lang, altlangs=altlangs, meta=meta, markers=markers)
     return texts
