@@ -8,6 +8,9 @@ text = """
 Tell me a funny joke about {topic}
 """
 markers = ["topic"]
+# Following are just preserved as metadaa associated with this language item
+tag = "humor"
+updated = "2024-01-01"
 
 # French equivalent of the same language item.
 # It's possible this is not a direct translation of the other versions, if e.g. LLMOps testing

@@ -23,10 +23,11 @@ class text_item(str):
     'en'
     '''
 
-    def __new__(cls, value, lang, markers=None):
+    def __new__(cls, value, lang, meta=None, markers=None):
         assert isinstance(value, str)
         self = super(text_item, cls).__new__(cls, value)
         self.lang = lang
+        self.meta = meta
         self.markers = markers
         return self
 
@@ -66,5 +67,6 @@ def load(fp_or_str, lang='en'):
             # Skip top-level items
             continue
         if v.get('lang') == lang or ('lang' not in v and lang == default_lang):
-            texts[k] = T(v['text'], lang, markers=v.get('markers'))
+            meta = {kk: vv for kk, vv in v.items() if (not kk.startswith('_') and kk not in ('text', 'markers'))}
+            texts[k] = T(v['text'], lang, meta=meta, markers=v.get('markers'))
     return texts
