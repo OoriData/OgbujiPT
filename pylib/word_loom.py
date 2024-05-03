@@ -18,27 +18,30 @@ class text_item(str):
     Largely keeps metadata around language, template markers, etc.
 
     >>> from ogbujipt.word_loom import T
-    >>> t = T('spam', lang='en)
+    >>> t = T('spam', lang='en')
+    >>> t
     'spam'
     >>> t.lang
     'en'
+    >>> t = T('spam', lang='en', altlang={'fr': 'jambon'})
+    >>> t.altlang['fr']
+    'jambon'
     '''
 
-    def __new__(cls, value, deflang, altlangs=None, meta=None, markers=None):
+    def __new__(cls, value, deflang, altlang=None, meta=None, markers=None):
         assert isinstance(value, str)
         self = super(text_item, cls).__new__(cls, value)
         self.lang = deflang  # Default language
         self.meta = meta or {}
         self.markers = markers or {}
-        self.altlangs = altlangs or {}
+        self.altlang = altlang or {}
         return self
 
     def __repr__(self):
-        return u'T(' + str(self) + ')'
+        return u'T(' + repr(str(self)) + ')'
 
     def in_lang(self, lang):
-        return self.altlangs.get(lang)
-
+        return self.altlang.get(lang)
 
 T = text_item
 
@@ -91,7 +94,7 @@ def load(fp_or_str, lang='en'):
         else:
             markers = v.get('_m')
         if v.get('lang') == lang or ('lang' not in v and lang == default_lang):
-            altlangs = {kk.lstrip('_'): vv for kk, vv in v.items() if (kk.startswith('_') and kk not in ('_', '_m'))}
+            altlang = {kk.lstrip('_'): vv for kk, vv in v.items() if (kk.startswith('_') and kk not in ('_', '_m'))}
             meta = {kk: vv for kk, vv in v.items() if (not kk.startswith('_') and kk not in ('text', 'markers'))}
-            texts[k] = T(text, lang, altlangs=altlangs, meta=meta, markers=markers)
+            texts[k] = T(text, lang, altlang=altlang, meta=meta, markers=markers)
     return texts
