@@ -194,5 +194,5 @@ def process_search_response(qresponse):
 
 
 # Down here to avoid circular imports
-from ogbujipt.embedding.pgvector_data_doc import DataDB, DocDB  # noqa: E402 F401
+from ogbujipt.embedding.pgvector_data import DataDB  # noqa: E402 F401
 from ogbujipt.embedding.pgvector_message import MessageDB  # noqa: E402 F401

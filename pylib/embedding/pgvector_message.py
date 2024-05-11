@@ -180,7 +180,7 @@ class MessageDB(PGVectorHelper):
 
             timestamp (datetime, optional): timestamp of the message, defaults to current time
 
-            metadata (dict[str, str], optional): additional metadata of the message
+            metadata (dict, optional): additional metadata of the message
 
         Returns:
             generator which yields the rows os the query results ass attributable dicts

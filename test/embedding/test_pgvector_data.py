@@ -8,7 +8,7 @@ pytest test
 
 or, for just this test module:
 
-pytest test/embedding/test_pgvector_data.py
+`pytest test/embedding/test_pgvector_data.py`
 
 Uses fixtures from conftest.py in current & parent directories
 '''
@@ -45,7 +45,7 @@ async def test_insert_data_vector(DB):
 
     # Insert data
     for index, (text, meta) in enumerate(KG_STATEMENTS):
-        await DB.insert(                                  # Insert the row into the table
+        await DB.insert(                                   # Insert the row into the table
             content=text,                                  # text to be embedded
             tags=[f'{k}={v}' for (k, v) in meta.items()],  # Tag metadata
         )
