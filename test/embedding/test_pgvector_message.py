@@ -10,7 +10,7 @@ or, for just this test module:
 
 pytest test/embedding/test_pgvector_message.py
 
-Uses fixtures from conftest.py in current & parent directories
+Uses fixtures from test/embedding/conftest.py in current & parent directories, including Postgres database connection
 '''
 
 from datetime import datetime

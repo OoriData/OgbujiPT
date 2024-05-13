@@ -10,7 +10,7 @@ or, for just this test module:
 
 `pytest test/embedding/test_pgvector_data.py`
 
-Uses fixtures from conftest.py in current & parent directories
+Uses fixtures from test/embedding/conftest.py in current & parent directories, including Postgres database connection
 '''
 
 import pytest
@@ -45,9 +45,9 @@ async def test_insert_data_vector(DB):
 
     # Insert data
     for index, (text, meta) in enumerate(KG_STATEMENTS):
-        await DB.insert(                                   # Insert the row into the table
-            content=text,                                  # text to be embedded
-            tags=[f'{k}={v}' for (k, v) in meta.items()],  # Tag metadata
+        await DB.insert(    # Insert the row into the table
+            content=text,   # text to be embedded
+            metadata=meta,  # Tag metadata
         )
 
     assert await DB.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
@@ -58,8 +58,8 @@ async def test_insert_data_vector(DB):
 
     # Even though the embedding is mocked, the stored text should be faithful
     row = next(result)
-    assert row.content == item1_text
-    assert row.tags == [f'{k}={v}' for (k, v) in item1_meta.items()]
+    assert row.content == item1_text, 'text mismatch'
+    assert row.metadata == item1_meta, 'Metadata mismatch'
 
     await DB.drop_table()
 
@@ -73,7 +73,7 @@ async def test_insertmany_data_vector(DB):
     item1_meta = KG_STATEMENTS[0][1]
 
     # Insert data using insert_many()
-    dataset = ((text, [f'{k}={v}' for (k, v) in tags.items()]) for (text, tags) in KG_STATEMENTS)
+    dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
     
     await DB.insert_many(dataset)
 
@@ -86,7 +86,9 @@ async def test_insertmany_data_vector(DB):
     # Even though the embedding is mocked, the stored text should be faithful
     row = next(result)
     assert row.content == item1_text
-    assert row.tags == [f'{k}={v}' for (k, v) in item1_meta.items()]
+    
+    # Adjusted assertion for metadata comparison
+    assert row.metadata == item1_meta, "Metadata mismatch"
 
     await DB.drop_table()
 
