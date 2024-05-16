@@ -3,7 +3,40 @@
 # ogbujipt.embedding.qdrant
 
 '''
+<<<<<<< Updated upstream
 Vector databases embeddings using Qdrant
+=======
+Vector databases embeddings using Qdrant: https://qdrant.tech/
+
+See class `collection` docstring for a simple example, using the in-memory drive.
+
+Example storing a Qdrant collection to disk:
+
+```py
+from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from ogbujipt.text_helper import text_splitter
+from ogbujipt.embedding.qdrant import collection
+
+DBPATH = '/tmp/qdrant_test'
+qclient = QdrantClient(path=DBPATH)
+
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+collection = collection('my-text', embedding_model, db=qclient)
+
+text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
+text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
+chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
+
+collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
+retval = collection.search('what does the fox say?', limit=1, score_threshold=0.5)
+```
+
+You can now always re-load the collections from that file via similar code in a different process
+
+Refer to Qdrant docs: https://qdrant.github.io/qdrant/redoc/index.html
+
+>>>>>>> Stashed changes
 '''
 
 import warnings

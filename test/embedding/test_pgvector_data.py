@@ -73,9 +73,9 @@ async def test_insertmany_data_vector(DB):
     item1_meta = KG_STATEMENTS[0][1]
 
     # Insert data using insert_many()
-    dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
+    # dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
     
-    await DB.insert_many(dataset)
+    await DB.insert_many(KG_STATEMENTS)
 
     assert await DB.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
 
