@@ -3,9 +3,6 @@
 # ogbujipt.embedding.qdrant
 
 '''
-<<<<<<< Updated upstream
-Vector databases embeddings using Qdrant
-=======
 Vector databases embeddings using Qdrant: https://qdrant.tech/
 
 See class `collection` docstring for a simple example, using the in-memory drive.
@@ -35,8 +32,6 @@ retval = collection.search('what does the fox say?', limit=1, score_threshold=0.
 You can now always re-load the collections from that file via similar code in a different process
 
 Refer to Qdrant docs: https://qdrant.github.io/qdrant/redoc/index.html
-
->>>>>>> Stashed changes
 '''
 
 import warnings
@@ -45,6 +40,7 @@ import itertools
 
 # Qdrant install is optional for OgbujiPT
 try:
+    # pip install qdrant_client
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
     QDRANT_AVAILABLE = True
@@ -70,7 +66,7 @@ class collection:
             https://huggingface.co/sentence-transformers
 
             
-            db (optional QdrantClient): existing DB/client to use
+            db (optional QdrantClient): existing DB/client to use, which should already be initialized
 
             distance_function (str): Distance function by which vectors will be compared
 
@@ -90,7 +86,6 @@ class collection:
         >>> chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
         >>> collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
         >>> retval = collection.search('what does the fox say?', limit=1)
-        retval
         '''
         self.name = name
         self.db = db
@@ -100,16 +95,18 @@ class collection:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
             
-        if not self.db:
-            if not QDRANT_AVAILABLE: 
-                raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
-
+        if self.db:
+            # Assume any passed-in DB has been initialized
+            self._db_initialized = True
+        elif not QDRANT_AVAILABLE: 
+            raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
+        else:
             # Create a Qdrant client
             if not conn_params:
                 conn_params = MEMORY_QDRANT_CONNECTION_PARAMS
             self.db = QdrantClient(**conn_params)
+            self._db_initialized = False
         self._distance_function = distance_function or models.Distance.COSINE
-        self._db_initialized = False
 
     def _first_update_prep(self, text):
         if text.__class__.__name__ != 'str':
