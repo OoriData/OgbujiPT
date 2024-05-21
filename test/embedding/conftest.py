@@ -20,7 +20,7 @@ import pytest_asyncio
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
 import numpy as np
-from ogbujipt.embedding.pgvector import MessageDB, DataDB, DocDB
+from ogbujipt.embedding.pgvector import MessageDB, DataDB
 
 
 @pytest.fixture
@@ -108,7 +108,6 @@ class SentenceTransformer(object):
 DB_CLASS = {
     'test/embedding/test_pgvector_message.py': MessageDB,
     'test/embedding/test_pgvector_data.py': DataDB,
-    'test/embedding/test_pgvector_doc.py': DocDB,
 }
 
 # print(HOST, DB_NAME, USER, PASSWORD, PORT)

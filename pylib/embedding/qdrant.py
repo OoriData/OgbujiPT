@@ -31,6 +31,7 @@ retval = collection.search('what does the fox say?', limit=1, score_threshold=0.
 
 You can now always re-load the collections from that file via similar code in a different process
 
+Refer to Qdrant docs: https://qdrant.github.io/qdrant/redoc/index.html
 '''
 
 import warnings
