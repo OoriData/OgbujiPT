@@ -151,7 +151,7 @@ class DataDB(PGVectorHelper):
             text (str): string to compare against items in the table.
                 This will be a vector/fuzzy/nearest-neighbor type search.
 
-            metadata (dict, optional): additional metadata of the chunk
+            threshold: minimum vector similarity to return
             
             limit (int, optional): maximum number of results to return (useful for top-k query)
                 Default is no limit
