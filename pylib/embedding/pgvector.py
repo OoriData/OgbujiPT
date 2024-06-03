@@ -193,6 +193,27 @@ def process_search_response(qresponse):
         yield attr_dict(row)
 
 
+# PG JSON operators https://www.postgresql.org/docs/16/functions-json.html
+# More tutorial-like: https://popsql.com/learn-sql/postgresql/how-to-query-a-json-column-in-postgresql
+def match_exact(key, val):
+    '''
+    Filter specifier to only return rows where the given top-level key exists in metadata, and matches the given value
+    '''
+    assert key.isalnum()
+    cast = ''
+    if isinstance(val, str):
+        assert val.isalnum()
+    elif isinstance(val, bool):
+        cast = '::boolean'
+    elif isinstance(val, int):
+        cast = '::int'
+    elif isinstance(val, float):
+        cast = '::float'
+    def apply():
+        return f'(metadata ->> \'{key}\'){cast} = ${{}}', val
+    return apply
+
+
 # Down here to avoid circular imports
 from ogbujipt.embedding.pgvector_data import DataDB  # noqa: E402 F401
 from ogbujipt.embedding.pgvector_message import MessageDB  # noqa: E402 F401

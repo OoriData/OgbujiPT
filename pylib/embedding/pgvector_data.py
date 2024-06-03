@@ -6,7 +6,7 @@
 Vector databases embeddings using PGVector
 '''
 
-from typing import Iterable
+from typing import Iterable, Callable, List, Sequence
 
 from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
 
@@ -142,6 +142,7 @@ class DataDB(PGVectorHelper):
             self,
             text: str,
             threshold: float | None = None,
+            meta_filter: Callable | List[Callable] | None = None,
             limit: int = 0
     ) -> list[asyncpg.Record]:
         '''
@@ -152,6 +153,17 @@ class DataDB(PGVectorHelper):
                 This will be a vector/fuzzy/nearest-neighbor type search.
 
             threshold: minimum vector similarity to return
+
+            meta_filter: specifies further restrictions on results, via one or more functions setting up SQL conditions
+                for the metadata field. Can be a callable or list of callables, which will be ANDed together
+                e.g.
+                ```
+                from ogbujipt.embedding.pgvector import match_exact
+                page_one_filt = match_exact('page', 1)
+                await DB.search(text='Hello!', meta_filter=page_one_filt)
+                ```
+                Provided filter helpers such as match_exact provide some SQL injection safety. If you roll your own,
+                be careful of injection.
             
             limit (int, optional): maximum number of results to return (useful for top-k query)
                 Default is no limit
@@ -164,6 +176,9 @@ class DataDB(PGVectorHelper):
                 raise TypeError('threshold must be a float between 0.0 and 1.0')
         if not isinstance(limit, int):
             raise TypeError('limit must be an integer')  # Guard against injection
+        meta_filter = meta_filter or ()
+        if not isinstance(meta_filter, Sequence):
+            meta_filter = (meta_filter,)
 
         # Get the embedding of the query string as a PGvector compatible list
         query_embedding = list(self._embedding_model.encode(text))
@@ -171,18 +186,22 @@ class DataDB(PGVectorHelper):
         # Build where clauses
         if threshold is None:
             # No where clauses, so don't bother with the WHERE keyword
-            where_clauses = ''
+            where_clauses = []
             query_args = [query_embedding]
         else:  # construct where clauses
-            param_count = 1
-            clauses = []
+            where_clauses = []
             query_args = [query_embedding]
             if threshold is not None:
-                param_count += 1
                 query_args.append(threshold)
-                clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${param_count}'))
-            clauses = 'AND\n'.join(clauses)  # TODO: move this into the fstring below after py3.12
-            where_clauses = f'WHERE\n{clauses}'
+                where_clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${len(query_args)+1}'))
+
+        for mf in meta_filter:
+            assert callable(mf), 'All meta_filter items must be callable'
+            clause, pval = mf()
+            where_clauses.append(clause.format(len(query_args)+1))
+            query_args.append(pval)
+
+        where_clauses_str = 'WHERE\n' + 'AND\n'.join(where_clauses) if where_clauses else ''
 
         if limit:
             limit_clause = f'LIMIT {limit}\n'
@@ -192,7 +211,7 @@ class DataDB(PGVectorHelper):
         # Execute the search via SQL
         async with self.pool.acquire() as conn:
             search_results = await conn.fetch(
-                QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses,
+                QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses_str,
                                         limit_clause=limit_clause,
                 ),
                 *query_args

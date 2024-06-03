@@ -18,13 +18,15 @@ from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
 import numpy as np
 
+from ogbujipt.embedding.pgvector import match_exact
+
 
 KG_STATEMENTS = [  # Demo data
-    ("👤 Alikiba `releases_single` 💿 'Yalaiti'", {'url': 'https://notjustok.com/lyrics/yalaiti-lyrics-by-alikiba-ft-sabah-salum/'}),
-    ("👤 Sabah Salum `featured_in` 💿 'Yalaiti'", {'url': 'https://notjustok.com/lyrics/yalaiti-lyrics-by-alikiba-ft-sabah-salum/'}),
-    ('👤 Kukbeatz `collaborates_with` 👤 Ruger', {'url': 'https://notjustok.com/lyrics/all-of-us-lyrics-by-kukbeatz-ft-ruger/'}),
-    ('💿 All of Us `is_a_song_by` 👤 Kukbeatz and Ruger', {'url': 'https://notjustok.com/lyrics/all-of-us-lyrics-by-kukbeatz-ft-ruger/'}),
-    ('👤 Blaqbonez `collaborates_with` 👤 Fireboy DML', {'url': 'https://notjustok.com/news/snippet-of-fireboy-dmls-collaboration-with-blaqbonez/'})
+    ("👤 Alikiba `releases_single` 💿 'Yalaiti'", {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': True}),
+    ("👤 Sabah Salum `featured_in` 💿 'Yalaiti'", {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': False}),
+    ('👤 Kukbeatz `collab_with` 👤 Ruger', {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': True}),
+    ('💿 All of Us `song_by` 👤 Kukbeatz & Ruger', {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': False}),
+    ('👤 Blaqbonez `collab_with` 👤 Fireboy DML', {'url': 'https://njok.com/fireboy-dml-collab/', 'primary': True})
 ]
 
 
@@ -61,8 +63,6 @@ async def test_insert_data_vector(DB):
     assert row.content == item1_text, 'text mismatch'
     assert row.metadata == item1_meta, 'Metadata mismatch'
 
-    await DB.drop_table()
-
 
 @pytest.mark.asyncio
 async def test_insertmany_data_vector(DB):
@@ -90,7 +90,26 @@ async def test_insertmany_data_vector(DB):
     # Adjusted assertion for metadata comparison
     assert row.metadata == item1_meta, "Metadata mismatch"
 
-    await DB.drop_table()
+
+@pytest.mark.asyncio
+async def test_search_with_filter(DB):
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    # item1_text = KG_STATEMENTS[0][0]
+
+    # Insert data using insert_many()
+    # dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
+
+    await DB.insert_many(KG_STATEMENTS)
+
+    # search table with perfect match, but only where primary is set to True
+    primary_filt = match_exact('primary', True)
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 3
+
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt, limit=1))
+    assert len(result) == 1
 
 
 if __name__ == '__main__':
