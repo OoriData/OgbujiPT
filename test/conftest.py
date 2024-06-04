@@ -102,7 +102,7 @@ klmnopqrst'''
 def LOREM_IPSUM():
     # Lorem ipsum text
     return (
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisl eget mauris malesuada, '
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisi eget mauris malesuada, '
         'quis facilisis arcu vehicula. Sed consequat, quam ut auctor volutpat, augue ex tincidunt massa, in varius '
         'nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque dolor eu orci iaculis, '
         'at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id neque. Donec non orci eget '

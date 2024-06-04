@@ -3,9 +3,35 @@
 Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!--
--->
 ## [Unreleased]
 
+-->
+
+## [0.9.0] - 20240604
+
+### Added
+
+- `text_helper.text_split_fuzzy()` as basically a generator version of `text_helper.text_splitter()`, and deprecate the latter
+- `text_helper.text_split()` which brooks no overlap
+- `embedding.pgvector_data` module for vector database embedding of data fields using PGVector. Document fields are now treated as simple text, with specialized metadata generalized in the new `metadata` field
+- query filter mix-in, `embedding.pgvector.match_exact()`, for filtering vector search by metadata fields via new `meta_filter` argument to DB.search. This restores some of the tag matching search functionality that's been removed.
+- `clone()` method on `wordloom.language_item` class (formerly `text_item`)
+- `meta` and `preserve_key` args on `wordloom.language_item` (formerly `text_item`) initializer, to preserve TOML table items and top-level TOML key for each language item, respectively, in object properties
+
+### Changed
+
+- Deprecation of `text_helper.text_splitter()`
+- `tags` field of table encapsulated in `embedding.pgvector_data` now modified into a general, JSON `meta` field
+- Word Loom now uses `_` as the TOML table key for text content. The former `text` is deprecated
+- Word Loom now uses `_m` as the TOML table key for text substitution markers. The former `markers` is deprecated
+- Word Loom now reserves TOML table keys beginning with `_`, and passes on all other keys to the new `meta` property
+- `wordloom.text_item` class now renamed `wordloom.language_item`
+- `lang` arg on `wordloom.language_item` (formerly `text_item`) initializer renamed `deflang`
+
+### Removed
+
+- `embedding.pgvector_data_doc` (now just `embedding.pgvector_data`)
+- `conjunctive` option for tags searching now removed, in favor of a query filter mix-in approach
 
 ## [0.8.0] - 20240325
 
