@@ -111,8 +111,8 @@ skip-string-normalization = true
 [tool.ruff]
 target-version = "py310"
 line-length = 120
-select = ["E", "F"]
-ignore = [
+lint.select = ["E", "F"]
+lint.ignore = [
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Allow boolean positional values in function calls, like `dict.get(... True)`
@@ -122,18 +122,18 @@ ignore = [
   # Ignore complexity
   "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
 ]
-unfixable = [
+lint.unfixable = [
   # Don't touch unused imports
   "F401",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["ogbujipt"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "test/**/*" = ["PLR2004", "S101", "TID252"]
 

@@ -7,6 +7,12 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 
 -->
 
+## [0.9.1] - 20240604
+
+### Fixed
+
+- Demos & testing around `text_helper.text_split_fuzzy()`
+
 ## [0.9.0] - 20240604
 
 ### Added

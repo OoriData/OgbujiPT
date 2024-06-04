@@ -35,7 +35,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_splitter
+from ogbujipt.text_helper import text_split_fuzzy
 from ogbujipt.embedding.qdrant import collection
 
 from sentence_transformers import SentenceTransformer
@@ -118,7 +118,7 @@ def prep_pdf():
         # Use st.session_state to avoid unnecessary reprocessing/reloading
         pdf_reader = PdfReader(pdf)
         text = ''.join((page.extract_text() for page in pdf_reader.pages))
-        chunks = text_splitter(
+        chunks = text_split_fuzzy(
             text, 
             chunk_size=EMBED_CHUNK_SIZE,
             chunk_overlap=EMBED_CHUNK_OVERLAP,

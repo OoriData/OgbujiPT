@@ -44,7 +44,7 @@ import httpx
 import html2text
 
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_splitter
+from ogbujipt.text_helper import text_split_fuzzy
 from ogbujipt.embedding.qdrant import collection
 
 
@@ -77,7 +77,7 @@ async def read_site(url, coll, chunk_size, chunk_overlap):
     text = html2text.html2text(html)
 
     # Split text into chunks
-    chunks = text_splitter(text, chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator='\n')
+    chunks = text_split_fuzzy(text, chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator='\n')
 
     # print('\n\n'.join([ch[:100] for ch in chunks]))
     # Crude—for demo. Set URL metadata for all chunks to doc URL

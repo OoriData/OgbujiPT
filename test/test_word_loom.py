@@ -6,7 +6,7 @@ pytest test
 
 or
 
-pytest test/test_text_splitter.py
+pytest test/test_word_loom.py
 '''
 # ruff: noqa: E501
 

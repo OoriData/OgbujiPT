@@ -12,7 +12,7 @@ Example storing a Qdrant collection to disk:
 ```py
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
-from ogbujipt.text_helper import text_splitter
+from ogbujipt.text_helper import text_split
 from ogbujipt.embedding.qdrant import collection
 
 DBPATH = '/tmp/qdrant_test'
@@ -23,7 +23,7 @@ collection = collection('my-text', embedding_model, db=qclient)
 
 text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
 text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
-chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
+chunks = text_split(text, chunk_size=20, chunk_overlap=4, separator='\n')
 
 collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
 retval = collection.search('what does the fox say?', limit=1, score_threshold=0.5)
@@ -76,14 +76,14 @@ class collection:
 
         Example:
 
-        >>> from ogbujipt.text_helper import text_splitter
+        >>> from ogbujipt.text_helper import text_split
         >>> from ogbujipt.embedding.qdrant import collection  # pip install qdrant_client
         >>> from sentence_transformers import SentenceTransformer  # pip install sentence_transformers
         >>> text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
         >>> text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
         >>> embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         >>> collection = collection('my-text', embedding_model)
-        >>> chunks = text_splitter(text, chunk_size=20, chunk_overlap=4, separator='\n')
+        >>> chunks = text_split(text, chunk_size=20, chunk_overlap=4, separator='\n')
         >>> collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
         >>> retval = collection.search('what does the fox say?', limit=1)
         '''
