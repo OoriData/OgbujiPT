@@ -9,7 +9,7 @@ import re
 import warnings
 
 
-def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len) -> list[str]:
+def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len):
     '''
     Split string and generate the sequence of chunks
 
@@ -29,7 +29,7 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len) 
 
         seperator (str, optional): String that already splits "text" into sections
 
-        distance_function (callable, optional): Function to measure length, len() by default
+        len_func (callable, optional): Function to measure chunk length, len() by default
 
     Returns:
         chunks (List[str]): List of chunks of the text provided
@@ -58,13 +58,13 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len) 
 
     for fs in fine_split:
         if not fs: continue  # noqa E701
-        print(fs)
+        # print(fs)
         len_fs = len_func(fs)
         # if len_fs > chunk_size:
         #     warnings.warn(f'One of the splits is larger than the chunk size. '
         #                   f'Consider increasing the chunk size or splitting the text differently.')
 
-        if chunk_len + len_fs + separator_len > chunk_size:
+        if chunk_len + len_fs > chunk_size:
             yield separator.join(curr_chunk)
             curr_chunk, chunk_len = [fs], len_fs
         else:
@@ -80,28 +80,29 @@ def text_split_fuzzy(text: str,
         chunk_overlap: int=0,
         separator: str='\n\n',
         len_func=len
-    ) -> list[str]:
+    ):
     '''
-    Split string into a sequence of chunks in a "fuzzy" manner. Will generally not split the text into sequences
-    of chunk_size length, but will instead preserve some overlap on either side of the given separators.
+    Split string in a "fuzzy" manner and generate the sequence of chunks
+    Will generally not split the text into sequences of chunk_size length, but will instead preserve some overlap
+    on either side of the given separators.
     This results in slightly larger chunks than the chunk_size number by itself suggests.
 
-    >>> from ogbujipt.text_helper import text_splitter
-    >>> chunks = text_split_fuzzy('she sells seashells by the seashore', chunk_size=50, separator=' ')
+    >>> from ogbujipt.text_helper import text_split_fuzzy
+    >>> chunks = list(text_split_fuzzy('she sells seashells by the seashore', chunk_size=5, separator=' '))
 
     Args:
-        text (str): (Multiline) String to be split into chunks
+        text (str): (Multiline) string to be split into chunks
 
-        chunk_size (int): Number of characters to include per chunk
+        chunk_size (int): Target length (as determined by len_func) per chunk
 
         chunk_overlap (int, optional): Number of characters to overlap at the edges of chunks
 
         seperator (str, optional): String that already splits "text" into sections
 
-        distance_function (callable, optional): Function to measure length, len() by default
+        len_func (callable, optional): Function to measure chunk length, len() by default
 
-    Returns:
-        chunks (List[str]): List of chunks of the text provided
+    Yields:
+        Sequence of chunks (str) from splitting
     '''
     assert separator, 'Separator must be non-empty'
     
@@ -123,7 +124,7 @@ def text_split_fuzzy(text: str,
                          f'chunk_overlap must be a non-negative integer, and'
                          f'chunk_size must be greater than chunk_overlap.\n'
                          f'Got {chunk_size} chunk_size and {chunk_overlap} chunk_overlap.')
-    
+
     # Split up the text by the separator
     # FIXME: Need a step for escaping regex
     sep_pat = re.compile(separator)
@@ -133,12 +134,14 @@ def text_split_fuzzy(text: str,
     if len(fine_split) <= 1:
         warnings.warn(f'No splits detected. Perhaps a problem with separator? ({repr(separator)})?')
 
+    at_least_one_chunk = False
+
     # Combine the small pieces into medium size chunks
     # chunks will accumulate processed text chunks as we go along
     # curr_chunk will be a list of subchunks comprising the main, current chunk
     # back_overlap will be appended, once ready, to the end of the previous chunk (if any)
     # fwd_overlap will be prepended, once ready, to the start of the next chunk
-    chunks = []
+    prev_chunk = ''
     curr_chunk, curr_chunk_len = [], 0
     back_overlap, back_overlap_len = None, 0  # None signals not yet gathering
     fwd_overlap, fwd_overlap_len = None, 0
@@ -148,7 +151,7 @@ def text_split_fuzzy(text: str,
         split_len = len_func(s) + separator_len
         # Check for full back_overlap (if relevant, i.e. back_overlap isn't None)
         if back_overlap is not None and (back_overlap_len + split_len > chunk_overlap):  # noqa: F821
-            chunks[-1].extend(back_overlap)
+            prev_chunk.extend(back_overlap)
             back_overlap, back_overlap_len = None, 0
 
         # Will adding this split take us into overlap room?
@@ -164,7 +167,11 @@ def text_split_fuzzy(text: str,
                 # If empty, look back to make sure there is some overlap
                 fwd_overlap.append(curr_chunk[-1])
 
-            chunks.append(curr_chunk)
+            prev_chunk = separator.join(prev_chunk)
+            if prev_chunk:
+                at_least_one_chunk = True
+                yield prev_chunk
+            prev_chunk = curr_chunk
             # fwd_overlap intentionally not counted in running chunk length
             curr_chunk, curr_chunk_len = fwd_overlap, 0
             back_overlap, back_overlap_len = [], 0  # Start gathering
@@ -183,18 +190,13 @@ def text_split_fuzzy(text: str,
 
     # Done with the splits; use the final back_overlap, if any
     if back_overlap:
-        chunks[-1].extend(back_overlap)
+        prev_chunk.extend(back_overlap)
 
-    # Concatenate all the split parts of all the chunks
-    chunks = [separator.join(c) for c in chunks]
-
-    # Handle degenerate case where no splits found & chunk size too large
-    # Just becomes one big chunk
-    if not chunks:
-        chunks = [text]
-
-    # chunks.append(separator.join(curr_chunk))
-    return chunks
+    if at_least_one_chunk:
+        yield separator.join(prev_chunk)
+    else:
+        # Degenerate case where no splits found & chunk size too large; just one big chunk
+        yield text
 
 
 def text_splitter(text: str,
