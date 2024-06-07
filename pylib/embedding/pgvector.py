@@ -60,7 +60,7 @@ class PGVectorHelper:
     * min_max_size: Tuple of minimum and maximum number of connections to maintain in the pool.
         Defaults to (10, 20)
     '''
-    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool):
+    def __init__(self, embedding_model, table_name: str, pool):
         '''
         If you don't already have a connection pool, construct using the PGvectorHelper.from_pool_params() method
 
@@ -70,7 +70,7 @@ class PGVectorHelper:
 
             table_name: PostgresQL table. Checked to restrict to alphanumeric characters & underscore
 
-            pool: asyncpg connection pool instance
+            pool: asyncpg connection pool instance (asyncpg.pool.Pool)
         '''
         if not PREREQS_AVAILABLE:
             raise RuntimeError('pgvector not installed, you can run `pip install pgvector asyncpg`')

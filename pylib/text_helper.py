@@ -7,9 +7,11 @@ Routines to help with text processing
 '''
 import re
 import warnings
+from itertools import zip_longest
 
 
-def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len):
+# XXX: Do we want a case-insensitive separator regex flag?
+def text_split(text: str, chunk_size: int, separator: str='\n\n', joiner=None, len_func=len):
     '''
     Split string and generate the sequence of chunks
 
@@ -21,13 +23,21 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len):
     # Notice case sensitivity, plus the fact that the separator is not included in the chunks
     >>> list(text_split('She sells seashells by the seashore', chunk_size=10, separator='s'))
     ['She ', 'ells ', 'ea', 'hell', ' by the ', 'ea', 'hore']
+    >>> list(text_split('She\tsells seashells\tby the seashore', chunk_size=10, separator='\\s'))
+    ['She\tsells', 'seashells', 'by the', 'seashore']
+    >>> list(text_split('She\tsells seashells\tby the seashore', chunk_size=10, separator='\\s', joiner=' '))
+    ['She sells', 'seashells', 'by the', 'seashore']
 
     Args:
         text (str): String to be split into chunks
 
         chunk_size (int): Guidance on maximum length (based on distance_function) of each chunk
 
-        seperator (str, optional): String that already splits "text" into sections
+        seperator (str, optional): Regex used to split `text` into sections. Do not include outer capturing parenthesis.
+            Don't forget to use escaping where necessary.
+
+        joiner (str, optional): Exact string used to rejoin any sections in order to meet target length
+            defaults to using the literal match from the separator
 
         len_func (callable, optional): Function to measure chunk length, len() by default
 
@@ -44,11 +54,18 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len):
     if ((not isinstance(chunk_size, int)) or (chunk_size <= 0)):
         raise ValueError(f'chunk_size must be a positive integer, got {chunk_size}.')
     
-    # Split up the text by the separator
-    # FIXME: Need a step for escaping regex
+    # Split the text by the separator
+    if joiner is None:
+        separator = f'({separator})'
     sep_pat = re.compile(separator)
-    fine_split = re.split(sep_pat, text)
-    separator_len = len_func(separator)
+    raw_split = re.split(sep_pat, text)
+
+    # Rapid aid to understanding following logic:
+    # data = ['a',' ','b','\t','c']
+    # list(zip_longest(data[0::2], data[1::2], fillvalue=''))
+    #     →[('a', ' '), ('b', '\t'), ('c', '')]
+    fine_split = ([ i for i in zip_longest(raw_split[0::2], raw_split[1::2], fillvalue='') ]
+                    if joiner is None else re.split(sep_pat, text))
 
     if len(fine_split) <= 1:
         warnings.warn(f'No splits detected. Perhaps a problem with separator? ({repr(separator)})?')
@@ -57,28 +74,32 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', len_func=len):
     chunk_len = 0
 
     for fs in fine_split:
+        (fs, sep) = fs if joiner is None else (fs, joiner)
         if not fs: continue  # noqa E701
-        # print(fs)
+        sep_len = len_func(sep)
         len_fs = len_func(fs)
         # if len_fs > chunk_size:
         #     warnings.warn(f'One of the splits is larger than the chunk size. '
         #                   f'Consider increasing the chunk size or splitting the text differently.')
 
         if chunk_len + len_fs > chunk_size:
-            yield separator.join(curr_chunk)
-            curr_chunk, chunk_len = [fs], len_fs
+            chunk = ''.join(curr_chunk[:-1])
+            if chunk: yield chunk  # noqa E701
+            curr_chunk, chunk_len = [fs, sep], len_fs + sep_len
         else:
-            curr_chunk.append(fs)
-            chunk_len += len_fs + separator_len
+            curr_chunk.extend((fs, sep))
+            chunk_len += len_fs + sep_len
 
     if curr_chunk:
-        yield separator.join(curr_chunk)
+        chunk = ''.join(curr_chunk[:-1])
+        if chunk: yield chunk  # noqa E701
 
 
 def text_split_fuzzy(text: str,
         chunk_size: int,
         chunk_overlap: int=0,
         separator: str='\n\n',
+        joiner=None,
         len_func=len
     ):
     '''
@@ -97,7 +118,11 @@ def text_split_fuzzy(text: str,
 
         chunk_overlap (int, optional): Number of characters to overlap at the edges of chunks
 
-        seperator (str, optional): String that already splits "text" into sections
+        seperator (str, optional): Regex used to split `text` into sections. Do not include outer capturing parenthesis.
+            Don't forget to use escaping where necessary.
+
+        joiner (str, optional): Exact string used to rejoin any sections in order to meet target length
+            defaults to using the literal match from the separator
 
         len_func (callable, optional): Function to measure chunk length, len() by default
 

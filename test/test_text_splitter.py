@@ -65,7 +65,9 @@ def test_zero_overlap(LOREM_IPSUM):
     assert chunks[0] == 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vestibulum nisi eget mauris'
     assert chunks[2] == 'massa, in varius nulla ex vel ipsum. Nullam vitae eros nec ante sagittis luctus. Nullam scelerisque'
     assert chunks[3] == 'dolor eu orci iaculis, at convallis nulla luctus. Praesent eget ex id arcu facilisis varius vel id'
-    assert chunks[-1] == 'elit.'
+    assert chunks[-1] == 'quam justo at elit.'
+    for chunk in chunks:
+        assert len(chunk) <= 100
 
 
 if __name__ == '__main__':

@@ -94,10 +94,14 @@ class collection:
             self._embedding_model = embedding_model
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object')
-            
+
         if self.db:
-            # Assume any passed-in DB has been initialized
+            # Has the passed-in DB has been initialized?
             self._db_initialized = True
+            try:
+                self.db.get_collection(self.name)
+            except ValueError:
+                self._db_initialized = False
         elif not QDRANT_AVAILABLE: 
             raise RuntimeError('Qdrant not installed, you can run `pip install qdrant-client`')
         else:
@@ -204,7 +208,8 @@ class collection:
                     limit - maximum number of results to return (useful for top-k query)
         '''
         if not self._db_initialized:
-            raise RuntimeError('Qdrant Collection must be initialized before searching its contents.')
+            warnings.warn('Qdrant Collection must be initialized. No contents.')
+            return []
         
         if query.__class__.__name__ != 'str':
             raise ValueError('query must be a string')
@@ -216,8 +221,8 @@ class collection:
         Return the count of items in this Qdrant collection
         '''
         if not self._db_initialized:
-            raise RuntimeError('Qdrant Collection must be initialized before counting its contents.')
+            warnings.warn('Qdrant Collection must be initialized. No contents.')
+            return 0
         # This ugly declaration just gets the count as an integer
         current_count = int(str(self.db.count(self.name)).partition('=')[-1])
         return current_count
-
