@@ -199,7 +199,7 @@ def match_exact(key, val):
     '''
     Filter specifier to only return rows where the given top-level key exists in metadata, and matches the given value
     '''
-    assert key.strip('-_').isalnum()
+    assert key.replace('_', '').replace('-', '').isalnum(), 'key_'
     if isinstance(val, str):
         cast = ''
     elif isinstance(val, bool):
@@ -220,7 +220,7 @@ def match_oneof(key, options: tuple[str]):
     '''
     options = tuple(options)
     assert options
-    assert key.strip('-_').isalnum()
+    assert key.replace('_', '').replace('-', '').isalnum(), 'key_'
     option1 = options[0]
     if isinstance(option1, str):
         cast = ''
