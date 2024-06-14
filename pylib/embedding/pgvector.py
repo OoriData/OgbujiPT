@@ -200,9 +200,8 @@ def match_exact(key, val):
     Filter specifier to only return rows where the given top-level key exists in metadata, and matches the given value
     '''
     assert key.isalnum()
-    cast = ''
     if isinstance(val, str):
-        assert val.isalnum()
+        cast = ''
     elif isinstance(val, bool):
         cast = '::boolean'
     elif isinstance(val, int):
@@ -211,6 +210,29 @@ def match_exact(key, val):
         cast = '::float'
     def apply():
         return f'(metadata ->> \'{key}\'){cast} = ${{}}', val
+    return apply
+
+
+def match_oneof(key, options: tuple[str]):
+    '''
+    Filter specifier to only return rows where the given top-level key exists in metadata,
+    and matches one of the given values
+    '''
+    options = tuple(options)
+    assert options
+    assert key.isalnum()
+    option1 = options[0]
+    if isinstance(option1, str):
+        cast = ''
+    if isinstance(option1, bool):
+        cast = '::boolean'
+    elif isinstance(option1, int):
+        cast = '::int'
+    elif isinstance(option1, float):
+        cast = '::float'
+    def apply():
+        # return f'(metadata ->> \'{key}\'){cast} IN ${{}}', options
+        return f'(metadata ->> \'{key}\'){cast} = ANY(${{}})', options
     return apply
 
 

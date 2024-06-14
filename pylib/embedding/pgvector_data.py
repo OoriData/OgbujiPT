@@ -210,6 +210,15 @@ class DataDB(PGVectorHelper):
 
         # Execute the search via SQL
         async with self.pool.acquire() as conn:
+            # Uncomment to debug
+            # from asyncpg import utils
+            # print(await utils._mogrify(
+            #     conn,
+            #     QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses_str,
+            #                             limit_clause=limit_clause,
+            #     ),
+            #     query_args
+            # ))
             search_results = await conn.fetch(
                 QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses_str,
                                         limit_clause=limit_clause,

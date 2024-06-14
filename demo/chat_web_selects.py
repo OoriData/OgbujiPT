@@ -139,8 +139,7 @@ If you cannot answer with the given context, just say so.\n\n'''
                 top_p=1,  # AKA nucleus sampling; can increase generated text diversity
                 frequency_penalty=0,  # Favor more or less frequent tokens
                 presence_penalty=1,  # Prefer new, previously unused tokens
-                temperature=0.1
-                )
+                temperature=0.1)
 
             indicator_task = asyncio.create_task(indicate_progress())
             llm_task = asyncio.Task(oapi(messages, **model_params))

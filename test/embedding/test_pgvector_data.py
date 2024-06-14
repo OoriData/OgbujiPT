@@ -18,15 +18,20 @@ from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 
 import numpy as np
 
-from ogbujipt.embedding.pgvector import match_exact
+from ogbujipt.embedding.pgvector import match_exact, match_oneof
 
 
 KG_STATEMENTS = [  # Demo data
-    ("👤 Alikiba `releases_single` 💿 'Yalaiti'", {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': True}),
-    ("👤 Sabah Salum `featured_in` 💿 'Yalaiti'", {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': False}),
-    ('👤 Kukbeatz `collab_with` 👤 Ruger', {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': True}),
-    ('💿 All of Us `song_by` 👤 Kukbeatz & Ruger', {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': False}),
-    ('👤 Blaqbonez `collab_with` 👤 Fireboy DML', {'url': 'https://njok.com/fireboy-dml-collab/', 'primary': True})
+    ("👤 Alikiba `releases` 💿 'Yalaiti'",
+        {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': True, 'when': '2023-11-29'}),
+    ("👤 Sabah Salum `featured_in` 💿 'Yalaiti'",
+        {'url': 'https://njok.com/yalaiti-lyrics/', 'primary': False, 'when': '2023-11-29'}),
+    ('👤 Kukbeatz `collab_with` 👤 Ruger',
+        {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': True, 'when': '2023-11-25'}),
+    ('💿 All of Us `song_by` 👤 Kukbeatz & Ruger',
+        {'url': 'https://njok.com/all-of-us-lyrics/', 'primary': False, 'when': '2023-11-25'}),
+    ('👤 Blaqbonez `collab_with` 👤 Fireboy DML',
+        {'url': 'https://njok.com/fireboy-dml-collab/', 'primary': True, 'when': '2023-11-19'})
 ]
 
 
@@ -110,6 +115,54 @@ async def test_search_with_filter(DB):
 
     result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt, limit=1))
     assert len(result) == 1
+
+
+@pytest.mark.asyncio
+async def test_search_with_date_filter(DB):
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    # item1_text = KG_STATEMENTS[0][0]
+
+    # Insert data using insert_many()
+    # dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
+
+    await DB.insert_many(KG_STATEMENTS)
+
+    # search table with perfect match, but only where primary is set to True
+    primary_filt = match_exact('when', '2023-11-29')
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 2
+
+    primary_filt = match_exact('when', '2023-11-19')
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 1
+
+
+@pytest.mark.asyncio
+async def test_search_with_date_filter_match_oneof(DB):
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    # item1_text = KG_STATEMENTS[0][0]
+
+    # Insert data using insert_many()
+    # dataset = ((text, metadata) for (text, metadata) in KG_STATEMENTS)
+
+    await DB.insert_many(KG_STATEMENTS)
+
+    # search table with perfect match, but only where primary is set to True
+    primary_filt = match_oneof('when', ('2023-11-29',))
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 2
+
+    primary_filt = match_oneof('when', ('2023-11-29', '2023-11-19'))
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 3
+
+    primary_filt = match_oneof('when', ('2023-11-29', '2023-11-25', '2023-11-19'))
+    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    assert len(result) == 5
 
 
 if __name__ == '__main__':
