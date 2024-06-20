@@ -156,6 +156,10 @@ pytest test
 
 If you want to make contributions to the project, please [read these notes](https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors).
 
+# Resources
+
+* [Against mixing environment setup with code](https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
+
 # License
 
 Apache 2. For tha culture!
@@ -189,7 +193,7 @@ I mentioned the bias to software engineering, but what does this mean?
 
 ## Does this support GPU for locally-hosted models
 
-Yes, but you have to make sure you set up your back end LLm server (llama.cpp or text-generation-webui) with GPU, and properly configure the model you load into it. If you can use the webui to query your model and get GPU usage, that will also apply here in OgbujiPT.
+Yes, but you have to make sure you set up your back end LLM server (llama.cpp or text-generation-webui) with GPU, and properly configure the model you load into it.
 
 Many install guides I've found for Mac, Linux and Windows touch on enabling GPU, but the ecosystem is still in its early days, and helpful resouces can feel scattered.
 
