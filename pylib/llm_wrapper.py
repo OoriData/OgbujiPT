@@ -190,8 +190,7 @@ class openai_api(llm_wrapper):
             kwargs (dict, optional): Extra parameters to pass to the model via API.
                 See Completions.create in OpenAI API, but in short, these:
                 best_of, echo, frequency_penalty, logit_bias, logprobs, max_tokens, n
-                presence_penalty, seed, stop, stream, suffix, temperature, top_p, user
-q
+                presence_penalty, seed, stop, stream, suffix, temperature, top_p, userq
         Returns:
             dict: JSON response from the LLM
         '''
