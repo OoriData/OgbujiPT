@@ -140,7 +140,12 @@ def load(fp_or_str, lang='en', preserve_key=False):
             meta = {kk: vv for kk, vv in v.items() if (not kk.startswith('_') and kk not in ('text', 'markers'))}
             if preserve_key:
                 meta['_key'] = k
+            if k in texts:
+                warnings.warn(f'Key {k} duplicates an existing item, which will be overwritten')
             texts[k] = T(text, lang, altlang=altlang, meta=meta, markers=markers)
             # Also index by literal text
+            if text in texts:
+                warnings.warn(
+                    f'Item default language text {text[:20]} duplicates an existing item, which will be overwritten')
             texts[text] = T(text, lang, altlang=altlang, meta=meta, markers=markers)
     return texts

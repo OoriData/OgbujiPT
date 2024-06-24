@@ -12,7 +12,7 @@ pytest test/test_word_loom.py
 
 import os
 import sys
-from itertools import chain
+# from itertools import chain
 
 import pytest
 
