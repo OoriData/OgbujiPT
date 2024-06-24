@@ -86,7 +86,9 @@ LI = language_item  # Alias for language_item
 def load(fp_or_str, lang='en', preserve_key=False):
     '''
     Read a word loom and return the tables as top-level result mapping
-    Loads the TOML, then selects text by given language
+    Loads the TOML
+
+    Return a dict of the language items, indexed by the TOML key as well as its default language text
 
     fp_or_str - file-like object or string containing TOML
     lang - select oly texts in this language (default: 'en')
@@ -97,9 +99,12 @@ def load(fp_or_str, lang='en', preserve_key=False):
     >>>     loom = word_loom.load(fp)
     >>> loom['test_prompt_joke'].meta
     {'tag': 'humor', 'updated': '2024-01-01'}
-    >>> str(loom['test_prompt_joke'])
+    >>> actual_text = loom['test_prompt_joke']
+    >>> str(actual_text)
     'Tell me a funny joke about {topic}\n'
-    >>> loom['test_prompt_joke'].in_lang('fr')
+    >>> str(loom[str(actual_text)])
+    'Tell me a funny joke about {topic}\n'
+    >>> loom[str(actual_text)].in_lang('fr')
     'Dites-moi une blague drôle sur {topic}\n'
     '''
     # Ensure we have a file-like object
@@ -136,4 +141,6 @@ def load(fp_or_str, lang='en', preserve_key=False):
             if preserve_key:
                 meta['_key'] = k
             texts[k] = T(text, lang, altlang=altlang, meta=meta, markers=markers)
+            # Also index by literal text
+            texts[text] = T(text, lang, altlang=altlang, meta=meta, markers=markers)
     return texts
