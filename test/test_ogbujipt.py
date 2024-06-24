@@ -12,14 +12,14 @@ pytest test/test_ogbujipt.py
 
 # import pytest
 
-from ogbujipt.llm_wrapper import openai_chat_api
+from ogbujipt.llm_wrapper import llm_response  #, openai_chat_api
 
 def test_oapi_first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT):
-    text1 = openai_chat_api.first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT)
+    text1 = llm_response.from_openai_chat(OPENAI_TEXT_RESPONSE_OBJECT).first_choice_text
     assert text1 == '…is an exceptional employee who has made significant contributions to our company.'
 
 def test_oapi_first_choice_message(OPENAI_MSG_RESPONSE_OBJECT):
-    msg1 = openai_chat_api.first_choice_message(OPENAI_MSG_RESPONSE_OBJECT)
+    msg1 = llm_response.from_openai_chat(OPENAI_MSG_RESPONSE_OBJECT).first_choice_text
     assert msg1 == '…is an exceptional employee who has made significant contributions to our company.'
 
 

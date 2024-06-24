@@ -17,7 +17,6 @@ import asyncio
 import concurrent.futures
 from functools import partial
 from typing import List
-import warnings
 
 from amara3 import iri
 
@@ -72,13 +71,12 @@ class llm_response(config.attr_dict):
                     c['message'] = llm_response(c['message'])
             rc1 = resp['choices'][0]
             # No response message content if a tool call is invoked
-            if 'tool_calls' in rc1['message']:
-                # Why the hell does OpenAI have these arguments properties as plain text? Seems like a massive layering violation
+            if rc1.get('message', {}).get('tool_calls'):
+                # WTH does OpenAI have these arguments properties as plain text? Seems a massive layering violation
                 for tc in rc1['message']['tool_calls']:
                     tc['function']['arguments_obj'] = json.loads(tc['function']['arguments'])
             else:
                 resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
-            print('GRIPPO', f'from_openai_chat: {rc1 =}')
         else:
             resp['first_choice_text'] = resp['content']
         return resp
