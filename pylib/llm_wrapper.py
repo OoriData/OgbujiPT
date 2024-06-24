@@ -12,6 +12,7 @@ it's in .gitignore or equivalent so it never gets accidentally committed!
 '''
 
 import os
+import json
 import asyncio
 import concurrent.futures
 from functools import partial
@@ -70,8 +71,14 @@ class llm_response(config.attr_dict):
                 if 'message' in c:
                     c['message'] = llm_response(c['message'])
             rc1 = resp['choices'][0]
-            # print(f'from_openai_chat: {rc1 =}')
-            resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
+            # No response message content if a tool call is invoked
+            if 'tool_calls' in rc1['message']:
+                # Why the hell does OpenAI have these arguments properties as plain text? Seems like a massive layering violation
+                for tc in rc1['message']['tool_calls']:
+                    tc['function']['arguments_obj'] = json.loads(tc['function']['arguments'])
+            else:
+                resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
+            print('GRIPPO', f'from_openai_chat: {rc1 =}')
         else:
             resp['first_choice_text'] = resp['content']
         return resp
@@ -244,19 +251,6 @@ class openai_api(llm_wrapper):
             raise RuntimeError(f'Unexpected response from {self.base_url}/models:\n{repr(resp)}')
         return [ i['id'] for i in resp['data'] ]
 
-    @staticmethod
-    def first_choice_text(response):
-        '''
-        Given an OpenAI-compatible API simple completion response, return the first choice text
-        '''
-        warnings.warn('The first_choice_text method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
-        try:
-            return response.choices[0].text
-        except AttributeError:
-            raise RuntimeError(
-                f'''Response does not appear to be an OpenAI API completion structure, as expected:
-{repr(response)}''')
-
 
 class openai_chat_api(openai_api):
     '''
@@ -321,19 +315,6 @@ class openai_chat_api(openai_api):
         '''
         # Haven't implemented any OpenAI API calls that are async, so just call the sync version
         return self.call(prompt, api_func, **kwargs)
-
-    @staticmethod
-    def first_choice_message(response):
-        '''
-        Given an OpenAI-compatible API chat completion response, return the first choice message content
-        '''
-        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
-        try:
-            return response.choices[0].message.content
-        except AttributeError:
-            raise RuntimeError(
-                f'''Response does not appear to be an OpenAI API chat-style completion structure, as expected:
-{repr(response)}''')
 
 
 class llama_cpp_http(llm_wrapper):
@@ -464,19 +445,6 @@ class llama_cpp_http_chat(llama_cpp_http):
                 return llm_response.from_llamacpp(result.json())
             else:
                 raise RuntimeError(f'Unexpected response from {self.base_url}{req}:\n{repr(result)}')
-
-    @staticmethod
-    def first_choice_message(response):
-        '''
-        Given an OpenAI-compatible API chat completion response, return the first choice message content
-        '''
-        warnings.warn('The first_choice_message method is deprecated; use the first_choice_text attribute or key instead', DeprecationWarning, stacklevel=2)  # noqa E501
-        try:
-            return response['choices'][0]['message']['content']
-        except (IndexError, KeyError):
-            raise RuntimeError(
-                f'''Response does not appear to be a llama.cpp API chat-style completion structure, as expected:
-{repr(response)}''')
 
 
 class ctransformer:
