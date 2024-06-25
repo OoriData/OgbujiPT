@@ -17,6 +17,7 @@ import asyncio
 import concurrent.futures
 from functools import partial
 from typing import List
+from enum import Enum
 
 from amara3 import iri
 
@@ -41,6 +42,11 @@ HTTP_SUCCESS = 200
 DUMMY_MODEL = 'DUMMY_MODEL'
 
 
+class response_type(Enum):
+    MESSAGE = 1
+    TOOL_CALL = 2
+
+
 class llm_response(config.attr_dict):
     '''
     Uniform interface for LLM responses from Open
@@ -52,6 +58,7 @@ class llm_response(config.attr_dict):
         '''
         # print(f'from_openai_chat: {response =}')
         resp = llm_response(response)
+        resp['response_type'] = response_type.MESSAGE  # Default assumption
         if 'usage' in resp:
             resp['usage'] = llm_response(resp['usage'])
             resp['prompt_tokens'] = resp.usage.prompt_tokens
@@ -72,11 +79,13 @@ class llm_response(config.attr_dict):
             rc1 = resp['choices'][0]
             # No response message content if a tool call is invoked
             if rc1.get('message', {}).get('tool_calls'):
+                resp['response_type'] = response_type.TOOL_CALL
                 # WTH does OpenAI have these arguments properties as plain text? Seems a massive layering violation
                 for tc in rc1['message']['tool_calls']:
                     tc['function']['arguments_obj'] = json.loads(tc['function']['arguments'])
             else:
                 resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
+            # print(f'from_openai_chat: {rc1 =}')
         else:
             resp['first_choice_text'] = resp['content']
         return resp

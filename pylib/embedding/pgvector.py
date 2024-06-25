@@ -18,7 +18,9 @@ try:
     from pgvector.asyncpg import register_vector
     PREREQS_AVAILABLE = True
     POOL_TYPE = asyncpg.pool.Pool
-except ImportError:
+except ImportError as e:
+    import warnings
+    warnings.warn(f'Missing module {e.name}; required for using PGVector')
     PREREQS_AVAILABLE = False
     asyncpg = None
     register_vector = object()  # Set up a dummy to satisfy the type hints

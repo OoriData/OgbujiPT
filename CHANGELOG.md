@@ -13,6 +13,7 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 
 - `joiner` param to `text_helper.text_split()` for better control of regex separator handling
 - query filter mix-in, `embedding.pgvector.match_oneof()`, for use with `meta_filter` argument to `DB.search`
+- `llm_wrapper.response_type` to differentiate tool calling vs regular LLM responses
 
 ### Changed
 
