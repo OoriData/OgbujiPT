@@ -43,9 +43,7 @@ INSERT INTO {{table_name}} (
 INSERT_DATA = INSERT_BASE.format(extra_fields='', extra_vals='')
 
 QUERY_TABLE_BASE = '''-- Semantic search a document
-SELECT * FROM
--- Subquery to calculate cosine similarity, required to use the alias in the WHERE clause
-(
+SELECT * FROM (  -- Subquery to calculate cosine similarity, required to use the alias in the WHERE clause
     SELECT
         1 - (embedding <=> $1) AS cosine_similarity,
         content,
