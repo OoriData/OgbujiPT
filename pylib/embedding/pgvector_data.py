@@ -182,22 +182,17 @@ class DataDB(PGVectorHelper):
         query_embedding = list(self._embedding_model.encode(text))
 
         # Build where clauses
-        if threshold is None:
-            # No where clauses, so don't bother with the WHERE keyword
-            where_clauses = []
-            query_args = [query_embedding]
-        else:  # construct where clauses
-            where_clauses = []
-            query_args = [query_embedding]
-            if threshold is not None:
-                query_args.append(threshold)
-                where_clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${len(query_args)+1}'))
+        query_args = [query_embedding]
+        where_clauses = []
+        if threshold is not None:
+            query_args.append(threshold)
+            where_clauses.append(THRESHOLD_WHERE_CLAUSE.format(query_threshold=f'${len(query_args)}'))
 
         for mf in meta_filter:
             assert callable(mf), 'All meta_filter items must be callable'
             clause, pval = mf()
-            where_clauses.append(clause.format(len(query_args)+1))
             query_args.append(pval)
+            where_clauses.append(clause.format(len(query_args)))
 
         where_clauses_str = 'WHERE\n' + 'AND\n'.join(where_clauses) if where_clauses else ''
 
@@ -205,6 +200,11 @@ class DataDB(PGVectorHelper):
             limit_clause = f'LIMIT {limit}\n'
         else:
             limit_clause = ''
+
+        # print(QUERY_DATA_TABLE.format(table_name=self.table_name, where_clauses=where_clauses_str,
+        #                             limit_clause=limit_clause,
+        #     ))
+        # print(query_args)
 
         # Execute the search via SQL
         async with self.pool.acquire() as conn:

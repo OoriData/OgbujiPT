@@ -93,9 +93,6 @@ class PGVectorHelper:
         else:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
-        self.table_name = table_name
-        self.pool = pool
-
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password) -> 'PGVectorHelper': # noqa: E501
         '''
@@ -117,6 +114,10 @@ class PGVectorHelper:
     async def init_pool(conn):
         '''
         Initialize vector extension for a connection from a pool
+
+        Can be invoked from upstream if they're managing the connection pool themselves
+
+        If they choose to have us create a connection pool (e.g. from_conn_params), it will use this
         '''
         await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
         await register_vector(conn)

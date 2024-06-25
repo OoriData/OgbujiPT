@@ -12,7 +12,7 @@ pytest test/test_word_loom.py
 
 import os
 import sys
-# import pkgutil
+# from itertools import chain
 
 import pytest
 
@@ -49,9 +49,19 @@ def test_load_fp_vs_str(SAMPLE_TOML_STR, SAMPLE_TOML_FP):
 def test_sample_texts_check(SAMPLE_TOML_STR):
     # print(SAMPLE_TOML)
     loom = word_loom.load(SAMPLE_TOML_STR)
-    assert list(sorted(loom.keys())) == ['davinci3_instruct_system', 'hello_translated', 'i18n_context', 'write_i18n_advocacy']
-    assert list(sorted([v[:20] for v in loom.values()])) == ['Hello', 'Internationalization', 'Obey the instruction', '{davinci3_instruct_s']
-    assert [v.markers or [] for v in loom.values()] == [[], [], ['davinci3_instruct_system', 'i18n_context'], []]
+    # default language text is also a key
+    assert len(loom.keys()) == 8
+    for k in ['davinci3_instruct_system', 'hello_translated', 'i18n_context', 'write_i18n_advocacy']:
+        assert k in loom.keys()
+    assert 'Hello' in loom.keys()
+
+    # loom_dlt = set([v[:20] for v in loom.values()])
+
+    assert len(set(loom.values())) == 4
+    for k in ['Hello', 'Internationalization', 'Obey the instruction', '{davinci3_instruct_s']:
+        assert k in [v[:20] for v in loom.values()]
+
+    assert [v.markers or [] for v in loom.values()] == [[], [], [], [], ['davinci3_instruct_system', 'i18n_context'], ['davinci3_instruct_system', 'i18n_context'], [], []]
     assert loom['davinci3_instruct_system'].lang == 'en'
 
     # Default language is English
@@ -59,9 +69,9 @@ def test_sample_texts_check(SAMPLE_TOML_STR):
     assert loom1 == loom
 
     loom = word_loom.load(SAMPLE_TOML_STR, lang='fr')
-    assert list(sorted(loom.keys())) == ['goodbye_translated', 'hardcoded_food', 'translate_request']
-    assert list(sorted([v[:20] for v in loom.values()])) == ['Adieu', 'Comment dit-on en an', 'pomme de terre']
-    assert [v.markers or [] for v in loom.values()] == [['hardcoded_food'], [], []]
+    assert list(sorted(loom.keys())) == ['Adieu', 'Comment dit-on en anglais: {hardcoded_food}?', 'goodbye_translated', 'hardcoded_food', 'pomme de terre', 'translate_request']
+    assert list(sorted(set([v[:20] for v in loom.values()]))) == ['Adieu', 'Comment dit-on en an', 'pomme de terre']
+    assert [v.markers or [] for v in loom.values()] == [['hardcoded_food'], ['hardcoded_food'], [], [], [], []]
     assert loom['hardcoded_food'].lang == 'fr'
 
 

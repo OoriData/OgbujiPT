@@ -7,6 +7,27 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 
 -->
 
+## [0.9.2] - 20240625
+
+### Added
+
+- `joiner` param to `text_helper.text_split()` for better control of regex separator handling
+- query filter mix-in, `embedding.pgvector.match_oneof()`, for use with `meta_filter` argument to `DB.search`
+
+### Changed
+
+- Index word loom items by their literal default language text, as well
+- Cleaned up PGVector query-building logic
+
+### Fixed
+
+- `llm_wrapper.llm_response` objects to handle tool calls
+- failure of some matching scenarios in `embedding.pgvector.match_exact()`
+
+### Removed
+
+- Previously deprecated `first_choice_text` & `first_choice_message` methods
+
 ## [0.9.1] - 20240604
 
 ### Fixed
