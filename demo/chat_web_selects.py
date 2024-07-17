@@ -5,7 +5,6 @@
 Advanced, "Chat my docs" demo, using docs from the web
 
 Download one or more web pages and query an LLM using them as context.
-Works especially well with airoboros self-hosted LLM.
 
 Vector store: Qdrant - https://qdrant.tech/
     Alternatives: pgvector & Chroma (built-in support from OgbujiPT), Faiss, Weaviate, etc.

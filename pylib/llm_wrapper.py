@@ -84,7 +84,7 @@ class llm_response(config.attr_dict):
                 for tc in rc1['message']['tool_calls']:
                     tc['function']['arguments_obj'] = json.loads(tc['function']['arguments'])
             else:
-                resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message']['content']
+                resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message'].get('content', '')
             # print(f'from_openai_chat: {rc1 =}')
         else:
             resp['first_choice_text'] = resp['content']
