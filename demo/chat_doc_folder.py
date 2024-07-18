@@ -27,6 +27,8 @@ Assume for the following the server is running on localhost, port 8000.
 python demo/chat_doc_folder.py --apibase http://localhost:8000 demo/sample_docs 
 ```
 
+Sample query: Tell me about the Calabar Kingdom
+
 You can specify your document directory, and/or tweak it with the following command line options:
 --verbose - print more information while processing (for debugging)
 --limit (max number of chunks to retrieve for use as context)
@@ -53,6 +55,8 @@ COLLECTION_NAME = 'chat-doc-folder'
 USER_PROMPT = 'What do you want to know from the documents?\n'
 
 
+# Note: simple demo mode, so no duplicate management, cleanup, etc of the chroma DB
+# You can always add self.coll.delete_collection(name='chat_doc_folder'), but take case!
 class vector_store:
     '''Encapsulates Chroma the vector store and its parameters (e.g. for doc chunking)'''
     def __init__(self, chunk_size, chunk_overlap):
@@ -86,7 +90,7 @@ def read_word_doc(fpath, store):
     with docx2python(fpath) as docx_content:
         doctext = docx_content.text
     chunks = list(store.text_split(doctext))
-    metas = [{'source': fpath}]*len(chunks)
+    metas = [{'source': str(fpath)}]*len(chunks)
     store.update(chunks, metas=metas)
 
 
@@ -96,7 +100,7 @@ def read_pdf_doc(fpath, store):
     pdf_reader = PdfReader(fpath)
     doctext = ''.join((page.extract_text() for page in pdf_reader.pages))
     chunks = list(store.text_split(doctext))
-    metas = [{'source': fpath}]*len(chunks)
+    metas = [{'source': str(fpath)}]*len(chunks)
     store.update(chunks, metas=metas)
 
 
