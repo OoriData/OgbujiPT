@@ -39,10 +39,10 @@ jobs:
         run: |
           # stop the build if there are Python syntax errors or undefined names
           # ruff --format=github --select=E9,F63,F7,F82 --target-version=py311 .  # No longer works
-          ruff --select=E9,F63,F7,F82 --target-version=py311 .
+          ruff check --select=E9,F63,F7,F82 --target-version=py311 .
           # default set of ruff rules with GitHub Annotations
           # ruff --format=github --target-version=py311 .  # No longer works
-          ruff --target-version=py311 .
+          ruff check --target-version=py311 .
       - name: Test with pytest
         env:
           PG_HOST: 0.0.0.0
