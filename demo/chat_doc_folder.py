@@ -4,7 +4,7 @@
 '''
 "Chat my docs" demo, using docs in a folder. Skill level: intermediate
 
-Index a folder full of Word, PDF & Markdown documents, then query an LLM using these as context.
+Indexes a folder full of Word, PDF & Markdown documents, then query an LLM using these as context.
 
 Vector store: Chroma - https://docs.trychroma.com/getting-started
     Alternatives: pgvector & Qdrant (built-in support from OgbujiPT), Faiss, Weaviate, etc.
@@ -49,7 +49,6 @@ from ogbujipt.text_helper import text_split_fuzzy
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-
 COLLECTION_NAME = 'chat-doc-folder'
 USER_PROMPT = 'What do you want to know from the documents?\n'
 
@@ -71,12 +70,9 @@ class vector_store:
         nid = f'id-{self.id_counter}'
         return nid
 
-    def update(self, chunks):
+    def update(self, chunks, metas):
         ids = [self.new_docid() for c in chunks]
-        # metas = [{'source': fpath}]*len(chunks)
-        # metadatas=[{"chapter": "3", "verse": "16"}, {"chapter": "3", "verse": "5"}, {"chapter": "29", "verse": "11"}, ...],
-        self.coll.add(documents=chunks, ids=ids)
-        # print(f'{store.count()} vectorized chunks now in collection')
+        self.coll.add(documents=chunks, ids=ids, metadatas=metas)
 
     def search(self, q, limit=None):
         results = self.coll.query(query_texts=[q], n_results=limit)
@@ -85,19 +81,23 @@ class vector_store:
 
 
 def read_word_doc(fpath, store):
+    '''Convert a single word doc to text, split into chunks & add these to vector store'''
     print('Processing as Word doc:', fpath)  # e.g. 'path/to/file.docx'
     with docx2python(fpath) as docx_content:
         doctext = docx_content.text
     chunks = list(store.text_split(doctext))
-    store.update(chunks)
+    metas = [{'source': fpath}]*len(chunks)
+    store.update(chunks, metas=metas)
 
 
 def read_pdf_doc(fpath, store):
+    '''Convert a single PDF to text, split into chunks & add these to vector store'''
     print('Processing as PDF:', fpath)  # e.g. 'path/to/file.pdf'
     pdf_reader = PdfReader(fpath)
     doctext = ''.join((page.extract_text() for page in pdf_reader.pages))
     chunks = list(store.text_split(doctext))
-    store.update(chunks)
+    metas = [{'source': fpath}]*len(chunks)
+    store.update(chunks, metas=metas)
 
 
 async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, question):
@@ -113,7 +113,7 @@ async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, ques
     # Main chat loop
     done = False
     while not done:
-        print()
+        print('\n')
         if question:
             user_question = question
         else:
@@ -125,10 +125,8 @@ async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, ques
         if verbose:
             print(docs)
         if docs:
-            # Collects "chunked_doc" into "gathered_chunks"
             gathered_chunks = '\n\n'.join(docs)
-
-            # Build system message with the doc chunks as provided context
+            # Build system message with the approx nearest neighbor chunks as provided context
             # In practice we'd use word loom to load the propts, as demoed in multiprocess.py
             sys_prompt = '''\
 You are a helpful assistant, who answers questions directly and as briefly as possible.
@@ -139,7 +137,6 @@ If you cannot answer with the given context, just say so.\n\n'''
             if verbose:
                 print('-'*80, '\n', messages, '\n', '-'*80)
 
-            # The rest is much like in demo/alpaca_multitask_fix_xml.py
             model_params = dict(
                 max_tokens=1024,  # Limit number of generated tokens
                 top_p=1,  # AKA nucleus sampling; can increase generated text diversity
@@ -150,8 +147,6 @@ If you cannot answer with the given context, just say so.\n\n'''
             retval = await oapi(messages, **model_params)
             if verbose:
                 print(type(retval))
-            # Response is a json-like object; extract the text
-            if verbose:
                 print('\nFull response data from LLM:\n', retval)
 
             # just get back the text of the response
