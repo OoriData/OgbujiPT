@@ -29,6 +29,8 @@ python demo/chat_doc_folder.py --apibase http://localhost:8000 demo/sample_docs
 
 Sample query: Tell me about the Calabar Kingdom
 
+You can always check the retrieval using `--verbose`
+
 You can specify your document directory, and/or tweak it with the following command line options:
 --verbose - print more information while processing (for debugging)
 --limit (max number of chunks to retrieve for use as context)
@@ -104,15 +106,27 @@ def read_pdf_doc(fpath, store):
     store.update(chunks, metas=metas)
 
 
+def read_text_or_markdown_doc(fpath, store):
+    '''Split a single text or markdown file into chunks & add these to vector store'''
+    print('Processing as text:', fpath)  # e.g. 'path/to/file.txt'
+    with open(fpath) as docx_content:
+        doctext = docx_content.read()
+    chunks = list(store.text_split(doctext))
+    metas = [{'source': str(fpath)}]*len(chunks)
+    store.update(chunks, metas=metas)
+
+
 async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, question):
     store = vector_store(chunk_size, chunk_overlap)
 
     for fname in docs.iterdir():
-        print(fname, fname.suffix)
+        # print(fname, fname.suffix)
         if fname.suffix in ['.doc', '.docx']:
             read_word_doc(fname, store)
         elif fname.suffix == '.pdf':
             read_pdf_doc(fname, store)
+        elif fname.suffix in ['.txt', '.md', '.mdx']:
+            read_text_or_markdown_doc(fname, store)
 
     # Main chat loop
     done = False

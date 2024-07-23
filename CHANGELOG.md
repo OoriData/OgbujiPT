@@ -7,6 +7,17 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 
 -->
 
+## [0.9.3] - 20240722
+
+### Added
+
+- `demo/chat_doc_folder.py` - "chat my folder of docs" demo
+- `llm_wrapper.response_type` to indicate tool-call LLM responses
+
+### Fixed
+
+- `llm_wrapper.llm_response` object generation
+
 ## [0.9.2] - 20240625
 
 ### Added
