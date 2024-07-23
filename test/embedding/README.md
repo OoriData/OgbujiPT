@@ -25,3 +25,5 @@ PG_USER="username"
 PG_PASSWORD="passwd"
 PG_DATABASE="PeeGeeVee"
 ```
+
+Make sure those are set in the subshell, for example by using an env.sh file and `set -o allexport && source env.sh && set +o allexport`! Further reading: (https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
