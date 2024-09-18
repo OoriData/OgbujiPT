@@ -129,7 +129,8 @@ class PGVectorHelper:
         and set that as a pool attribute on the created object as a user convenience.
         '''
         # https://github.com/MagicStack/asyncpg/blob/0a322a2e4ca1c3c3cf6c2cf22b236a6da6c61680/asyncpg/pool.py#L339
-        pool = await asyncpg.create_pool(conn_string, init=PGVectorHelper.init_pool, min_size=pool_min, max_size=pool_max)
+        pool = await asyncpg.create_pool(conn_string, init=PGVectorHelper.init_pool,
+                                            min_size=pool_min, max_size=pool_max)
 
         new_obj = cls(embedding_model, table_name, pool)
         return new_obj
