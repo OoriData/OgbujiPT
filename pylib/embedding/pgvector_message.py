@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from ogbujipt.config import attr_dict
-from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
+from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response,
+    DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE)
 
 __all__ = ['MessageDB']
 
@@ -143,8 +144,18 @@ class MessageDB(PGVectorHelper):
         self.window = window
 
     @classmethod
-    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0) -> 'MessageDB': # noqa: E501
-        obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password)
+    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0,
+        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password,
+            pool_min, pool_max)
+        obj.window = window
+        return obj
+
+    @classmethod
+    async def from_conn_string(cls, conn_string, embedding_model, table_name, window=0,
+        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        obj = await super().from_conn_string(conn_string, embedding_model, table_name,
+            pool_min, pool_max)
         obj.window = window
         return obj
 

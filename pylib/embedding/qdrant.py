@@ -10,8 +10,8 @@ See class `collection` docstring for a simple example, using the in-memory drive
 Example storing a Qdrant collection to disk:
 
 ```py
-from sentence_transformers import SentenceTransformer
-from qdrant_client import QdrantClient
+from sentence_transformers import SentenceTransformer  # pip install SentenceTransformer
+from qdrant_client import QdrantClient  # pip install qdrant_client
 from ogbujipt.text_helper import text_split
 from ogbujipt.embedding.qdrant import collection
 
@@ -19,14 +19,14 @@ DBPATH = '/tmp/qdrant_test'
 qclient = QdrantClient(path=DBPATH)
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-collection = collection('my-text', embedding_model, db=qclient)
+coll = collection('my-text', embedding_model, db=qclient)
 
 text = 'The quick brown fox\njumps over the lazy dog,\nthen hides under a log\nwith a frog.\n'
 text += 'Should the hound wake up,\nall jumpers beware\nin a log, in a bog\nhe\'ll search everywhere.\n'
 chunks = text_split(text, chunk_size=20, chunk_overlap=4, separator='\n')
 
-collection.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
-retval = collection.search('what does the fox say?', limit=1, score_threshold=0.5)
+coll.update(texts=chunks, metas=[{'seq-index': i} for (i, _) in enumerate(chunks)])
+retval = coll.search('what does the fox say?', limit=1, score_threshold=0.5)
 ```
 
 You can now always re-load the collections from that file via similar code in a different process
@@ -89,11 +89,11 @@ class collection:
         '''
         self.name = name
         self.db = db
-        # Check if the provided embedding model is a SentenceTransformer
-        if embedding_model.__class__.__name__ == 'SentenceTransformer':
+        # Check for compatible embedding model object, e.g. `SentenceTransformer`
+        if hasattr(embedding_model, 'encode'):
             self._embedding_model = embedding_model
         else:
-            raise ValueError('embedding_model must be a SentenceTransformer object')
+            raise ValueError('embedding_model must be a SentenceTransformer, or compatible object')
 
         if self.db:
             # Has the passed-in DB has been initialized?
@@ -119,6 +119,8 @@ class collection:
         # Make sure we have a vector size set; use a sample embedding if need be
         partial_embeddings = self._embedding_model.encode(text)
         self._vector_size = len(partial_embeddings)
+        # partial_embeddings = self._embedding_model.encode([text])
+        # self._vector_size = partial_embeddings.shape[1]
 
         # Create a collection in the Qdrant client, and configure its vectors
         # Using REcreate_collection ensures overwrite for a clean, fresh, new collection

@@ -1,9 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.embedding.pgvector
-
 '''
 Vector databases embeddings using PGVector
+
+TODO: Consider create indexes for faster queries, e.g.:
+
+```py
+await conn.execute('CREATE INDEX ON table_name USING hnsw (embedding vector_l2_ops)')
+```
 '''
 
 import json
@@ -42,14 +47,15 @@ SELECT EXISTS (
 
 # Default overall PG max is 100.
 # See: https://commandprompt.com/education/how-to-alter-max_connections-parameter-in-postgresql/
-DEFAULT_MIN_MAX_CONNECTION_POOL_SIZE = (10, 20)
+DEFAULT_MIN_CONNECTION_POOL_SIZE = 10
+DEFAULT_MAX_CONNECTION_POOL_SIZE = 20
 
 
 class PGVectorHelper:
     '''
     Helper class for PGVector operations
 
-    Construct using PGVectorHelper.from_conn_params() method
+    Construct using from_conn_params() or from_conn_string() class method
 
     Connection and pool parameters:
 
@@ -59,8 +65,8 @@ class PGVectorHelper:
     * user: User name used to authenticate.
     * password: Password used to authenticate.
     * database: Database name to connect to.
-    * min_max_size: Tuple of minimum and maximum number of connections to maintain in the pool.
-        Defaults to (10, 20)
+    * pool_min: minimum number of connections to maintain in the pool (used as min_size for create_pool).
+    * pool_max: maximum number of connections to maintain in the pool (used as max_size for create_pool).
     '''
     def __init__(self, embedding_model, table_name: str, pool):
         '''
@@ -96,18 +102,34 @@ class PGVectorHelper:
             raise ValueError('embedding_model must be a SentenceTransformer object or None')
 
     @classmethod
-    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password) -> 'PGVectorHelper': # noqa: E501
+    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password,
+        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'PGVectorHelper': # noqa: E501
         '''
         Create PGVectorHelper instance from connection/pool parameters
 
-        Will create a connection pool for you, with JSON type handling initialized,
+        Will create a connection pool, with JSON type handling initialized,
         and set that as a pool attribute on the created object as a user convenience.
 
         For details on accepted parameters, See the class docstring
             (e.g. run `help(PGVectorHelper)`)
         '''
         pool = await asyncpg.create_pool(init=PGVectorHelper.init_pool, host=host, port=port, user=user,
-                                        password=password, database=db_name)
+                                        password=password, database=db_name, min_size=pool_min, max_size=pool_max)
+
+        new_obj = cls(embedding_model, table_name, pool)
+        return new_obj
+
+    @classmethod
+    async def from_conn_string(cls, conn_string, embedding_model, table_name,
+        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'PGVectorHelper': # noqa: E501
+        '''
+        Create PGVectorHelper instance from a connection string AKA DSN
+
+        Will create a connection pool, with JSON type handling initialized,
+        and set that as a pool attribute on the created object as a user convenience.
+        '''
+        # https://github.com/MagicStack/asyncpg/blob/0a322a2e4ca1c3c3cf6c2cf22b236a6da6c61680/asyncpg/pool.py#L339
+        pool = await asyncpg.create_pool(conn_string, init=PGVectorHelper.init_pool, min_size=pool_min, max_size=pool_max)
 
         new_obj = cls(embedding_model, table_name, pool)
         return new_obj

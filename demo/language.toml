@@ -8,7 +8,7 @@ _ = """
 Tell me a funny joke about {topic}
 """
 _m = ["topic"]
-# Following are just preserved as metadaa associated with this language item
+# Following are just preserved as metadata associated with this language item
 tag = "humor"
 updated = "2024-01-01"
 

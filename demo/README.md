@@ -16,16 +16,26 @@ Works even if the LLM framework suport asyncio, thanks to ogbujipt.async_helper
 
 ## function_calling.py
 
-[OpenAI-style function calling](https://openai.com/blog/function-calling-and-other-api-updates) allows the LLM to specify a structured response to a user's query in the form of details of a function to be called to complete the response, or take an action. Though developed by OpenAI, function calling can be made available through other LLM tools, though progress on this
-is just emerging.
+[OpenAI-style function calling](https://openai.com/blog/function-calling-and-other-api-updates) allows the LLM to specify a structured response to a user's query in the form of details of a function to be called to complete the response, or take an action.
+
+You might also be interested [Toolio](https://github.com/OoriData/Toolio), Oori's open-source tool-calling project for locally-hosted (Mac via MLX) LLMs.
 
 * [In llama-cpp-python](https://llama-cpp-python.readthedocs.io/en/latest/server/#function-calling)
 
-You might also be interested in the reAct approach, which Oori has covered in their blog:
-
-* [reAct (reasoning Action)](https://www.oori.dev/blog/2023/10/react/)
-
 See also: [Low-level experiments for agent/tool interaction with locally-hosted LLMs #42](https://github.com/OoriData/OgbujiPT/discussions/42)
+
+## demo/chat_doc_folder.py
+
+"Chat my docs" demo, using docs in a folder. Indexes a folder full of Word, PDF & Markdown documents into Chroma vector DB, then user can query an LLM using these as context.
+
+Warning: these "chat my docs" make for flashy prototypes, but require hefty engineering to have
+any chance in production. I receommend at least pondering points by Ethan Mollick (July 2024).
+
+> 1) No one is testing the final LLM output enough, it can be both true AND misleading. There are no automated benchmarks for this.
+> 2) No one will ever check on the primary source. Seriously, our research shows this.
+> 3) Users don't really understand them well. Among many misunderstandings, they expect the RAG system to work like a search engine, not as a flawed, forgetful analyst.
+> 4) LLM systems are persuasive, not passive. They want to make the user happy and they will persuade them that the results are what they wanted if they aren't.
+> 5) Users are used to Type 1 errors in search, false negatives (a document that is there wasn't found). They aren't used to Type 2 errors with false positives (details are made up that aren't there).
 
 # Advanced
 

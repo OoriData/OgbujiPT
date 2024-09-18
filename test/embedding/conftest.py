@@ -97,6 +97,10 @@ USER = os.environ.get('PG_USER', 'mock_user')
 PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
 PORT = os.environ.get('PG_PORT', 5432)
 
+# In some cases this might be `postgresql://`? Supabase?
+SCHEME = 'postgres'
+
+DSN = f'{SCHEME}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}'
 
 # XXX: Move to a fixture?
 # Definitely don't want to even import SentenceTransformer class due to massive side-effects
@@ -135,6 +139,12 @@ async def DB(request):
     # if vDB is None:
     #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
 
+    await vDB.pool.expire_connections()
+    del vDB  # Accelerate clean-up (I think)
+
+    # Re-acquire using DSN
+    vDB = await DB_CLASS[testfile].from_conn_string(DSN, dummy_model, table_name, pool_min=5, pool_max=10)
+
     # Create table
     await vDB.drop_table()
     assert not await vDB.table_exists(), Exception("Table exists before creation")
@@ -169,6 +179,12 @@ async def DB_WINDOWED2(request):
     # Actually we want to propagate the error condition, in this case
     # if vDB is None:
     #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+
+    await vDB.pool.expire_connections()
+    del vDB  # Accelerate clean-up (I think)
+
+    # Re-acquire using DSN
+    vDB = await MessageDB.from_conn_string(DSN, dummy_model, table_name, window=2, pool_min=5, pool_max=10)
 
     # Create table
     await vDB.drop_table()
