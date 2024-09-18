@@ -4,14 +4,13 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     services:
       mockdb:
-        image: ankane/pgvector
+        image: pgvector/pgvector:pg16
         env:
           PG_DB: mock_db
           PG_USER: mock_user
@@ -39,10 +38,10 @@ jobs:
         run: |
           # stop the build if there are Python syntax errors or undefined names
           # ruff --format=github --select=E9,F63,F7,F82 --target-version=py311 .  # No longer works
-          ruff check --select=E9,F63,F7,F82 --target-version=py311 .
+          ruff check --select=E9,F63,F7,F82 --target-version=py311 --exclude **/*.ipynb .
           # default set of ruff rules with GitHub Annotations
           # ruff --format=github --target-version=py311 .  # No longer works
-          ruff check --target-version=py311 .
+          ruff check --target-version=py311 --exclude **/*.ipynb .
       - name: Test with pytest
         env:
           PG_HOST: 0.0.0.0
