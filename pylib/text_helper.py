@@ -57,7 +57,7 @@ def text_split(text: str, chunk_size: int, separator: str='\n\n', joiner=None, l
     # Split the text by the separator
     if joiner is None:
         separator = f'({separator})'
-    sep_pat = re.compile(separator)
+    sep_pat = re.compile(separator, flags=re.M)
     raw_split = re.split(sep_pat, text)
 
     # Rapid aid to understanding following logic:

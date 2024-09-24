@@ -17,7 +17,7 @@ __all__ = ['DataDB']
 # Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
 
 CREATE_TABLE_BASE = '''-- Create a table to hold embedded documents or data
-CREATE TABLE IF NOT EXISTS {{table_name}} (
+{{set_schema}}CREATE TABLE IF NOT EXISTS {{table_name}} (
     id BIGSERIAL PRIMARY KEY,
     embedding VECTOR({{embed_dimension}}),  -- embedding vectors (array dimension)
     content TEXT NOT NULL,                  -- text content of the chunk
@@ -78,10 +78,12 @@ class DataDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
+        set_schema = f'SET SCHEMA \'{self.schema}\';\n' if self.schema else ''
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_DATA_TABLE.format(
+                        set_schema=set_schema,
                         table_name=self.table_name,
                         embed_dimension=self._embed_dimension)
                     )

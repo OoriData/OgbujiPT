@@ -70,5 +70,51 @@ def test_zero_overlap(LOREM_IPSUM):
         assert len(chunk) <= 100
 
 
+# TODO: Markup split based on below:
+
+'''
+# Hello
+
+Goodbye
+
+## World
+
+Neighborhood
+
+### Spam
+
+Spam spam spam!
+
+# Eggs
+
+Green, with ham
+'''
+
+# Check the differences with e.g.
+# list(text_split(s, chunk_size=50, separator=r'^(#)'))
+# Where chunk_size varies from 5 to 100 & sep is also e.g. r'^#', r'^(#+)', etc.
+
+# Notice, 
+
+# Based on https://regex101.com/r/cVCCSg/1 This wacky example:
+
+'''
+import re
+text= """# Heading 1
+## heading 2 (some text in parentheses)
+###Heading 3
+
+Don't match the following:
+
+[Some internal link](
+#foo)
+[Some internal link](
+#foo)
+[Some internal link](
+#foo
+)"""
+print( re.sub(r'(\[[^][]*]\([^()]*\))|^(#+)(.*)', lambda x: x.group(1) if x.group(1) else "<h{1}>{0}</h{1}>".format(x.group(3), len(x.group(2))), text, flags=re.M) )
+'''
+
 if __name__ == '__main__':
     raise SystemExit("Attention! Run with pytest")

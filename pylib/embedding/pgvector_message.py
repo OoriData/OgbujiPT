@@ -131,7 +131,7 @@ AND
 # ------ Class implementations ---------------------------------------------------------------------------------------
 
 class MessageDB(PGVectorHelper):
-    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0):
+    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0, schema=None):
         '''
         Helper class for messages/chatlog storage and retrieval
 
@@ -140,22 +140,22 @@ class MessageDB(PGVectorHelper):
             https://huggingface.co/sentence-transformers
             window (int, optional): number of messages to maintain in the DB. Default is 0 (all messages)
         '''
-        super().__init__(embedding_model, table_name, pool)
+        super().__init__(embedding_model, table_name, pool, schema=schema)
         self.window = window
 
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0,
-        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        schema=None, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password,
-            pool_min, pool_max)
+            schema, pool_min, pool_max)
         obj.window = window
         return obj
 
     @classmethod
     async def from_conn_string(cls, conn_string, embedding_model, table_name, window=0,
-        pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        schema=None, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_string(conn_string, embedding_model, table_name,
-            pool_min, pool_max)
+            schema, pool_min, pool_max)
         obj.window = window
         return obj
 
