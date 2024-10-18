@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.embedding.pgvector_data_doc
-
 '''
 Vector databases embeddings using PGVector
 '''
 
 from typing import Iterable, Callable, List, Sequence
 
-from ogbujipt.embedding.pgvector import PGVectorHelper, asyncpg, process_search_response
+from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response,
+    DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_SYSTEM_SCHEMA, DEFAULT_USER_SCHEMA)
 
 __all__ = ['DataDB']
 
@@ -16,53 +16,43 @@ __all__ = ['DataDB']
 # PG only supports proper query arguments (e.g. $1, $2, etc.) for values, not for table or column names
 # Table names are checked to be legit sequel table names, and embed_dimension is assured to be an integer
 
-CREATE_TABLE_BASE = '''-- Create a table to hold embedded documents or data
-{{set_schema}}CREATE TABLE IF NOT EXISTS {{table_name}} (
+CREATE_DATA_TABLE = '''-- Create a table to hold embedded documents or data
+{set_schema}CREATE TABLE IF NOT EXISTS {table_name} (
     id BIGSERIAL PRIMARY KEY,
-    embedding VECTOR({{embed_dimension}}),  -- embedding vectors (array dimension)
+    embedding {type}({embed_dimension}),    -- embedding vectors (array dimension)
     content TEXT NOT NULL,                  -- text content of the chunk
-    metadata JSON                           -- additional metadata of the chunk
-{extra_fields});
+    metadata jsonb                           -- additional metadata of the chunk
+)
 '''
 
-# CREATE_DOC_TABLE = CREATE_TABLE_BASE.format(extra_fields='''\
-# ,    title TEXT,                            -- title of file
-#     page_numbers INTEGER[]                  -- page number of the document that the chunk is found in
-# ''')
+# itype: vector, halfvec (0.7.0 & up), bit, sparsevec (0.7.0+)
+# func: l2, ip, cosine, l1, hamming (0.7.0+, with bit type only), jaccard (0.7.0+, with bit type only)
+CREATE_DATA_INDEX_HNSW = '''-- Create a table to hold a full precision HNSW index
+CREATE INDEX ON {table_name} USING hnsw ((embedding::{type}({embed_dimension})) {itype}_{func}_ops)
+WITH (m = {max_conn}, ef_construction = {ef_construction});
+'''
 
-CREATE_DATA_TABLE = CREATE_TABLE_BASE.format(extra_fields='')
-
-INSERT_BASE = '''-- Insert a document into a table
-INSERT INTO {{table_name}} (
+INSERT_DATA = '''-- Insert a document into a table
+INSERT INTO {table_name} (
     embedding,
     content,
-    metadata
-    {extra_fields}) VALUES ($1, $2, $3{extra_vals});
+    metadata) VALUES ($1, $2, $3);
 '''
 
-INSERT_DATA = INSERT_BASE.format(extra_fields='', extra_vals='')
-
-QUERY_TABLE_BASE = '''-- Semantic search a document
+QUERY_DATA_TABLE = '''-- Semantic search a document
 SELECT * FROM (  -- Subquery to calculate cosine similarity, required to use the alias in the WHERE clause
     SELECT
         1 - (embedding <=> $1) AS cosine_similarity,
         content,
         metadata
-        {extra_fields}
     FROM
-        {{table_name}}
+        {table_name}
 ) subquery
-{{where_clauses}}
+{where_clauses}
 ORDER BY
     cosine_similarity DESC
-{{limit_clause}};
+{limit_clause};
 '''
-
-# QUERY_DOC_TABLE = QUERY_TABLE_BASE.format(extra_fields='''\
-# ,        title
-# ''')
-
-QUERY_DATA_TABLE = QUERY_TABLE_BASE.format(extra_fields='')
 
 # TITLE_WHERE_CLAUSE = 'title = {query_title}  -- Equals operator\n'
 
@@ -78,16 +68,29 @@ class DataDB(PGVectorHelper):
         '''
         Create the table to hold embedded documents
         '''
-        set_schema = f'SET SCHEMA \'{self.schema}\';\n' if self.schema else ''
+        # set_schema = f'SET SCHEMA \'{self.schema}\';\n' if self.schema else ''
+        set_schema = ''
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     CREATE_DATA_TABLE.format(
                         set_schema=set_schema,
+                        type=self.vtype,
                         table_name=self.table_name,
                         embed_dimension=self._embed_dimension)
                     )
-    
+                for it in self.itypes:
+                    for f in self.ifuncs:
+                        await conn.execute(CREATE_DATA_INDEX_HNSW.format(
+                            table_name=self.table_name,
+                            type=self.vtype,
+                            embed_dimension=self._embed_dimension,
+                            itype=it,
+                            func=f,
+                            max_conn=self.i_max_conn,
+                            ef_construction=self.ef_construction)
+                        )
+
     async def insert(
             self,
             content: str,

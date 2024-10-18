@@ -12,7 +12,7 @@ from typing import Iterable
 
 from ogbujipt.config import attr_dict
 from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response,
-    DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE)
+    DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_SYSTEM_SCHEMA, DEFAULT_USER_SCHEMA)
 
 __all__ = ['MessageDB']
 
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS {table_name} (
                                               -- or an ID associated with the sender)
     content TEXT NOT NULL,                    -- text content of the message
     embedding VECTOR({embed_dimension}),      -- embedding vectors (array dimension)
-    metadata JSON                             -- additional metadata of the message
+    metadata jsonb                            -- additional metadata of the message
 );
 '''
 
@@ -40,7 +40,7 @@ INSERT INTO {table_name} (
     embedding,
     ts,
     metadata
-) VALUES ($1, $2, $3, $4, $5, $6);
+) VALUES ($1, $2, $3, $4, $5, ($6::jsonb));
 '''
 
 CLEAR_MESSAGE = '''-- Deletes matching messages
@@ -131,7 +131,8 @@ AND
 # ------ Class implementations ---------------------------------------------------------------------------------------
 
 class MessageDB(PGVectorHelper):
-    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0, schema=None):
+    def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0,
+                 sys_schema=DEFAULT_SYSTEM_SCHEMA):
         '''
         Helper class for messages/chatlog storage and retrieval
 
@@ -140,22 +141,24 @@ class MessageDB(PGVectorHelper):
             https://huggingface.co/sentence-transformers
             window (int, optional): number of messages to maintain in the DB. Default is 0 (all messages)
         '''
-        super().__init__(embedding_model, table_name, pool, schema=schema)
+        super().__init__(embedding_model, table_name, pool, sys_schema=sys_schema)
         self.window = window
 
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0,
-        schema=None, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE,
+        half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password,
-            schema, pool_min, pool_max)
+            sys_schema, pool_min, pool_max)
         obj.window = window
         return obj
 
     @classmethod
     async def from_conn_string(cls, conn_string, embedding_model, table_name, window=0,
-        schema=None, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE) -> 'MessageDB': # noqa: E501
+        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE,
+        half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_string(conn_string, embedding_model, table_name,
-            schema, pool_min, pool_max)
+            sys_schema, pool_min, pool_max)
         obj.window = window
         return obj
 
@@ -197,7 +200,7 @@ class MessageDB(PGVectorHelper):
             generator which yields the rows os the query results ass attributable dicts
         '''
         if not timestamp:
-            timestamp = datetime.utcnow().replace(tzinfo=timezone.utc)
+            timestamp = datetime.now(tz=timezone.utc)
 
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)

@@ -165,5 +165,59 @@ async def test_search_with_date_filter_match_oneof(DB):
     assert len(result) == 5
 
 
+@pytest.mark.asyncio
+async def test_data_vector_half(DB_HALF):
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    item1_text = KG_STATEMENTS[0][0]
+    item1_meta = KG_STATEMENTS[0][1]
+
+    # Insert data
+    for index, (text, meta) in enumerate(KG_STATEMENTS):
+        await DB_HALF.insert(    # Insert the row into the table
+            content=text,   # text to be embedded
+            metadata=meta,  # Tag metadata
+        )
+
+    assert await DB_HALF.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
+
+    # search table with perfect match
+    result = await DB_HALF.search(text=item1_text, limit=3)
+    # assert result is not None, Exception('No results returned from perfect search')
+
+    # Even though the embedding is mocked, the stored text should be faithful
+    row = next(result)
+    assert row.content == item1_text, 'text mismatch'
+    assert row.metadata == item1_meta, 'Metadata mismatch'
+
+
+@pytest.mark.asyncio
+async def test_data_vector_half_index_half(DB_HALF_INDEX_HALF):
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    item1_text = KG_STATEMENTS[0][0]
+    item1_meta = KG_STATEMENTS[0][1]
+
+    # Insert data
+    for index, (text, meta) in enumerate(KG_STATEMENTS):
+        await DB_HALF_INDEX_HALF.insert(    # Insert the row into the table
+            content=text,   # text to be embedded
+            metadata=meta,  # Tag metadata
+        )
+
+    assert await DB_HALF_INDEX_HALF.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
+
+    # search table with perfect match
+    result = await DB_HALF_INDEX_HALF.search(text=item1_text, limit=3)
+    # assert result is not None, Exception('No results returned from perfect search')
+
+    # Even though the embedding is mocked, the stored text should be faithful
+    row = next(result)
+    assert row.content == item1_text, 'text mismatch'
+    assert row.metadata == item1_meta, 'Metadata mismatch'
+
+
 if __name__ == '__main__':
     raise SystemExit("Attention! Run with pytest")
