@@ -207,7 +207,8 @@ async def test_data_vector_half_index_half(DB_HALF_INDEX_HALF):
             metadata=meta,  # Tag metadata
         )
 
-    assert await DB_HALF_INDEX_HALF.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
+    assert await DB_HALF_INDEX_HALF.count_items() == len(KG_STATEMENTS), \
+        Exception('Incorrect number of documents after insertion')
 
     # search table with perfect match
     result = await DB_HALF_INDEX_HALF.search(text=item1_text, limit=3)

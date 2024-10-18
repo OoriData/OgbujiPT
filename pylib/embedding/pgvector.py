@@ -26,7 +26,7 @@ except ImportError as e:
     register_vector = object()  # Set up a dummy to satisfy the type hints
     POOL_TYPE = object
 
-# See: 
+# See: https://github.com/OoriData/OgbujiPT/issues/87
 DEFAULT_USER_SCHEMA = 'public'
 DEFAULT_SYSTEM_SCHEMA = 'pg_catalog'
 
@@ -84,7 +84,7 @@ class PGVectorHelper:
                 using multiple schemata, you can run into `ERROR: type "vector" does not exist`
                 unless a schema with the extension is in the search path (via `SET SCHEMA`)
 
-            half_precision (bool) - if True, use halfvec type to store half-precision vectors (pgvector 0.7.0 & up only).
+            half_precision (bool) - if True, use halfvec type to store half-precision vectors (pgvector 0.7.0+ only).
                 Default is False (full precision)
 
             itypes (list <str>) - Index types (or empty for no indexing).
@@ -138,8 +138,9 @@ class PGVectorHelper:
 
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password,
-        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE,
-        half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
+        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
+        pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False, itypes=None, ifuncs=None,
+        i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
         '''
         Create PGVectorHelper instance from connection/pool parameters
 
@@ -165,8 +166,9 @@ class PGVectorHelper:
 
     @classmethod
     async def from_conn_string(cls, conn_string, embedding_model, table_name,
-        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE, pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE,
-        half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
+        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
+        pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False,
+        itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
         '''
         Create PGVectorHelper instance from a connection string AKA DSN
 
@@ -201,7 +203,7 @@ class PGVectorHelper:
         try:
             await register_vector(conn, schema=schema)
         except ValueError as e:
-            raise RuntimeError(f'Unable to find the vector type in the database or schema. You might need to enable it: {e}')
+            raise RuntimeError(f'Unable to find vector type in the DB/schema. You might need to enable it: {e}')
         try:
             await conn.set_type_codec(  # Register a codec for JSON
                 'jsonb', encoder=json.dumps, decoder=json.loads, schema=schema)

@@ -7,8 +7,7 @@ Vector databases embeddings using PGVector
 
 from typing import Iterable, Callable, List, Sequence
 
-from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response,
-    DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE, DEFAULT_SYSTEM_SCHEMA, DEFAULT_USER_SCHEMA)
+from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response)
 
 __all__ = ['DataDB']
 
