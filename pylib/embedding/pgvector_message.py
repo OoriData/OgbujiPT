@@ -5,7 +5,7 @@
 '''
 Vector embeddings DB feature for messaging (chat, etc.) using PGVector
 '''
-
+import json
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Iterable
@@ -132,7 +132,8 @@ AND
 
 class MessageDB(PGVectorHelper):
     def __init__(self, embedding_model, table_name: str, pool: asyncpg.pool.Pool, window=0,
-                 sys_schema=DEFAULT_SYSTEM_SCHEMA):
+                 stringify_json=False, sys_schema=DEFAULT_SYSTEM_SCHEMA,
+                 half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64):
         '''
         Helper class for messages/chatlog storage and retrieval
 
@@ -141,26 +142,33 @@ class MessageDB(PGVectorHelper):
             https://huggingface.co/sentence-transformers
             window (int, optional): number of messages to maintain in the DB. Default is 0 (all messages)
         '''
-        super().__init__(embedding_model, table_name, pool, sys_schema=sys_schema)
+        super().__init__(embedding_model, table_name, pool, stringify_json=stringify_json, sys_schema=sys_schema,
+                        half_precision=half_precision, itypes=itypes, ifuncs=ifuncs,
+                        i_max_conn=i_max_conn, ef_construction=ef_construction)
         self.window = window
 
     @classmethod
-    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password, window=0,
+    async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password,
+        stringify_json=False, window=0,
         sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
         pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False,
         itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_params(embedding_model, table_name, host, port, db_name, user, password,
-            sys_schema, pool_min, pool_max)
+            stringify_json=stringify_json, sys_schema=sys_schema, pool_min=pool_min, pool_max=pool_max,
+            half_precision=half_precision, itypes=itypes, ifuncs=ifuncs,
+            i_max_conn=i_max_conn, ef_construction=ef_construction)
         obj.window = window
         return obj
 
     @classmethod
-    async def from_conn_string(cls, conn_string, embedding_model, table_name, window=0,
+    async def from_conn_string(cls, conn_string, embedding_model, table_name, stringify_json=False, window=0,
         sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
         pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False,
         itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'MessageDB': # noqa: E501
         obj = await super().from_conn_string(conn_string, embedding_model, table_name,
-            sys_schema, pool_min, pool_max)
+            stringify_json=stringify_json, sys_schema=sys_schema, pool_min=pool_min, pool_max=pool_max,
+            half_precision=half_precision, itypes=itypes, ifuncs=ifuncs,
+            i_max_conn=i_max_conn, ef_construction=ef_construction)
         obj.window = window
         return obj
 
@@ -204,6 +212,9 @@ class MessageDB(PGVectorHelper):
         if not timestamp:
             timestamp = datetime.now(tz=timezone.utc)
 
+        if self.stringify_json:
+            metadata = json.dumps(metadata)
+
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
@@ -241,12 +252,15 @@ class MessageDB(PGVectorHelper):
         Args:
             content_list: List of tuples, each of the form: (history_key, role, text, timestamp, metadata)
         '''
+        def handle_metadata(md):
+            return json.dumps(md) if self.stringify_json else md
+
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
                     INSERT_MESSAGE.format(table_name=self.table_name),
                     (
-                        (hk, role, text, self._embedding_model.encode(text), ts, metadata)
+                        (hk, role, text, self._embedding_model.encode(text), ts, handle_metadata(metadata))
                         for hk, role, text, ts, metadata in content_list
                     )
                 )

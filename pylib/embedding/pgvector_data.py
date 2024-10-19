@@ -4,7 +4,7 @@
 '''
 Vector databases embeddings using PGVector
 '''
-
+import json
 from typing import Iterable, Callable, List, Sequence
 
 from ogbujipt.embedding.pgvector import (PGVectorHelper, asyncpg, process_search_response)
@@ -27,8 +27,10 @@ CREATE_DATA_TABLE = '''-- Create a table to hold embedded documents or data
 # itype: vector, halfvec (0.7.0 & up), bit, sparsevec (0.7.0+)
 # func: l2, ip, cosine, l1, hamming (0.7.0+, with bit type only), jaccard (0.7.0+, with bit type only)
 CREATE_DATA_INDEX_HNSW = '''-- Create a table to hold a full precision HNSW index
-CREATE INDEX ON {table_name} USING hnsw ((embedding::{type}({embed_dimension})) {itype}_{func}_ops)
-WITH (m = {max_conn}, ef_construction = {ef_construction});
+CREATE INDEX
+    IF NOT EXISTS {table_tail}_{itype}_{func} ON {table_name}
+    USING hnsw ((embedding::{type}({embed_dimension})) {itype}_{func}_ops)
+    WITH (m = {max_conn}, ef_construction = {ef_construction});
 '''
 
 INSERT_DATA = '''-- Insert a document into a table
@@ -82,6 +84,7 @@ class DataDB(PGVectorHelper):
                     for f in self.ifuncs:
                         await conn.execute(CREATE_DATA_INDEX_HNSW.format(
                             table_name=self.table_name,
+                            table_tail=self.table_name.split('.')[-1],
                             type=self.vtype,
                             embed_dimension=self._embed_dimension,
                             itype=it,
@@ -103,6 +106,8 @@ class DataDB(PGVectorHelper):
 
             metadata (dict, optional): additional metadata of the chunk
         '''
+        if self.stringify_json:
+            metadata = json.dumps(metadata)
         # Get the embedding of the content as a PGvector compatible list
         content_embedding = self._embedding_model.encode(content)
 
@@ -129,13 +134,16 @@ class DataDB(PGVectorHelper):
                 `content` is a string and
                 `metadata` is a dictionary
         '''
+        def handle_metadata(md):
+            return json.dumps(md) if self.stringify_json else md
+
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.executemany(
                     INSERT_DATA.format(table_name=self.table_name),
                     (
                         # Does this need to be .tolist()?
-                        (self._embedding_model.encode(content), content, metadata)
+                        (self._embedding_model.encode(content), content, handle_metadata(metadata))
                         for content, metadata in content_list
                     )
                 )

@@ -67,7 +67,7 @@ class PGVectorHelper:
     * pool_min: minimum number of connections to maintain in the pool (used as min_size for create_pool).
     * pool_max: maximum number of connections to maintain in the pool (used as max_size for create_pool).
     '''
-    def __init__(self, embedding_model, table_name: str, pool, sys_schema=DEFAULT_SYSTEM_SCHEMA,
+    def __init__(self, embedding_model, table_name: str, pool, stringify_json=False, sys_schema=DEFAULT_SYSTEM_SCHEMA,
                  half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64):
         '''
         If you don't already have a connection pool, construct using the PGvectorHelper.from_pool_params() method
@@ -80,25 +80,28 @@ class PGVectorHelper:
 
             pool (asyncpg.pool.Pool): asyncpg connection pool instance
 
+            stringify_json (bool): if True, interchange JSON metadata to/from string,
+                rather than relying on the registered data type. Defaults to False.
+
             sys_schema (str): schema to which the vector extension has been set. In more sophisticated DB setups
                 using multiple schemata, you can run into `ERROR: type "vector" does not exist`
                 unless a schema with the extension is in the search path (via `SET SCHEMA`)
 
-            half_precision (bool) - if True, use halfvec type to store half-precision vectors (pgvector 0.7.0+ only).
+            half_precision (bool): if True, use halfvec type to store half-precision vectors (pgvector 0.7.0+ only).
                 Default is False (full precision)
 
-            itypes (list <str>) - Index types (or empty for no indexing).
+            itypes (list <str>): Index types (or empty for no indexing).
                 An index will be build for each combo of itypes & ifunc
                 Values: vector, halfvec (0.7.0 & up), bit, sparsevec (0.7.0+)
 
-            ifuncs (list <str>) - Index functions (defaults to ['cosine'] if itypes is not None)
+            ifuncs (list <str>): Index functions (defaults to ['cosine'] if itypes is not None)
                 An index will be build for each combo of itypes & ifunc
                 Values: l2, ip, cosine, l1, hamming (0.7.0+, with bit type only), jaccard (0.7.0+, with bit type only)
 
-            i_max_conn (int) - max number of connections per layer (16 by default);
+            i_max_conn (int): max number of connections per layer (16 by default);
                 see pgvector docs
 
-            ef_construction (int) - size of the dynamic candidate list for constructing the graph (64 by default);
+            ef_construction (int): size of the dynamic candidate list for constructing the graph (64 by default);
                 see pgvector docs
         '''
         if not PREREQS_AVAILABLE:
@@ -111,6 +114,7 @@ class PGVectorHelper:
         self.table_name = table_name
         self.embedding_model = embedding_model
         self.pool = pool
+        self.stringify_json = stringify_json
         self.sys_schema = sys_schema
         if half_precision:
             self.vtype = 'halfvec'
@@ -123,6 +127,7 @@ class PGVectorHelper:
         if itypes and not ifuncs:
             ifuncs = ['cosine']
         assert all([f in ('l2', 'ip', 'cosine', 'l1', 'hamming', 'jaccard') for f in ifuncs])
+        self.ifuncs = ifuncs
         self.i_max_conn = i_max_conn
         self.ef_construction = ef_construction
 
@@ -138,7 +143,7 @@ class PGVectorHelper:
 
     @classmethod
     async def from_conn_params(cls, embedding_model, table_name, host, port, db_name, user, password,
-        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
+        stringify_json=False, sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
         pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False, itypes=None, ifuncs=None,
         i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
         '''
@@ -159,14 +164,14 @@ class PGVectorHelper:
         pool = await asyncpg.create_pool(init=init_pool_, host=host, port=port, user=user,
                     password=password, database=db_name, min_size=pool_min, max_size=pool_max)
 
-        new_obj = cls(embedding_model, table_name, pool, sys_schema=sys_schema,
+        new_obj = cls(embedding_model, table_name, pool, stringify_json=stringify_json, sys_schema=sys_schema,
                         half_precision=half_precision, itypes=itypes, ifuncs=ifuncs,
                         i_max_conn=i_max_conn, ef_construction=ef_construction)
         return new_obj
 
     @classmethod
     async def from_conn_string(cls, conn_string, embedding_model, table_name,
-        sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
+        stringify_json=False, sys_schema=DEFAULT_SYSTEM_SCHEMA, pool_min=DEFAULT_MIN_CONNECTION_POOL_SIZE,
         pool_max=DEFAULT_MAX_CONNECTION_POOL_SIZE, half_precision=False,
         itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64) -> 'PGVectorHelper': # noqa: E501
         '''
@@ -183,7 +188,7 @@ class PGVectorHelper:
         pool = await asyncpg.create_pool(
             conn_string, init=init_pool_, min_size=pool_min, max_size=pool_max)
 
-        new_obj = cls(embedding_model, table_name, pool, sys_schema=sys_schema,
+        new_obj = cls(embedding_model, table_name, pool, stringify_json=stringify_json, sys_schema=sys_schema,
                         half_precision=half_precision, itypes=itypes, ifuncs=ifuncs,
                         i_max_conn=i_max_conn, ef_construction=ef_construction)
         return new_obj
