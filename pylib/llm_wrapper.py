@@ -305,12 +305,13 @@ class openai_chat_api(openai_api):
             result.model = self.hosted_model()
         return result
 
-    async def __call__(self, prompt, api_func=None, **kwargs):
+    async def __call__(self, messages, api_func=None, **kwargs):
         '''
         Invoke the LLM with a completion request
 
         Args:
-            prompt (str): Prompt to send to the LLM
+            messages (list): Series of messages representing the chat history
+            e.f. messages=[{"role": "user", "content": "Hello world"}])
 
             kwargs (dict, optional): Extra parameters to pass to the model via API.
                 See Completions.create in OpenAI API, but in short, these:
@@ -321,7 +322,7 @@ class openai_chat_api(openai_api):
             dict: JSON response from the LLM
         '''
         # Haven't implemented any OpenAI API calls that are async, so just call the sync version
-        return self.call(prompt, api_func, **kwargs)
+        return self.call(messages, api_func, **kwargs)
 
 
 class llama_cpp_http(llm_wrapper):
