@@ -235,4 +235,11 @@ class DataDB(PGVectorHelper):
                 ),
                 *query_args
             )
+        if self.stringify_json:
+            search_results = ({
+                'cosine_similarity': r['cosine_similarity'],
+                'content': r['content'],
+                'metadata': json.loads(r['metadata']),
+                } for r in search_results)
+
         return process_search_response(search_results)

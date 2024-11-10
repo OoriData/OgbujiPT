@@ -351,7 +351,7 @@ class MessageDB(PGVectorHelper):
                 'ts': record['ts'],
                 'role': record['role'],
                 'content': record['content'],
-                'metadata': record['metadata']
+                'metadata': json.loads(record['metadata']) if self.stringify_json else record['metadata']
             }) for record in message_records)
 
     async def search(
@@ -415,15 +415,15 @@ class MessageDB(PGVectorHelper):
                 *qparams
             )
 
-        search_results = [
+        search_results = (
             {
                 'ts': record['ts'],
                 'role': record['role'],
                 'content': record['content'],
-                'metadata': record['metadata'],
+                'metadata': json.loads(record['metadata']) if self.stringify_json else record['metadata'],
                 'cosine_similarity': record['cosine_similarity']
             }
             for record in message_records
-        ]
+        )
 
         return process_search_response(search_results)
