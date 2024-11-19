@@ -2,7 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # ogbujipt.embedding.pgvector
 '''
-Vector databases embeddings using PGVector
+Vector databases embeddings using PGVector (https://github.com/pgvector/pgvector)
+
+Includes features up to pgvector 0.7.0 (e.g. quantized vectors & indices)
+
+Jonathan Katz has a very lucid analysis of the vector quantization features in 0.7.0, published pre-release
+https://jkatz05.com/post/postgres/pgvector-scalar-binary-quantization/
 '''
 import json
 # import asyncio

@@ -7,6 +7,20 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 
 -->
 
+## [0.9.4] - 20241119
+
+### Added
+
+- (PGVector) Support for init via DSN connection string: `PGVectorHelper.from_conn_string()`
+- (PGVector) Support setting max & min connection pool size in `PGVectorHelper.from_*()` methods
+- (PGVector) Support for DB schema use for PGVector, e.g., constructors now take a `schema` kwarg.
+- (PGVector) Support for `halfvec` half-precision vector type & other quantized types, plus HNSW indexing, including half-precision indexing.
+- (PGVector) `stringify_json` flag on PGVector helpers, to help deal with cases where JSONB type registration isn't reliable
+
+### Fixed
+
+- `llm_wrapper.openai_chat_api` call to take `messages` arg, as expected, not `prompt`
+
 ## [0.9.3] - 20240722
 
 ### Added
