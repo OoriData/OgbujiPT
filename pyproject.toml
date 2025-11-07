@@ -31,6 +31,23 @@ dependencies = [
   "amara3.iri"
 ]
 
+[project.optional-dependencies]
+# Extra requirements for project contributors & other developers
+dev = [
+  "build",
+  "twine",
+  "hatch",
+  "pipdeptree",
+  "ruff",
+  "pytest",
+  "pytest-mock",
+  "pytest-asyncio",
+  "pytest-cov",
+  "respx",
+  "pgvector",
+  "asyncpg",
+]
+
 [project.urls]
 Documentation = "https://github.com/OoriData/OgbujiPT#readme"
 Issues = "https://github.com/OoriData/OgbujiPT/issues"
