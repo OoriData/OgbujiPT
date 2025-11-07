@@ -94,25 +94,21 @@ HTML_ANTIPATTERN1 = '''\
 
 def html_split(text: str, chunk_size: int, separator: str='\n\n', joiner=None, len_func=len):
     '''
-    Split string and generate the sequence of chunks
+    Split string and generate the sequence of chunks.
+    
+    This is a wrapper around text_split from text_helper, intended for use with markdown
+    text that has been converted from HTML.
 
     >>> from ogbujipt.html_helper import html_split
-    >>> list(text_split('She sells seashells by the seashore', chunk_size=5, separator=' '))
+    >>> list(html_split('She sells seashells by the seashore', chunk_size=5, separator=' '))
     ['She', 'sells', 'seashells', 'by', 'the', 'seashore']
-    >>> list(text_split('She sells seashells by the seashore', chunk_size=10, separator=' '))
-    ['She sells', 'seashells', 'by the', 'seashore']
-    # Notice case sensitivity, plus the fact that the separator is not included in the chunks
-    >>> list(text_split('She sells seashells by the seashore', chunk_size=10, separator='s'))
-    ['She ', 'ells ', 'ea', 'hell', ' by the ', 'ea', 'hore']
-    >>> list(text_split('She\tsells seashells\tby the seashore', chunk_size=10, separator='\\s'))
-    ['She\tsells', 'seashells', 'by the', 'seashore']
-    >>> list(text_split('She\tsells seashells\tby the seashore', chunk_size=10, separator='\\s', joiner=' '))
+    >>> list(html_split('She sells seashells by the seashore', chunk_size=10, separator=' '))
     ['She sells', 'seashells', 'by the', 'seashore']
 
     Args:
-        html (str): HTML string to be split into chunks
+        text (str): Text string (typically markdown) to be split into chunks
 
-        chunk_size (int): Guidance on maximum length (based on distance_function) of each chunk
+        chunk_size (int): Guidance on maximum length (based on len_func) of each chunk
 
         separator (str, optional): Regex used to split `text` into sections. Do not include outer capturing parenthesis.
             Don't forget to use escaping where necessary.
@@ -122,12 +118,11 @@ def html_split(text: str, chunk_size: int, separator: str='\n\n', joiner=None, l
 
         len_func (callable, optional): Function to measure chunk length, len() by default
 
-    Returns:
-        chunks (List[str]): List of chunks of the text provided
-    
-    TODO: Implementation pending
+    Yields:
+        chunks (str): Chunks of the text provided
     '''
-    raise NotImplementedError("html_split is not yet implemented")
+    from ogbujipt.text_helper import text_split
+    yield from text_split(text, chunk_size=chunk_size, separator=separator, joiner=joiner, len_func=len_func)
 
 
 def count_tokens(text: str) -> int:
@@ -202,28 +197,191 @@ def clean_html(html: str, attr_max_len: int = 0) -> tuple[str, str]:
 
 def elem2markdown(elem, chunks):
     '''
-    Convert a single element to markdown and append to chunks list
+    Convert a single HTML element to markdown and append to chunks list.
     
-    TODO: Implementation pending
+    This is a helper function used by html2markdown for recursive processing.
+    Note: This function is kept for backward compatibility but html2markdown
+    now uses _process_element_to_markdown internally.
+    
+    Args:
+        elem: selectolax element node
+        chunks: list to append markdown strings to
     '''
-    raise NotImplementedError("elem2markdown is not yet implemented")
+    # Delegate to the main processing function
+    _process_element_to_markdown(elem, chunks)
 
-def html2markdown(root, chunks):
+def html2markdown(root, chunks=None):
     '''
-    Converts HTML text or a selectolax parsed tree to Markdown, using probably oversimplified logic
+    Converts HTML text or a selectolax parsed tree to Markdown, using simplified logic.
     Preserves indentation in code blocks as does the inspiring code:
     https://github.com/SivilTaram/code-html-to-markdown/blob/main/main.py
     
     Args:
-        root: selectolax HTMLParser tree or root element
-        chunks: list to append markdown chunks to
+        root: selectolax HTMLParser tree, root element, or HTML string
+        chunks: optional list to append markdown chunks to. If None, returns a string.
     
     Returns:
-        markdown string (or appends to chunks if chunks is provided)
-    
-    TODO: Implementation pending - function body contains incomplete/incorrect code
+        If chunks is provided, appends to chunks and returns None.
+        Otherwise, returns markdown string.
     '''
-    raise NotImplementedError("html2markdown is not yet implemented")
+    if HTMLParser is None:
+        raise ImportError("selectolax is required for html2markdown")
+    
+    # If root is a string, parse it
+    if isinstance(root, str):
+        root = HTMLParser(root)
+    
+    # Get body or use root
+    body = root.body if hasattr(root, 'body') and root.body else root
+    
+    if chunks is None:
+        chunks = []
+        return_string = True
+    else:
+        return_string = False
+    
+    # Process the body element
+    if body:
+        # Get title if available
+        title_elem = root.css_first('title')
+        if title_elem:
+            title_text = title_elem.text(deep=True, separator='', strip=True)
+            if title_text:
+                chunks.append(f"# {title_text}\n\n")
+        
+        # Process main content
+        _process_element_to_markdown(body, chunks)
+    
+    if return_string:
+        result = ''.join(chunks)
+        # Apply post-processing
+        result = post_processing(result)
+        return result
+    else:
+        # Post-process chunks in place
+        if chunks:
+            combined = ''.join(chunks)
+            processed = post_processing(combined)
+            chunks.clear()
+            chunks.append(processed)
+
+
+def _process_element_to_markdown(elem, chunks, level=0):
+    '''
+    Recursively process an HTML element and convert to markdown.
+    
+    Args:
+        elem: selectolax element node
+        chunks: list to append markdown strings to
+        level: nesting level (for indentation)
+    '''
+    if not elem or not hasattr(elem, 'tag'):
+        return
+    
+    tag = elem.tag.lower() if elem.tag else ''
+    text = elem.text(deep=False, separator='', strip=True) if hasattr(elem, 'text') else ''
+    
+    # Handle different HTML tags
+    if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+        level_num = int(tag[1])
+        prefix = '#' * level_num + ' '
+        if text:
+            chunks.append(f"\n{prefix}{text}\n\n")
+    elif tag == 'p':
+        if text:
+            chunks.append(f"{text}\n\n")
+    elif tag == 'strong' or tag == 'b':
+        if text:
+            chunks.append(f"**{text}**")
+    elif tag == 'em' or tag == 'i':
+        if text:
+            chunks.append(f"*{text}*")
+    elif tag == 'code':
+        # Check if parent is pre for code blocks
+        parent_tag = elem.parent.tag.lower() if elem.parent and hasattr(elem.parent, 'tag') else ''
+        if parent_tag == 'pre':
+            # Handled by pre tag
+            pass
+        else:
+            if text:
+                chunks.append(f"`{text}`")
+    elif tag == 'pre':
+        code_text = elem.text(deep=True, separator='\n', strip=False)
+        if code_text:
+            chunks.append(f"\n```\n{code_text}\n```\n\n")
+        return  # Don't process children for pre
+    elif tag == 'a':
+        href = elem.attrs.get('href', '') if hasattr(elem, 'attrs') else ''
+        link_text = elem.text(deep=True, separator='', strip=True)
+        if link_text:
+            if href:
+                chunks.append(f"[{link_text}]({href})")
+            else:
+                chunks.append(link_text)
+    elif tag == 'ul':
+        chunks.append('\n')
+        for child in elem.iter():
+            if child != elem and hasattr(child, 'tag') and child.tag.lower() == 'li':
+                _process_element_to_markdown(child, chunks, level + 1)
+        chunks.append('\n')
+        return
+    elif tag == 'ol':
+        chunks.append('\n')
+        idx = 1
+        for child in elem.iter():
+            if child != elem and hasattr(child, 'tag') and child.tag.lower() == 'li':
+                li_text = child.text(deep=True, separator='', strip=True)
+                if li_text:
+                    chunks.append(f"{idx}. {li_text}\n")
+                idx += 1
+        chunks.append('\n')
+        return
+    elif tag == 'li':
+        li_text = elem.text(deep=True, separator='', strip=True)
+        if li_text:
+            chunks.append(f"* {li_text}\n")
+    elif tag == 'blockquote':
+        quote_text = elem.text(deep=True, separator='\n', strip=True)
+        if quote_text:
+            lines = quote_text.split('\n')
+            for line in lines:
+                chunks.append(f"> {line}\n")
+            chunks.append('\n')
+    elif tag == 'table':
+        # Simple table conversion
+        rows = elem.css('tr')
+        if rows:
+            # Header row
+            header_cells = rows[0].css('th, td')
+            if header_cells:
+                header_texts = [cell.text(deep=True, separator='', strip=True) for cell in header_cells]
+                chunks.append('\n| ' + ' | '.join(header_texts) + ' |\n')
+                chunks.append('| ' + ' | '.join(['---'] * len(header_texts)) + ' |\n')
+            
+            # Data rows
+            for row in rows[1:]:
+                cells = row.css('td')
+                if cells:
+                    cell_texts = [cell.text(deep=True, separator='', strip=True) for cell in cells]
+                    chunks.append('| ' + ' | '.join(cell_texts) + ' |\n')
+            chunks.append('\n')
+        return
+    elif tag in ['div', 'span', 'section', 'article', 'main', 'body']:
+        # Container elements - just process children, add spacing for div/section/article
+        if tag in ['div', 'section', 'article'] and level == 0:
+            chunks.append('\n')
+    elif tag in ['script', 'style', 'head', 'meta']:
+        # Skip these
+        return
+    else:
+        # For unknown tags, just extract text
+        if text:
+            chunks.append(text)
+    
+    # Process children recursively (unless we returned early)
+    for child in elem.iter():
+        if child != elem:
+            _process_element_to_markdown(child, chunks, level + 1)
 
 
 def post_processing(markdown_content: str):

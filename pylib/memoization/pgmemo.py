@@ -234,3 +234,86 @@ class PGMemo:
         # Delete the table
         async with self.pool.acquire() as conn:
             await conn.execute(f'DROP TABLE IF EXISTS {self.table_name};')
+
+    async def create_table(self) -> None:
+        '''
+        Create the memo table if it doesn't exist.
+        
+        Also ensures the pg_trgm extension is enabled for trigram similarity matching.
+        '''
+        async with self.pool.acquire() as conn:
+            # Enable pg_trgm extension for trigram similarity
+            await conn.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm;')
+            # Create the table
+            await conn.execute(CREATE_MEMO_TABLE.format(table_name=self.table_name))
+            # Create index on prompt for faster similarity searches
+            await conn.execute(
+                f'CREATE INDEX IF NOT EXISTS {self.table_name}_prompt_trgm_idx '
+                f'ON {self.table_name} USING gin (prompt gin_trgm_ops);'
+            )
+
+    async def check_memo(self, llm_id: str, prompt: str, similarity_threshold: float = 0.1) -> dict | None:
+        '''
+        Check if a prompt is similar enough to a previous one to use a cached response.
+        
+        Uses PostgreSQL trigram similarity (pg_trgm extension) to find similar prompts.
+        The <-> operator returns a distance (0 = identical, higher = more different).
+        
+        Args:
+            llm_id: Identifier for the LLM model
+            prompt: The prompt text to check
+            similarity_threshold: Maximum distance threshold (lower = more similar required).
+                Default 0.1 means prompts must be very similar. Typical range: 0.05-0.3
+        
+        Returns:
+            dict with keys 'response', 'ts', 'metadata' if a match is found, None otherwise
+        '''
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchrow(
+                CHECK_MEMO.format(table_name=self.table_name),
+                llm_id, prompt, similarity_threshold
+            )
+            if result:
+                return {
+                    'response': result['response'],
+                    'ts': result['ts'],
+                    'metadata': result['metadata'] if result['metadata'] else {}
+                }
+            return None
+
+    async def insert_entry(self, llm_id: str, prompt: str, response: str, metadata: dict | None = None) -> None:
+        '''
+        Insert a new memo entry (prompt/response pair).
+        
+        Args:
+            llm_id: Identifier for the LLM model
+            prompt: The prompt text
+            response: The LLM response text
+            metadata: Optional metadata dictionary (will be stored as JSON)
+        '''
+        from datetime import datetime
+        async with self.pool.acquire() as conn:
+            # Convert metadata to JSON string if provided, otherwise use None
+            metadata_json = json.dumps(metadata) if metadata else None
+            await conn.execute(
+                INSERT_ENTRY.format(table_name=self.table_name),
+                llm_id, prompt, response, datetime.now(), metadata_json
+            )
+
+    async def clear_by_llm(self, llm_id: str) -> int:
+        '''
+        Remove all memo entries for a given LLM.
+        
+        Args:
+            llm_id: Identifier for the LLM model
+            
+        Returns:
+            Number of rows deleted
+        '''
+        async with self.pool.acquire() as conn:
+            result = await conn.execute(
+                CLEAR_BY_LLM.format(table_name=self.table_name),
+                llm_id
+            )
+            # Extract number of rows deleted from result string like "DELETE 5"
+            return int(result.split()[-1]) if result else 0
