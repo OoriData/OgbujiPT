@@ -10,7 +10,7 @@ See class `collection` docstring for a simple example, using the in-memory drive
 Example storing a Qdrant collection to disk:
 
 ```py
-from sentence_transformers import SentenceTransformer  # pip install SentenceTransformer
+from sentence_transformers import SentenceTransformer  # pip install sentence-transformers
 from qdrant_client import QdrantClient  # pip install qdrant_client
 from ogbujipt.text_helper import text_split
 from ogbujipt.embedding.qdrant import collection

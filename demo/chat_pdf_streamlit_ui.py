@@ -28,6 +28,8 @@ Run the demo:
 ```sh
 streamlit run demo/chat_pdf_streamlit_ui.py
 ```
+
+PDF to text alternative: [Docling](https://github.com/DS4SD/docling)
 '''
 import os
 

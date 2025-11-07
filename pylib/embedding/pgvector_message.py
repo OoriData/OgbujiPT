@@ -96,6 +96,8 @@ FROM
         content,
         metadata FROM {table_name}) AS main
 {where_clauses}
+ORDER BY
+    cosine_similarity DESC
 {limit_clause};
 '''
 

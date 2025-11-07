@@ -141,6 +141,8 @@ ban-relative-imports = "all"
 # "path/to/file.py" = ["E402"]  # in specific file.py
 # Ignore `D` rules everywhere except for the `src/` directory.
 "!pylib/**.py" = ["D"]
+# Ignore `E501` (line too long) in Jupyter notebooks
+"*.ipynb" = ["E501"]
 
 [tool.coverage.run]
 source_pkgs = ["ogbujipt", "test"]

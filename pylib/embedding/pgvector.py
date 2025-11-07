@@ -75,7 +75,8 @@ class PGVectorHelper:
     def __init__(self, embedding_model, table_name: str, pool, stringify_json=False, sys_schema=DEFAULT_SYSTEM_SCHEMA,
                  half_precision=False, itypes=None, ifuncs=None, i_max_conn=16, ef_construction=64):
         '''
-        If you don't already have a connection pool, construct using the PGvectorHelper.from_pool_params() method
+        If you don't already have a connection pool, construct using PGvectorHelper.from_conn_params(),
+        PGvectorHelper.from_conn_string(), etc.
 
         Args:
             embedding (SentenceTransformer): SentenceTransformer object of your choice
