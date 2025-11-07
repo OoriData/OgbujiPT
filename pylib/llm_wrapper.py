@@ -83,6 +83,8 @@ class llm_response(config.attr_dict):
                 # WTH does OpenAI have these arguments properties as plain text? Seems a massive layering violation
                 for tc in rc1['message']['tool_calls']:
                     tc['function']['arguments_obj'] = json.loads(tc['function']['arguments'])
+                    # Fails when tc is ChatCompletionMessageToolCall, in which case we need this commented out logic
+                    # tc.function.arguments_obj = json.loads(tc.function.arguments)
             else:
                 resp['first_choice_text'] = rc1['text'] if 'text' in rc1 else rc1['message'].get('content', '')
             # print(f'from_openai_chat: {rc1 =}')

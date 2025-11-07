@@ -10,6 +10,8 @@ Vector store: Chroma - https://docs.trychroma.com/getting-started
     Alternatives: pgvector & Qdrant (built-in support from OgbujiPT), Faiss, Weaviate, etc.
 Text to vector (embedding) model: 
     Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
+PDF to text [PyPDF2](https://pypdf2.readthedocs.io/en/3.x/)
+    Alternative: [Docling](https://github.com/DS4SD/docling)
 
 Needs access to an OpenAI-like service. This can be private/self-hosted, though.
 OgbujiPT's sister project Toolio would work - https://github.com/OoriData/Toolio
@@ -18,7 +20,7 @@ via e.g. llama-cpp-python, text-generation-webui, Ollama
 Prerequisites, in addition to OgbujiPT (warning: chromadb installs a lot of stuff):
 
 ```sh
-pip install click sentence_transformers chromadb docx2python PyPDF2 PyCryptodome
+pip install click sentence-transformers chromadb docx2python PyPDF2 PyCryptodome
 ```
 
 Assume for the following the server is running on localhost, port 8000.
