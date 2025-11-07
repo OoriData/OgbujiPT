@@ -13,7 +13,8 @@ import json
 # from typing import ClassVar
 from functools import partial
 
-from ogbujipt.embedding.pgvector import (asyncpg, process_search_response, DEFAULT_SCHEMA, CHECK_TABLE_EXISTS,
+# from ogbujipt.embedding.pgvector import process_search_response
+from ogbujipt.embedding.pgvector import (asyncpg, DEFAULT_SCHEMA, CHECK_TABLE_EXISTS,
                                          DEFAULT_MIN_CONNECTION_POOL_SIZE, DEFAULT_MAX_CONNECTION_POOL_SIZE)
 
 
