@@ -111,8 +111,8 @@ class SentenceTransformer(object):
 
 
 DB_CLASS = {
-    'test/embedding/test_pgvector_message.py': MessageDB,
-    'test/embedding/test_pgvector_data.py': DataDB,
+    'test/store/test_pgvector_message.py': MessageDB,
+    'test/store/test_pgvector_data.py': DataDB,
 }
 
 # print(HOST, DB_NAME, USER, PASSWORD, PORT)

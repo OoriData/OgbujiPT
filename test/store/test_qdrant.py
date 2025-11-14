@@ -60,7 +60,7 @@ def test_qdrant_embed_poem(mocker, COME_THUNDER_POEM, CORRECT_STRING):
     qdrant.models = mocker.MagicMock()
     mock_vparam = object()
     qdrant.models.VectorParams.side_effect = [mock_vparam]
-    mocker.patch('ogbujipt.embedding.qdrant.QdrantClient')
+    mocker.patch('ogbujipt.store.qdrant.collection.QdrantClient')
 
     coll = collection(name=collection_name, embedding_model=embedding_model)
 

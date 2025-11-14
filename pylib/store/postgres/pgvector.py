@@ -338,6 +338,7 @@ def match_oneof(key, options: tuple[str]):
     return apply
 
 
-# Down here to avoid circular imports
-from ogbujipt.store.postgres.pgvector_data import DataDB  # noqa: E402 F401
-from ogbujipt.store.postgres.pgvector_message import MessageDB  # noqa: E402 F401
+# Note: DataDB and MessageDB are no longer imported here to avoid circular imports.
+# Import them directly from their respective modules:
+#   from ogbujipt.store.postgres.pgvector_data import DataDB
+#   from ogbujipt.store.postgres.pgvector_message import MessageDB
