@@ -42,9 +42,9 @@ import click
 import httpx
 import html2text
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_split_fuzzy
-from ogbujipt.embedding.qdrant import collection
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.text.splitter import text_split_fuzzy
+from ogbujipt.store.qdrant.collection import collection
 
 
 # Avoid re-entrace complaints from huggingface/tokenizers

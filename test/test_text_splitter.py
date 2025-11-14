@@ -12,7 +12,7 @@ pytest test/test_text_splitter.py
 
 import pytest
 
-from ogbujipt.text_helper import text_split, text_split_fuzzy
+from ogbujipt.text.splitter import text_split, text_split_fuzzy
 
 # Also test: chunk_overlap > chunk_size, chunk_overlap == chunk_size, etc.
 

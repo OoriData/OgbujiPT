@@ -41,7 +41,7 @@ import asyncio
 
 import discord
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
 
 # Enable all standard intents, plus message content
 # The bot app you set up on Discord will require this intent (Bot tab)

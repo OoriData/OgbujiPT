@@ -26,9 +26,23 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
+  # Core LLM
   "openai>=1.1.0",
   "tomli",
-  "amara3.iri"
+  "amara3.iri",
+
+  # Memory & Knowledge Bank
+  "onya>=0.1.0",           # GraphRAG knowledge graphs
+  "chonkie",               # Document chunking
+  "rank-bm25",             # Sparse retrieval (BM25)
+
+  # Production utilities
+  "structlog",             # Structured logging
+  "tenacity",              # Retry logic
+  "httpx",                 # Async HTTP client
+
+  # MCP protocol
+  "mcp",                   # Model Context Protocol
 ]
 
 [project.optional-dependencies]

@@ -8,8 +8,8 @@ import json
 import pytest
 
 from ogbujipt import config
-from ogbujipt.llm_wrapper import openai_api, openai_chat_api, prompt_to_chat # , DUMMY_MODEL
-from ogbujipt.llm_wrapper import llama_cpp_http, llama_cpp_http_chat
+from ogbujipt.llm.wrapper import openai_api, openai_chat_api, prompt_to_chat # , DUMMY_MODEL
+from ogbujipt.llm.wrapper import llama_cpp_http, llama_cpp_http_chat
 
 try:
     import respx

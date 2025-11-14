@@ -1,0 +1,41 @@
+Additional context on this repository for AI tools & coding agents
+
+- Python 3.12+ code, unless otherwise specified
+- Python code uses single outer quotes, including triple single quotes for e.g. docstrings
+- prefer absolute imports to relative imports
+- Use a decent amount of comments
+  - not *too* many, just enough that anybody familiar with the code can use them as a reference point. Not meant to teach somebody new every intricacy of the code, just help keep the reader oriented.
+- if it saves a line, put a comment after a line rather than above it
+  - use the standard two spaces before the comment character, eg. `CODE  # COMMENT`
+- Try to stick to 120 characters per line
+  - if one of those comments would break this guideline, just put that comment above the line instead, as is standard convention
+- If there is a pyproject.toml in place, use it as a reference for builds, installs, etc. The basic packaging and dev preference, including if you have to supply your own pyproject.toml, is as follows:
+  - Use pyproject.toml with hatchling, not e.g. setup.py
+  - Reusable Python code modules are developed in the `pylib` folder, and installed using e.g. `uv pip install -U .`, which includes proper mapping to Python library package namespace via `tool.hatch.build.sources`. The `__init__.py` and other modules in the top-level package go directly in `pylib`, though submodules can use subdirectories, e.g. `pylib/a/b` becomes `installed_library_name.a.b`. Ultimately this will mean the installed package is importable as `from installed_library_name.etc import …`
+  - Yes this means editable and "dev mode" environments are NOT desirable, nor are shenanigans adding pylib to `sys.path`. Layer-efficient dockerization is an option if that's needed.
+  - The ethos is to always develop keeping things properly installable. No dev mode shortcuts
+  - Prefer hatchling build system over setuptools, poetry, etc. Avoid setuptools as much as possible. Use `[tool.hatch.build.sources]` to map source directories to package namespaces (e.g., `"pylib" = "installed_library_name"`).
+  - Use `[tool.hatch.build.targets.wheel]` with `only-include = ["pylib"]` to ensure the pylib directory structure gets included properly in the wheel, avoiding the duplication issue that can occur with sources mapping
+- **Debugging package issues**: When modules aren't importing correctly after installation, check:
+  - That you are in the correct virtualenv (you may have to ask the developer)
+  - Package structure in site-packages (e.g., `ls -la /path/to/site-packages/package_name/`)
+- Use uv, but pay attention to the above
+  - Again always use `uv pip install -U .` for full installation, never editable installs (`pip install -e`). This ensures proper testing of the actual distribution.
+- Use async (e.g. asyncio) wherever it makes sense. Avoid multithreading, though multiprocessing is OK. Multiprocess for CPU-bound concurrency, and asyncIO for I/O bound, cooperative etc.
+- Be pythonic. Avoid e.g. complex abstract class hierarchies for the sake of them, though classes are also fine in many usage patterns. We love dictionaries, dynamic dispatch, etc.
+  - I don't consider Pydantic very Pythonic, so we can tolerate it if need be (e.g. we're using a toolkit that strictly works with Pydantic), but otherwise, simple dataclasses are better.
+- use iterator patterns as much as practical. Also functional programming approaches, including partials (currying) and decorators
+- Prefereed tools:
+  - Logging: structlog
+  - Retries on failure: tenacity
+  - CLI argument processing: fire—avoid argparse except for truly trivial usage
+  - CLI formatting: rich
+  - HTTP client: httpx (async)
+  - HTML/XML parsing: selectolax (though for now we're using html5-modern as the base implementation for our html5 features)
+  - Browser-like Web crawling/scraping: Python playwright (with playwright_stealth if needed)
+  - pytest, as well as pytest-mock, pytest-httpx, pytest-asyncio
+  - rapidfuzz for fuzzy text matching
+- AVOID the following unless explicitly requested or otherwise unavoidable:
+  - langchain
+
+- Once again PREFER SINGLE QUOTES

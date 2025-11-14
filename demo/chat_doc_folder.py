@@ -49,8 +49,8 @@ import chromadb
 from docx2python import docx2python
 from PyPDF2 import PdfReader
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_split_fuzzy
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.text.splitter import text_split_fuzzy
 
 # Avoid re-entrace complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
