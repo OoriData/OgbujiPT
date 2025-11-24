@@ -19,7 +19,7 @@ MAKE SURE YOU USE A WORKING SERVER BECAUSE THIS IS A DEMO & THE ERROR HANDLING I
 
 pip install prerequisites, in addition to OgbujiPT cloned dir:
 
-click sentence_transformers qdrant-client httpx html2text amara3.xml
+click sentence_transformers qdrant-client httpx html2text amara
 
 ```sh
 python demo/chat_web_selects.py --apibase http://localhost:8000 "www.newworldencyclopedia.org/entry/Igbo_People"

@@ -19,7 +19,7 @@ from functools import partial
 from typing import List
 from enum import Enum
 
-from amara3 import iri
+from amara import iri
 
 from ogbujipt import config
 
