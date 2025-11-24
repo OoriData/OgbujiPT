@@ -12,13 +12,12 @@ Philosophy: Minimal abstractions. This is a search strategy that works with
 any KBBackend that provides text content.
 '''
 
-from typing import AsyncIterator, Optional
-import asyncio
+from typing import AsyncIterator
 
 from rank_bm25 import BM25Okapi
 import structlog
 
-from ogbujipt.memory.base import SearchResult, SearchStrategy, KBBackend
+from ogbujipt.memory.base import SearchResult, KBBackend  # , SearchStrategy
 
 
 logger = structlog.get_logger()
@@ -127,7 +126,7 @@ class BM25Search:
         query: str,
         backends: list[KBBackend],
         limit: int = 5,
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
         **kwargs
     ) -> AsyncIterator[SearchResult]:
         '''

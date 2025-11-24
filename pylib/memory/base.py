@@ -8,7 +8,7 @@ Philosophy: Minimal abstractions. Every layer must justify its existence.
 We define protocols (structural subtyping) rather than rigid ABC hierarchies.
 '''
 
-from typing import Protocol, Any, AsyncIterator, Optional
+from typing import Protocol, Any, AsyncIterator
 from dataclasses import dataclass
 
 
@@ -53,7 +53,7 @@ class KBBackend(Protocol):
         self,
         query: Any,  # Could be str, embedding vector, or structured query
         limit: int = 5,
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
         **kwargs
     ) -> AsyncIterator[SearchResult]:
         '''
@@ -73,7 +73,7 @@ class KBBackend(Protocol):
     async def insert(
         self,
         content: str,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs
     ) -> Any:
         '''

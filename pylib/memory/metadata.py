@@ -8,7 +8,7 @@ Includes schema definitions, filters, and RBAC helpers.
 Philosophy: Keep it simple. Metadata is just dicts. Provide helpers, not frameworks.
 '''
 
-from typing import Any, Optional, Callable
+from typing import Any, Callable
 from datetime import datetime
 from dataclasses import dataclass, field, asdict
 
@@ -22,25 +22,25 @@ class ItemMetadata:
     This is a convenience class, not a requirement - plain dicts work fine.
     '''
     # Content metadata
-    source: Optional[str] = None  # Where did this content come from?  (URL, file path, etc.)
-    content_type: Optional[str] = None  # MIME type or semantic type ('chat_message', 'document', etc.)
-    language: Optional[str] = None  # ISO 639-1 code (e.g., 'en', 'es')
+    source: str | None = None  # Where did this content come from?  (URL, file path, etc.)
+    content_type: str | None = None  # MIME type or semantic type ('chat_message', 'document', etc.)
+    language: str | None = None  # ISO 639-1 code (e.g., 'en', 'es')
 
     # Temporal metadata
-    created_at: Optional[datetime] = None  # When was this item created?
-    updated_at: Optional[datetime] = None  # When was it last updated?
-    expires_at: Optional[datetime] = None  # When should it be pruned?
+    created_at: datetime | None = None  # When was this item created?
+    updated_at: datetime | None = None  # When was it last updated?
+    expires_at: datetime | None = None  # When should it be pruned?
 
     # Provenance
-    author: Optional[str] = None  # Who created this?
-    version: Optional[str] = None  # Version or revision number
+    author: str | None = None  # Who created this?
+    version: str | None = None  # Version or revision number
 
     # Organization
     tags: list[str] = field(default_factory=list)  # Free-form tags
-    category: Optional[str] = None  # Single categorical label
+    category: str | None = None  # Single categorical label
 
     # RBAC (longer term - initial approach is separate KBs per role)
-    access_level: Optional[str] = None  # 'public', 'private', 'team', etc.
+    access_level: str | None = None  # 'public', 'private', 'team', etc.
     allowed_roles: list[str] = field(default_factory=list)  # Which roles can access this?
 
     # Custom fields
@@ -110,8 +110,8 @@ def tag_filter(tags: list[str], match_all: bool = False) -> Callable[[dict], boo
 
 
 def date_range_filter(
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
+    start: datetime | None = None,
+    end: datetime | None = None,
     field: str = 'created_at'
 ) -> Callable[[dict], bool]:
     '''

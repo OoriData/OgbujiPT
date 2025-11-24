@@ -24,6 +24,8 @@ Additional context on this repository for AI tools & coding agents
 - Use async (e.g. asyncio) wherever it makes sense. Avoid multithreading, though multiprocessing is OK. Multiprocess for CPU-bound concurrency, and asyncIO for I/O bound, cooperative etc.
 - Be pythonic. Avoid e.g. complex abstract class hierarchies for the sake of them, though classes are also fine in many usage patterns. We love dictionaries, dynamic dispatch, etc.
   - I don't consider Pydantic very Pythonic, so we can tolerate it if need be (e.g. we're using a toolkit that strictly works with Pydantic), but otherwise, simple dataclasses are better.
+- Type hints are OK in moderation, but avoid absolutely littering the code with them.
+  - No excess imports & symbols, e.g. Use type | None rather than Optional[type]
 - use iterator patterns as much as practical. Also functional programming approaches, including partials (currying) and decorators
 - Prefereed tools:
   - Logging: structlog

@@ -16,11 +16,11 @@ Philosophy: Extend existing pgvector patterns with minimal new abstractions.
 '''
 
 import json
-from typing import AsyncIterator, Optional, Any
+from typing import AsyncIterator
 
 import structlog
 
-from ogbujipt.store.postgres.pgvector import PGVectorHelper, asyncpg, process_search_response
+from ogbujipt.store.postgres.pgvector import PGVectorHelper  # , asyncpg, process_search_response
 from ogbujipt.memory.base import SearchResult
 
 
@@ -198,7 +198,7 @@ class SparseDB(PGVectorHelper):
         self,
         content: str,
         sparse_vector: dict[int, float] | list[tuple[int, float]],  # Sparse format: {idx: val} or [(idx, val), ...]
-        metadata: Optional[dict] = None
+        metadata: dict | None = None
     ) -> int:
         '''
         Insert a document with its sparse vector.
@@ -248,7 +248,7 @@ class SparseDB(PGVectorHelper):
     async def search(
         self,
         query: str | dict[int, float] | list[tuple[int, float]],  # Text or sparse vector
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
         limit: int = 5,
         **kwargs
     ) -> AsyncIterator[SearchResult]:

@@ -184,6 +184,9 @@ ban-relative-imports = "all"
 "!pylib/**.py" = ["D"]
 # Ignore `E501` (line too long) in Jupyter notebooks
 "*.ipynb" = ["E501"]
+# Ignore `E501` (line too long) in the following files:
+"demo/pg-hybrid/hybrid_search_demo.py" = ["E501"]
+"demo/pg-hybrid/chat_with_hybrid_kb.py" = ["E501"]
 
 [tool.coverage.run]
 source_pkgs = ["ogbujipt", "test"]

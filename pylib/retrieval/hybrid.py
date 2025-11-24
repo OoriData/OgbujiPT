@@ -16,7 +16,7 @@ Philosophy: Minimal abstractions. Compose multiple search strategies without
 complex weighting or tuning.
 '''
 
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 from collections import defaultdict
 import asyncio
 
@@ -60,7 +60,7 @@ class HybridSearch:
         self,
         strategies: list[SearchStrategy],
         k: int = 60,  # RRF constant (typical range: 1-100)
-        strategy_limits: Optional[dict[str, int]] = None,  # Per-strategy result limits
+        strategy_limits: dict[str, int] | None = None,  # Per-strategy result limits
     ):
         '''
         Initialize hybrid search with RRF.
@@ -87,7 +87,7 @@ class HybridSearch:
         query: str,
         backends: list[KBBackend],
         limit: int = 5,
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
         **kwargs
     ) -> AsyncIterator[SearchResult]:
         '''

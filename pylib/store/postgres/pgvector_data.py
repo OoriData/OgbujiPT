@@ -8,7 +8,7 @@ import json
 from typing import Iterable, Callable, List, Sequence, AsyncIterator
 
 from ogbujipt.memory.base import SearchResult
-from ogbujipt.store.postgres.pgvector import (PGVectorHelper, asyncpg, process_search_response)
+from ogbujipt.store.postgres.pgvector import PGVectorHelper  # , asyncpg, process_search_response
 
 __all__ = ['DataDB']
 

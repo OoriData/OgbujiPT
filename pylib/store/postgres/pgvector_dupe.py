@@ -28,7 +28,7 @@ async def example_usage():
 # await example_usage()
 
 '''
-from typing import Any, Optional
+from typing import Any
 import asyncpg
 import json
 
@@ -75,7 +75,7 @@ async def update_jsonb_array(
     array_key: str,
     new_item: Any,
     where_clause: str,
-    where_params: Optional[tuple] = None
+    where_params: tuple | None = None
 ) -> int:
     '''
     Updates a JSONB array field in the specified table.

@@ -26,6 +26,7 @@ Usage:
 Note: This demo focuses on retrieval patterns. For production, integrate
 with your LLM of choice (OpenAI, Anthropic, local models, etc.)
 '''
+# noqa: E501
 
 import asyncio
 import os
@@ -241,9 +242,7 @@ async def setup_databases(embedding_model):
 
 async def demo_conversation(rag_system):
     '''Run a sample conversation demonstrating the system'''
-    print('\n' + '='*80)
-    print('💬 DEMO CONVERSATION')
-    print('='*80)
+    print('\n', '='*80, '💬 DEMO CONVERSATION', '='*80, '\n')
 
     # Simulated conversation
     conversation = [
@@ -254,19 +253,19 @@ async def demo_conversation(rag_system):
     ]
 
     for i, (query, explanation) in enumerate(conversation, 1):
-        print(f'\n--- Turn {i}: {explanation} ---')
+        print('\n--- Turn {i}: {explanation} ---', '\n')
         print(f'👤 User: {query}')
 
         # Generate response with context
         context = await rag_system.generate_response(query)
 
         # Display what context would be sent to LLM
-        print(f'\n🔍 Context gathered for LLM:')
+        print('\n🔍 Context gathered for LLM:')
         print(rag_system.format_context_display(context))
 
         # Simulate assistant response (in production, call LLM here)
         assistant_response = f'[Assistant would use the above context to generate a response about: {query}]'
-        print(f'\n🤖 Assistant: {assistant_response}')
+        print('\n🤖 Assistant: {assistant_response}')
 
         # Store assistant response
         await rag_system.store_message('assistant', assistant_response)
@@ -284,9 +283,7 @@ async def interactive_mode(rag_system):
 
     Feel free to adapt this pattern to your own chat bot code.
     '''
-    print('\n' + '='*80)
-    print('💬 INTERACTIVE MODE')
-    print('='*80)
+    print('\n', '='*80, '💬 INTERACTIVE MODE', '='*80, '\n')
     print('\nType your questions (or "quit" to exit)\n')
 
     while True:
@@ -304,11 +301,10 @@ async def interactive_mode(rag_system):
             context = await rag_system.generate_response(user_input)
 
             # Display context
-            print(f'\n🔍 Context:')
-            print(rag_system.format_context_display(context))
+            print('\n  Context:\n', rag_system.format_context_display(context))
 
             # In production, you'd call your LLM here with the context
-            print(f'\n💡 In production: Send context to LLM for response generation')
+            print('\n  In production: Send context to LLM for response generation')
 
             # Store placeholder response
             await rag_system.store_message(
@@ -326,13 +322,11 @@ async def interactive_mode(rag_system):
 
 async def main():
     '''Main demo flow'''
-    print('='*80)
-    print('Conversational AI with Hybrid Knowledge Base')
-    print('='*80)
+    print('\n', '='*80, 'Conversational AI with Hybrid Knowledge Base', '='*80, '\n')
     print('\nThis demo shows how to combine:')
     print('  • Chat history tracking (MessageDB)')
     print('  • Knowledge base with hybrid search (DataDB + BM25)')
-    print('  • Context-aware retrieval for RAG systems')
+    print('  • Context-aware retrieval for RAG systems\n')
 
     # Load embedding model
     print('\n📦 Loading embedding model…')
@@ -368,7 +362,7 @@ async def main():
     await demo_conversation(rag_system)
 
     # Offer interactive mode
-    print('\n' + '='*80)
+    print('\n', '='*80)
     try:
         response = input('\nTry interactive mode? (y/n): ').strip().lower()
         if response == 'y':
@@ -390,22 +384,19 @@ async def main():
         print(f'   ⚠ Cleanup error: {e}')
 
     # Summary
-    print('\n' + '='*80)
-    print('✅ Demo Complete!')
-    print('='*80)
+    print('\n', '='*80, '✅ Demo Complete!', '='*80, '\n')
     print('\nKey Patterns Demonstrated:')
     print('  • Conversation history tracking with MessageDB')
-    print('  • Hybrid search on knowledge base (dense + sparse)')
-    print('  • Context assembly for LLM (history + KB results)')
-    print('  • Follow-up question handling with conversation context')
-    print('\nProduction Integration:')
-    print('  • Replace placeholder responses with actual LLM calls')
-    print('  • Add prompt engineering for better responses')
-    print('  • Implement proper error handling and retries')
-    print('  • Add metadata filtering for domain-specific search')
-    print('  • Consider adding reranking for better relevance')
-    print('\n📚 See README.md for more information')
-
+    print('  • Hybrid search on knowledge base (dense + sparse)\n')
+    print('  • Context assembly for LLM (history + KB results)\n')
+    print('  • Follow-up question handling with conversation context\n')
+    print('Production Integration:\n')
+    print('  • Replace placeholder responses with actual LLM calls\n')
+    print('  • Add prompt engineering for better responses\n')
+    print('  • Implement proper error handling and retries\n')
+    print('  • Add metadata filtering for domain-specific search\n')
+    print('  • Consider adding reranking for better relevance\n')
+    print('📚 See README.md for more information\n')
 
 if __name__ == '__main__':
     asyncio.run(main())

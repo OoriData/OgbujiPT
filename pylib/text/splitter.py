@@ -5,7 +5,8 @@
 '''
 Routines to help with text processing
 
-Note: You might want to use Chonkie (https://github.com/chonkie-inc/chonkie) for more comprehensive text splitting needs.
+Note: You might want to use Chonkie (https://github.com/chonkie-inc/chonkie)
+for more comprehensive text splitting needs.
 '''
 import re
 import warnings

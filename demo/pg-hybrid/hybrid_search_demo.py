@@ -15,15 +15,14 @@ Prerequisites:
 Usage:
     python hybrid_search_demo.py
 '''
+# See pyproject.toml for instruction to ignore `E501` (line too long)
 
 import asyncio
 import os
-from typing import AsyncIterator
 from sentence_transformers import SentenceTransformer
 
 from ogbujipt.store.postgres import DataDB
 from ogbujipt.retrieval import BM25Search, HybridSearch, SimpleDenseSearch
-from ogbujipt.memory.base import SearchResult
 
 
 # Database connection parameters
@@ -198,10 +197,8 @@ async def demo_hybrid_search(kb_db, query, bm25):
 
 async def compare_all_methods(kb_db, bm25, hybrid, query):
     '''Compare all three methods side by side'''
-    print(f'\n\n{"="*80}')
-    print(f'📊 COMPARISON TEST')
-    print(f'{"="*80}')
-    print(f'\nQuery: "{query}"')
+    print('\n\n', '='*80, '📊 COMPARISON TEST', '='*80, '\n')
+    print(f'Query: "{query}"')
     print('(This query uses terminology where exact keywords matter)\n')
 
     # Dense
@@ -231,9 +228,7 @@ async def compare_all_methods(kb_db, bm25, hybrid, query):
 
 async def main():
     '''Main demo flow'''
-    print('='*80)
-    print('OgbujiPT Hybrid Search Demo')
-    print('='*80)
+    print('\n', '='*80, 'OgbujiPT Hybrid Search Demo', '='*80, '\n')
     print('\nThis demo shows how combining dense vector search with sparse BM25')
     print('retrieval produces better results than either method alone.')
 
@@ -248,10 +243,8 @@ async def main():
     # Demo query
     query1 = 'What are ML algorithms?'
 
-    print(f'\n\n{"="*80}')
-    print(f'TEST 1: Basic Query')
-    print(f'{"="*80}')
-    print(f'\nQuery: "{query1}"\n')
+    print('\n\n', '='*80, 'TEST 1: Basic Query', '='*80, '\n')
+    print(f'Query: "{query1}"\n')
 
     # Run each search method
     await demo_dense_search(kb_db, query1)
@@ -263,20 +256,14 @@ async def main():
     await compare_all_methods(kb_db, bm25, hybrid, query2)
 
     # Summary
-    print(f'\n\n{"="*80}')
-    print('✅ Demo Complete!')
-    print('='*80)
-    print('\nKey Takeaways:')
+    print('\n\n', '='*80, '✅ Demo Complete!', '='*80)
+    print('\nKey Patterns Demonstrated:')
     print('  • Dense search: Best for semantic/conceptual queries')
-    print('  • Sparse BM25: Best for exact keywords and terminology')
+    print('  • Sparse BM25: Best for exact keywords & terminology')
     print('  • Hybrid RRF: Combines both for superior results')
-    print('\nNext Steps:')
-    print('  • Try hybrid_search_advanced.ipynb for interactive exploration')
-    print('  • Run chat_with_hybrid_kb.py for conversational AI demo')
-    print('  • Modify queries and parameters to see different results')
 
     # Cleanup
-    print('\n🧹 Cleaning up…')
+    print('\nCleaning up…')
     await kb_db.drop_table()
     print('   Dropped demo table')
 
