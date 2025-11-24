@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector_data_doc
+# ogbujipt.store.postgres.pgvector_data
 '''
 Vector databases embeddings using PGVector
 '''
 import json
-from typing import Iterable, Callable, List, Sequence
+from typing import Iterable, Callable, List, Sequence, AsyncIterator
 
+from ogbujipt.memory.base import SearchResult
 from ogbujipt.store.postgres.pgvector import (PGVectorHelper, asyncpg, process_search_response)
 
 __all__ = ['DataDB']
@@ -150,17 +151,21 @@ class DataDB(PGVectorHelper):
 
     async def search(
             self,
-            text: str,
+            query: str,
+            limit: int = 5,
             threshold: float | None = None,
             meta_filter: Callable | List[Callable] | None = None,
-            limit: int = 0
-    ) -> list[asyncpg.Record]:
+            **kwargs
+    ) -> AsyncIterator[SearchResult]:
         '''
         Similarity search documents using a query string
 
         Args:
-            text (str): string to compare against items in the table.
+            query (str): string to compare against items in the table.
                 This will be a vector/fuzzy/nearest-neighbor type search.
+
+            limit (int): maximum number of results to return (useful for top-k query).
+                Default is 5. Set to 0 for no limit.
 
             threshold: minimum vector similarity to return
 
@@ -170,16 +175,15 @@ class DataDB(PGVectorHelper):
                 ```
                 from ogbujipt.store.postgres.pgvector import match_exact
                 page_one_filt = match_exact('page', 1)
-                await DB.search(text='Hello!', meta_filter=page_one_filt)
+                await DB.search(query='Hello!', meta_filter=page_one_filt)
                 ```
                 Provided filter helpers such as match_exact provide some SQL injection safety. If you roll your own,
                 be careful of injection.
-            
-            limit (int, optional): maximum number of results to return (useful for top-k query)
-                Default is no limit
 
-        Returns:
-            generator which yields the rows os the query results ass attributable dicts
+            **kwargs: Additional backend-specific options (for protocol compatibility)
+
+        Yields:
+            SearchResult objects with content, score, metadata, and source
         '''
         if threshold is not None:
             if not isinstance(threshold, float) or (threshold < 0) or (threshold > 1):
@@ -191,7 +195,7 @@ class DataDB(PGVectorHelper):
             meta_filter = (meta_filter,)
 
         # Get the embedding of the query string as a PGvector compatible list
-        query_embedding = list(self._embedding_model.encode(text))
+        query_embedding = list(self._embedding_model.encode(query))
 
         # Build where clauses
         query_args = [query_embedding]
@@ -235,11 +239,17 @@ class DataDB(PGVectorHelper):
                 ),
                 *query_args
             )
-        if self.stringify_json:
-            search_results = ({
-                'cosine_similarity': r['cosine_similarity'],
-                'content': r['content'],
-                'metadata': json.loads(r['metadata']),
-                } for r in search_results)
 
-        return process_search_response(search_results)
+        # Convert results to SearchResult objects and yield them
+        for row in search_results:
+            if self.stringify_json:
+                metadata = json.loads(row['metadata'])
+            else:
+                metadata = dict(row['metadata']) if row['metadata'] else {}
+
+            yield SearchResult(
+                content=row['content'],
+                score=float(row['cosine_similarity']),
+                metadata=metadata,
+                source=self.table_name
+            )

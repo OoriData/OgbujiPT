@@ -18,6 +18,7 @@ import os
 import pytest
 import pytest_asyncio
 from unittest.mock import MagicMock, DEFAULT  # noqa: F401
+from urllib.parse import quote_plus
 
 import numpy as np
 from ogbujipt.store.postgres.pgvector_message import MessageDB
@@ -92,16 +93,17 @@ def HITHERE_all_MiniLM_L12_v2():
 0.0445879, -0.03780432, -0.024826797, 0.014669102, 0.057102628, -0.031820614, 0.0027352672, 0.052658144])
 
 # XXX: This stanza to go away once mocking is complete - Kai
-HOST = os.environ.get('PG_HOST', 'localhost')
-DB_NAME = os.environ.get('PG_DATABASE', 'mock_db')
-USER = os.environ.get('PG_USER', 'mock_user')
-PASSWORD = os.environ.get('PG_PASSWORD', 'mock_password')
-PORT = os.environ.get('PG_PORT', 5432)
+HOST = os.environ.get('PG_DB_HOST', 'localhost')
+DB_NAME = os.environ.get('PG_DB_NAME', 'mock_db')
+USER = os.environ.get('PG_DB_USER', 'mock_user')
+PASSWORD = os.environ.get('PG_DB_PASSWORD', 'mock_password')
+PORT = os.environ.get('PG_DB_PORT', 5432)
 
 # In some cases this might be `postgresql://`? Supabase?
 SCHEME = 'postgres'
 
-DSN = f'{SCHEME}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME}'
+# URL-encode the password to handle special characters like @, *, etc.
+DSN = f'{SCHEME}://{USER}:{quote_plus(PASSWORD)}@{HOST}:{PORT}/{DB_NAME}'
 
 # XXX: Move to a fixture?
 # Definitely don't want to even import SentenceTransformer class due to massive side-effects

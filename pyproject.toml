@@ -7,7 +7,7 @@ name = "OgbujiPT"
 dynamic = ["version"]
 description = 'Client-side tools for using large language models, full service (e.g. ChatGPT & Bard) or locally hosted (e.g. LLaMA derivatives)'
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "Apache-2.0"
 keywords = []
 authors = [
@@ -19,22 +19,26 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Utilities",
 ]
 dependencies = [
   # Core LLM
   "openai>=1.1.0",
   "tomli",
-  "amara3.iri",
+  "amara",
 
   # Memory & Knowledge Bank
   "onya>=0.1.0",           # GraphRAG knowledge graphs
   "chonkie",               # Document chunking
   "rank-bm25",             # Sparse retrieval (BM25)
+  "sentence_transformers",
 
   # Production utilities
   "structlog",             # Structured logging
@@ -55,11 +59,6 @@ dev = [
   "ruff",
   "pytest",
   "pytest-mock",
-  "pytest-asyncio",
-  "pytest-cov",
-  "respx",
-  "pgvector",
-  "asyncpg",
 ]
 
 [project.urls]
@@ -70,11 +69,9 @@ Source = "https://github.com/OoriData/OgbujiPT"
 [tool.hatch.version]
 path = "pylib/__about__.py"
 
-# Rewriting path in distribution
-[tool.hatch.build.sources]
-"pylib" = "ogbujipt"
-"resources" = "ogbujipt/resources"
-
+# Package configuration
+# Note: We only remap pylib->ogbujipt for wheels, not for sdist
+# This ensures both direct wheel builds and wheels-from-sdist work correctly
 [tool.hatch.build.targets.wheel]
 only-include = ["pylib", "resources"]
 
@@ -82,11 +79,24 @@ only-include = ["pylib", "resources"]
 "pylib" = "ogbujipt"
 "resources" = "ogbujipt/resources"
 
-# Hatch environemnts are too fiddly. For example, from `hatch run test` I get 
-# ModuleNotFoundError: No module named 'ogbujipt'
-# This may well have to do with my rewriting path in distribution,
-# But I'm not compromising on that, so I guess just install & use
-# e.g. pytest directly (tried dev-mode false, but no difference)
+[tool.hatch.build.targets.sdist]
+# Preserve original pylib structure in sdist so wheel-from-sdist can find it
+only-include = [
+    "pylib",
+    "resources",
+    "test",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+# Note: hatch environments don't work well with our pylib→ogbujipt source remapping.
+# The path remapping in [tool.hatch.build.targets.wheel.sources] only applies during wheel building,
+# not in dev environments. Hatch's dev-mode uses editable installs which can't apply
+# the remapping, and dev-mode=false means no install happens at all.
+#
+# We prefer proper installation over dev-mode shortcuts anyway.
+# Use: `uv pip install -U . && pytest test/`
 [tool.hatch.envs.default]
 dependencies = [
   "coverage[toml]>=6.5",
@@ -109,7 +119,7 @@ cov = [
 ]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11", "3.12"]
+python = ["3.12", "3.13"]
 
 [tool.hatch.envs.lint]
 detached = true

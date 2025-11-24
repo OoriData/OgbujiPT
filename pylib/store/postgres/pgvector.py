@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector
+# ogbujipt.store.postgres.pgvector
 '''
 Vector databases embeddings using PGVector (https://github.com/pgvector/pgvector)
 
@@ -274,13 +274,8 @@ def process_search_response(qresponse):
     Returns:
         list[dict]: List with a dict representation for each result row
 
-    >>> await mydb.search(text='Hello')
-    >>> results = process_search_response()
-    >>> row = next(results)  # Assume there's at least one result
-    >>> c = r.content
-    >>> t = r.tags
-
-    If a row does not have a title or page_numbers field, these will be set to None
+    >>> async for result in mydb.search(query='Hello'):
+    ...     print(result.content)
 
     Other reasons for this conversion: asyncpg.Record objects are not JSON serializable,
     and don't support attribute-style access

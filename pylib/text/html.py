@@ -1,12 +1,10 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.html_helper
+# ogbujipt.text.html
 
 '''
-HTML Chunking: first of all peprocesses HTML to remove hidden content, then converts to Markdown,
+HTML Chunking: first of all preprocesses HTML to remove hidden content, then converts to Markdown,
 which is chunked with some semantic awareness
-
-Some code adapted from https://github.com/KLGR123/html_chunking/blob/main/html_chunking.py
 '''
 import re
 import warnings

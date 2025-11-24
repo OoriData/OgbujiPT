@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.text_helper
+# ogbujipt.text.splitter
 
 '''
 Routines to help with text processing
+
+Note: You might want to use Chonkie (https://github.com/chonkie-inc/chonkie) for more comprehensive text splitting needs.
 '''
 import re
 import warnings

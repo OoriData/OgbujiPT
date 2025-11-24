@@ -60,11 +60,13 @@ async def test_insert_data_vector(DB):
     assert await DB.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
 
     # search table with perfect match
-    result = await DB.search(text=item1_text, limit=3)
-    # assert result is not None, Exception('No results returned from perfect search')
+    results = []
+    async for row in DB.search(query=item1_text, limit=3):
+        results.append(row)
+    # assert results, Exception('No results returned from perfect search')
 
     # Even though the embedding is mocked, the stored text should be faithful
-    row = next(result)
+    row = results[0]
     assert row.content == item1_text, 'text mismatch'
     assert row.metadata == item1_meta, 'Metadata mismatch'
 
@@ -85,13 +87,15 @@ async def test_insertmany_data_vector(DB):
     assert await DB.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
 
     # search table with perfect match
-    result = await DB.search(text=item1_text, limit=3)
-    # assert result is not None, Exception('No results returned from perfect search')
+    results = []
+    async for row in DB.search(query=item1_text, limit=3):
+        results.append(row)
+    # assert results, Exception('No results returned from perfect search')
 
     # Even though the embedding is mocked, the stored text should be faithful
-    row = next(result)
+    row = results[0]
     assert row.content == item1_text
-    
+
     # Adjusted assertion for metadata comparison
     assert row.metadata == item1_meta, "Metadata mismatch"
 
@@ -110,10 +114,10 @@ async def test_search_with_filter(DB):
 
     # search table with perfect match, but only where primary is set to True
     primary_filt = match_exact('primary', True)
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 3
 
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt, limit=1))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt, limit=1)]
     assert len(result) == 1
 
 
@@ -131,11 +135,11 @@ async def test_search_with_date_filter(DB):
 
     # search table with perfect match, but only where primary is set to True
     primary_filt = match_exact('when', '2023-11-29')
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 2
 
     primary_filt = match_exact('when', '2023-11-19')
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 1
 
 
@@ -153,15 +157,15 @@ async def test_search_with_date_filter_match_oneof(DB):
 
     # search table with perfect match, but only where primary is set to True
     primary_filt = match_oneof('when', ('2023-11-29',))
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 2
 
     primary_filt = match_oneof('when', ('2023-11-29', '2023-11-19'))
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 3
 
     primary_filt = match_oneof('when', ('2023-11-29', '2023-11-25', '2023-11-19'))
-    result = list(await DB.search(text='Kukbeatz and Ruger', meta_filter=primary_filt))
+    result = [row async for row in DB.search(query='Kukbeatz and Ruger', meta_filter=primary_filt)]
     assert len(result) == 5
 
 
@@ -183,11 +187,13 @@ async def test_data_vector_half(DB_HALF):
     assert await DB_HALF.count_items() == len(KG_STATEMENTS), Exception('Incorrect number of documents after insertion')
 
     # search table with perfect match
-    result = await DB_HALF.search(text=item1_text, limit=3)
-    # assert result is not None, Exception('No results returned from perfect search')
+    results = []
+    async for row in DB_HALF.search(query=item1_text, limit=3):
+        results.append(row)
+    # assert results, Exception('No results returned from perfect search')
 
     # Even though the embedding is mocked, the stored text should be faithful
-    row = next(result)
+    row = results[0]
     assert row.content == item1_text, 'text mismatch'
     assert row.metadata == item1_meta, 'Metadata mismatch'
 
@@ -211,11 +217,13 @@ async def test_data_vector_half_index_half(DB_HALF_INDEX_HALF):
         Exception('Incorrect number of documents after insertion')
 
     # search table with perfect match
-    result = await DB_HALF_INDEX_HALF.search(text=item1_text, limit=3)
-    # assert result is not None, Exception('No results returned from perfect search')
+    results = []
+    async for row in DB_HALF_INDEX_HALF.search(query=item1_text, limit=3):
+        results.append(row)
+    # assert results, Exception('No results returned from perfect search')
 
     # Even though the embedding is mocked, the stored text should be faithful
-    row = next(result)
+    row = results[0]
     assert row.content == item1_text, 'text mismatch'
     assert row.metadata == item1_meta, 'Metadata mismatch'
 

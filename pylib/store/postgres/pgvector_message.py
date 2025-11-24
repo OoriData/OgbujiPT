@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.embedding.pgvector_message
+# ogbujipt.store.postgres.pgvector_message
 
 '''
 Vector embeddings DB feature for messaging (chat, etc.) using PGVector
