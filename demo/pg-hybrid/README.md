@@ -19,7 +19,18 @@ For learning the fundamentals interactively, this notebook covers:
 - Tuning BM25 parameters (k1, b)
 - Understanding RRF fusion
 
-## 2. `chat_with_hybrid_kb.py`
+## 2. `hybrid_rerank_demo.py`
+
+**NEW!** Demonstrates three-stage retrieval with cross-encoder reranking:
+- Initial retrieval: Fast RRF fusion (dense + sparse)
+- Reranking: Accurate cross-encoder scoring of top candidates
+- Comparing all methods: dense, sparse, hybrid, and reranked
+- Shows how reranking reorders RRF results for better accuracy
+
+Install additional dependency: `uv pip install "rerankers[transformers]"`
+
+## 3. `chat_with_hybrid_kb.py`
+
 For cut & paste ready, application patterns, an advanced conversational AI demo with:
 - Chat history tracking (MessageDB)
 - Knowledge base with hybrid search (DataDB + BM25)
@@ -182,6 +193,65 @@ results = hybrid.execute(
 
 Hybrid Search is best for general-purpose search; it's the best of both worlds.
 
+### Reranked Hybrid Search (RRF + Cross-Encoder)
+
+```python
+from ogbujipt.retrieval import RerankedHybridSearch, BM25Search
+from rerankers import Reranker
+
+# Initialize cross-encoder reranker
+reranker = Reranker(model_name='BAAI/bge-reranker-base')
+
+# Combine hybrid search with reranking
+reranked = RerankedHybridSearch(
+    strategies=[dense_search, BM25Search()],
+    reranker=reranker,
+    rerank_top_k=20,  # Rerank top 20 from initial retrieval
+    k=60  # RRF constant
+)
+
+results = reranked.execute(
+    query='machine learning algorithms',
+    backends=[knowledge_db],
+    limit=5
+)
+```
+
+**Why reranking?**
+- **Speed + Accuracy**: Fast initial retrieval (RRF), slow but accurate final ranking (cross-encoder)
+- **Better than RRF alone**: Cross-encoders see query-document interactions that embeddings miss
+- **Efficient**: Only rerank top-K candidates (e.g., top 20), not entire corpus
+
+**Popular reranker models:**
+- `BAAI/bge-reranker-base`: Good balance of speed and quality (recommended)
+- `BAAI/bge-reranker-large`: Higher quality, slower
+- `cross-encoder/ms-marco-MiniLM-L-12-v2`: Faster, decent quality
+- `zeroentropy/zerank-2`: Instruction-following, multilingual
+  - Requires `trust_remote_code=True` and `batch_size=1` (padding token issue)
+  - Example:
+    ```python
+    reranker = Reranker(
+        model_name='zeroentropy/zerank-2',
+        model_kwargs={'trust_remote_code': True},
+        batch_size=1  # Required: model lacks padding token
+    )
+    ```
+
+**Installation:**
+```bash
+uv pip install "rerankers[transformers]"
+```
+
+**Troubleshooting:**
+
+*Error: "Cannot handle batch sizes > 1 if no padding token is defined"*
+- Some models (e.g., zerank-2) don't have a padding token configured
+- Solution: Set `batch_size=1` when creating the Reranker
+- Trade-off: Slower processing (one document at a time) but will work
+- See `hybrid_rerank_demo.py` for model-specific configurations
+
+See `hybrid_rerank_demo.py` for a complete example comparing all methods.
+
 ## Sparse Vector Storage (Advanced)
 
 For storing sparse vectors directly (e.g., precomputed BM25 vectors):
@@ -317,8 +387,8 @@ uv pip install -U .  # From OgbujiPT root directory
 
 - Read the [Phase 2 Architecture Notes](../../ARCHITECTURE.md) (if available)
 - Explore combining with graph RAG using [Onya](https://github.com/OoriData/Onya)
-- Implement reranking with cross-encoders
 - Add query expansion or pseudo-relevance feedback
+- Experiment with different reranker models for your domain
 
 # References
 

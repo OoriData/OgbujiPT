@@ -244,4 +244,196 @@ class HybridSearch:
             return []  # Return empty list on failure, continue with other strategies
 
 
-__all__ = ['HybridSearch']
+class RerankedHybridSearch:
+    '''
+    Hybrid search with reranking using cross-encoder models.
+
+    First performs hybrid search (RRF fusion), then reranks the top-K candidates
+    using a more powerful cross-encoder model for final ranking.
+
+    Two-stage retrieval:
+    1. Initial retrieval: Fast RRF fusion of multiple strategies (dense + sparse)
+    2. Reranking: Slower but more accurate cross-encoder scoring of top candidates
+
+    This pattern is more efficient than using cross-encoders for initial retrieval,
+    since reranking only scores a small set of candidates.
+
+    Example:
+        >>> from ogbujipt.retrieval.hybrid import RerankedHybridSearch
+        >>> from ogbujipt.retrieval.sparse import BM25Search
+        >>> from rerankers import Reranker
+        >>>
+        >>> # Initialize reranker (e.g., HuggingFace cross-encoder)
+        >>> reranker = Reranker(model_name='BAAI/bge-reranker-base')
+        >>>
+        >>> # Combine hybrid search with reranking
+        >>> reranked = RerankedHybridSearch(
+        ...     strategies=[dense_search, BM25Search()],
+        ...     reranker=reranker,
+        ...     rerank_top_k=20  # Rerank top 20 from initial retrieval
+        ... )
+        >>> results = reranked.execute('machine learning', backends=[db], limit=5)
+        >>> async for result in results:
+        ...     print(f'{result.score:.3f}: {result.content[:50]}...')
+
+    Note: Install rerankers with: pip install "rerankers[transformers]"
+
+    For some models, you may need special configuration:
+        >>> # ZeRank-2 requires trust_remote_code and batch_size=1 (padding token issue)
+        >>> reranker = Reranker(
+        ...     model_name='zeroentropy/zerank-2',
+        ...     model_kwargs={'trust_remote_code': True},
+        ...     batch_size=1  # Required: model lacks padding token
+        ... )
+
+    If you get "Cannot handle batch sizes > 1 if no padding token is defined",
+    set batch_size=1 when creating the Reranker.
+    '''
+    # To-do: Articulate support for the likes of https://huggingface.co/lightblue/lb-reranker-0.5B-v1.0
+    def __init__(
+        self,
+        strategies: list[SearchStrategy],
+        reranker,  # rerankers.Reranker instance
+        rerank_top_k: int = 50,  # Number of candidates to rerank
+        k: int = 60,  # RRF constant for initial fusion
+        strategy_limits: dict[str, int] | None = None,
+    ):
+        '''
+        Initialize reranked hybrid search.
+
+        Args:
+            strategies: List of search strategies to combine (e.g., [DenseSearch(), BM25Search()])
+            reranker: A rerankers.Reranker instance (e.g., cross-encoder, Cohere API, etc.)
+            rerank_top_k: Number of top candidates from initial retrieval to rerank.
+                Should be larger than your final limit to give reranker enough candidates.
+                Typical: 20-100 depending on corpus size and compute budget.
+            k: RRF constant for initial fusion (default 60)
+            strategy_limits: Optional per-strategy result limits for initial retrieval
+        '''
+        if not strategies:
+            raise ValueError('RerankedHybridSearch requires at least one strategy')
+
+        # Use HybridSearch for initial retrieval
+        self.hybrid_search = HybridSearch(
+            strategies=strategies,
+            k=k,
+            strategy_limits=strategy_limits
+        )
+        self.reranker = reranker
+        self.rerank_top_k = rerank_top_k
+
+    async def execute(
+        self,
+        query: str,
+        backends: list[KBBackend],
+        limit: int = 5,
+        threshold: float | None = None,
+        **kwargs
+    ) -> AsyncIterator[SearchResult]:
+        '''
+        Execute hybrid search with reranking.
+
+        Args:
+            query: Search query string
+            backends: List of KB backends to search
+            limit: Maximum number of results to return after reranking
+            threshold: Minimum reranker score threshold (optional)
+            **kwargs: Additional options passed to initial retrieval strategies
+
+        Yields:
+            SearchResult objects sorted by reranker score (highest first)
+
+        The process:
+        1. Initial retrieval: Get top rerank_top_k candidates using RRF
+        2. Reranking: Score candidates with cross-encoder
+        3. Final ranking: Return top limit results by reranker score
+        '''
+        if not backends:
+            logger.warning('reranked_hybrid_no_backends')
+            return
+
+        logger.info('reranked_hybrid_starting', strategy_count=len(self.hybrid_search.strategies),
+                   backend_count=len(backends), rerank_top_k=self.rerank_top_k)
+
+        # Stage 1: Initial retrieval with RRF fusion
+        # Fetch more candidates than final limit to give reranker good options
+        initial_limit = max(self.rerank_top_k, limit * 2)
+        candidates = []
+
+        async for result in self.hybrid_search.execute(
+            query=query,
+            backends=backends,
+            limit=initial_limit,
+            threshold=None,  # No threshold for initial retrieval
+            **kwargs
+        ):
+            candidates.append(result)
+
+        if not candidates:
+            logger.info('reranked_hybrid_no_candidates')
+            return
+
+        logger.debug('reranked_hybrid_initial_retrieval', candidate_count=len(candidates))
+
+        # Stage 2: Rerank using cross-encoder
+        # Build documents for reranker (format expected by rerankers library)
+        from rerankers import Document
+
+        # Pass explicit doc_ids to preserve mapping to original candidates
+        docs = [
+            Document(text=result.content, doc_id=i, metadata=result.metadata)
+            for i, result in enumerate(candidates)
+        ]
+
+        # Rerank with query
+        try:
+            reranked_results = self.reranker.rank(query=query, docs=docs)
+            logger.debug('reranked_hybrid_reranking_complete', result_count=len(reranked_results.results))
+        except Exception as e:
+            logger.error('reranked_hybrid_reranking_failed', error=str(e))
+            # Fallback to original RRF ordering if reranking fails
+            logger.warning('reranked_hybrid_fallback_to_rrf')
+            for i, result in enumerate(candidates[:limit]):
+                if threshold is None or result.score >= threshold:
+                    yield result
+            return
+
+        # Stage 3: Yield reranked results
+        returned = 0
+        for reranked_doc in reranked_results.results:
+            if returned >= limit:
+                break
+
+            # Apply threshold if specified
+            if threshold is not None and reranked_doc.score < threshold:
+                continue
+
+            # Find original result using doc_id we assigned
+            original_idx = reranked_doc.doc_id
+            if original_idx is None or original_idx >= len(candidates):
+                logger.warning('reranked_hybrid_invalid_doc_id', doc_id=original_idx)
+                continue
+
+            original_result = candidates[original_idx]
+
+            # Create new result with reranker score
+            result = SearchResult(
+                content=original_result.content,
+                score=reranked_doc.score,  # Use reranker score
+                metadata={
+                    **original_result.metadata,
+                    'reranker_score': reranked_doc.score,
+                    'rrf_score': original_result.score,  # Keep original RRF score
+                    'original_rank': original_idx + 1,
+                },
+                source=f'reranked({original_result.source})'
+            )
+
+            yield result
+            returned += 1
+
+        logger.info('reranked_hybrid_complete', total_candidates=len(candidates),
+                   reranked=len(reranked_results.results), returned=returned)
+
+
+__all__ = ['HybridSearch', 'RerankedHybridSearch']

@@ -39,6 +39,7 @@ dependencies = [
   "chonkie",               # Document chunking
   "rank-bm25",             # Sparse retrieval (BM25)
   "sentence_transformers",
+  "rerankers[transformers]",  # Cross-encoder reranking
 
   # Production utilities
   "structlog",             # Structured logging
@@ -59,6 +60,16 @@ dev = [
   "ruff",
   "pytest",
   "pytest-mock",
+]
+
+testall = [
+  "ruff",
+  "pytest-httpx",
+  "pytest-asyncio",
+  "respx",
+  "pgvector",
+  "asyncpg",
+  "qdrant-client>=1.10.0",
 ]
 
 [project.urls]
