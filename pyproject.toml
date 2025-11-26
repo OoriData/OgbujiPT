@@ -198,6 +198,7 @@ ban-relative-imports = "all"
 # Ignore `E501` (line too long) in the following files:
 "demo/pg-hybrid/hybrid_search_demo.py" = ["E501"]
 "demo/pg-hybrid/chat_with_hybrid_kb.py" = ["E501"]
+"demo/pg-hybrid/hybrid_rerank_demo.py" = ["E501"]
 
 [tool.coverage.run]
 source_pkgs = ["ogbujipt", "test"]

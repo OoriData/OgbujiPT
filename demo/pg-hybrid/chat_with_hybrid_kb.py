@@ -26,7 +26,7 @@ Usage:
 Note: This demo focuses on retrieval patterns. For production, integrate
 with your LLM of choice (OpenAI, Anthropic, local models, etc.)
 '''
-# noqa: E501
+# See pyproject.toml for instruction to ignore `E501` (line too long)
 
 import asyncio
 import os

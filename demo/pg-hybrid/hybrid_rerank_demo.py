@@ -22,6 +22,7 @@ Prerequisites:
 Usage:
     python hybrid_rerank_demo.py
 '''
+# See pyproject.toml for instruction to ignore `E501` (line too long)
 
 import asyncio
 import os
