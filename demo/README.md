@@ -1,4 +1,21 @@
-For all these demos you need access to an OpenAI-like service. Default assumption is that you have a self-hosted framework such as llama-cpp-python or text-generation-webui running
+OgbujiPT demos
+
+# Prep
+
+For all these demos you need access to an OpenAI-like service. Default assumption is that you have a local, self-hosted LLM server running, such as our sister project Toolio, if you're on Apple Silicon, or llama.cpp, Ollama or LM Studio otherwise.
+
+Toolio quick start, for Mac users:
+
+```sh
+pip install toolio
+toolio_server --model=mlx-community/Llama-3.2-3B-Instruct-4bit  # Will be open on port 8000
+```
+
+The demos also have a lot of Python dependencies which are not installed by default. The easiest way to just pull them all is by specifying the `mega` package:
+
+uv pip install -U ".[mega]"
+
+Demos within subdirectories may also have `requirements.txt`, so you can install only what you need for that subset of demos.
 
 # Simplest
 

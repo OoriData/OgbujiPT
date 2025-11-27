@@ -38,7 +38,6 @@ dependencies = [
   "onya>=0.1.0",           # GraphRAG knowledge graphs
   "chonkie",               # Document chunking
   "rank-bm25",             # Sparse retrieval (BM25)
-  "sentence_transformers",
   "rerankers[transformers]",  # Cross-encoder reranking
 
   # Production utilities
@@ -64,12 +63,34 @@ dev = [
 
 testall = [
   "ruff",
+  "pytest",
+  "pytest-mock",
   "pytest-httpx",
   "pytest-asyncio",
   "respx",
   "pgvector",
   "asyncpg",
   "qdrant-client>=1.10.0",
+  "coverage[toml]>=6.5",
+]
+
+pgvector = [
+  "pgvector",
+  "asyncpg",
+]
+
+mega = [
+  "chromadb",
+  "docx2python",
+  "PyPDF2",
+  "PyCryptodome",
+  "qdrant-client",
+  "streamlit",
+  "watchdog",
+  "html2text",
+  "tqdm",
+  "fire",
+  "sentence_transformers",
 ]
 
 [project.urls]
