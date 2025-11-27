@@ -263,7 +263,9 @@ def main(
     else:
         oapi = openai_chat_api(model=model, base_url=apibase)
 
-    asyncio.run(async_main(oapi, docs_path, verbose, limit, chunk_size, chunk_overlap, question, embedding_model_instance))
+    asyncio.run(
+        async_main(oapi, docs_path, verbose, limit, chunk_size, chunk_overlap, question, embedding_model_instance)
+    )
 
 
 if __name__ == '__main__':
