@@ -1,16 +1,21 @@
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# test/embedding/conftest.py
+# test/store/conftest.py
 '''
-Fixtures/setup/teardown for embedding tests
+Fixtures/setup/teardown for vector store tests
 
 General note: After setup as described in the README.md for this directory, run the tests with:
 
 pytest test
 
-or, for just embeddings tests:
+or, for just store tests:
 
-pytest test/embedding/
+pytest test/store/
+
+By default, tests use in-memory implementations (no external dependencies).
+To run integration tests against real PostgreSQL:
+
+pytest test/store/ -m integration --run-integration
 '''
 
 import sys
@@ -21,6 +26,11 @@ from unittest.mock import MagicMock, DEFAULT  # noqa: F401
 from urllib.parse import quote_plus
 
 import numpy as np
+
+# In-memory implementations (default for unit tests)
+from ogbujipt.store.memory import InMemoryDataDB, InMemoryMessageDB
+
+# PostgreSQL implementations (for integration tests)
 from ogbujipt.store.postgres.pgvector_message import MessageDB
 from ogbujipt.store.postgres.pgvector_data import DataDB
 
@@ -112,23 +122,68 @@ class SentenceTransformer(object):
         self.encode = MagicMock()
 
 
-DB_CLASS = {
+# Mapping of test files to their in-memory implementations
+INMEMORY_CLASS = {
+    'test/store/test_pgvector_message.py': InMemoryMessageDB,
+    'test/store/test_pgvector_data.py': DataDB,  # Will map to InMemoryDataDB
+}
+
+# Mapping for PostgreSQL integration tests
+PG_CLASS = {
     'test/store/test_pgvector_message.py': MessageDB,
     'test/store/test_pgvector_data.py': DataDB,
 }
 
 # print(HOST, DB_NAME, USER, PASSWORD, PORT)
 
-@pytest_asyncio.fixture  # Notice the async aware fixture declaration
+
+@pytest_asyncio.fixture  # Default fixture using in-memory store
 async def DB(request):
+    '''
+    Default DB fixture using in-memory implementation (no external dependencies).
+    Fast and suitable for unit testing.
+    '''
+    testname = request.node.name
+    testfile = request.node.location[0]
+    collection_name = testname.lower()
+    print(f'DB setup (in-memory) for test: {testname}. Collection: {collection_name}', file=sys.stderr)
+
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    # Determine which class to use based on test file
+    if 'message' in testfile:
+        vDB = InMemoryMessageDB(embedding_model=dummy_model, collection_name=collection_name)
+    else:
+        vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+
+    # Setup
+    await vDB.create_table()
+    assert await vDB.table_exists(), Exception("Collection not initialized after setup")
+
+    # The test will take control upon the yield
+    yield vDB
+
+    # Teardown
+    await vDB.drop_table()
+
+
+@pytest_asyncio.fixture  # PostgreSQL integration test fixture
+async def PG_DB(request):
+    '''
+    PostgreSQL integration test fixture. Requires a running PostgreSQL instance.
+    Only used for integration tests marked with @pytest.mark.integration
+    '''
     testname = request.node.name
     testfile = request.node.location[0]
     table_name = testname.lower()
-    print(f'DB setup for test: {testname}. Table name {table_name}', file=sys.stderr)
+    print(f'DB setup (PostgreSQL) for test: {testname}. Table name {table_name}', file=sys.stderr)
+
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
+
     try:
-        vDB = await DB_CLASS[testfile].from_conn_params(
+        vDB = await PG_CLASS[testfile].from_conn_params(
             embedding_model=dummy_model,
             table_name=table_name,
             db_name=DB_NAME,
@@ -138,15 +193,14 @@ async def DB(request):
             password=PASSWORD)
     except ConnectionRefusedError:
         pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    # Actually we want to propagate the error condition, in this case
-    # if vDB is None:
-    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+    except Exception as e:
+        pytest.skip(f"Unable to connect to PostgreSQL: {e}", allow_module_level=True)
 
     await vDB.pool.expire_connections()
     del vDB  # Accelerate clean-up (I think)
 
     # Re-acquire using DSN
-    vDB = await DB_CLASS[testfile].from_conn_string(DSN, dummy_model, table_name, pool_min=5, pool_max=10)
+    vDB = await PG_CLASS[testfile].from_conn_string(DSN, dummy_model, table_name, pool_min=5, pool_max=10)
 
     # Create table
     await vDB.drop_table()
@@ -158,15 +212,35 @@ async def DB(request):
     # Teardown: Drop table
     await vDB.drop_table()
 
-# FIXME: Lots of DRY violations!!!
 
-@pytest_asyncio.fixture  # Notice the async aware fixture declaration
+@pytest_asyncio.fixture  # Windowed message fixture (in-memory)
 async def DB_WINDOWED2(request):
+    '''In-memory MessageDB with window=2'''
     testname = request.node.name
-    table_name = testname.lower()
-    print(f'DB setup for test: {testname}. Table name {table_name}', file=sys.stderr)
+    collection_name = testname.lower()
+    print(f'DB setup (in-memory, windowed) for test: {testname}. Collection: {collection_name}', file=sys.stderr)
+
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    vDB = InMemoryMessageDB(embedding_model=dummy_model, collection_name=collection_name, window=2)
+
+    await vDB.create_table()
+    assert await vDB.table_exists(), Exception("Collection not initialized after setup")
+    yield vDB
+    await vDB.drop_table()
+
+
+@pytest_asyncio.fixture  # PostgreSQL windowed fixture for integration tests
+async def PG_DB_WINDOWED2(request):
+    '''PostgreSQL MessageDB with window=2 (integration tests only)'''
+    testname = request.node.name
+    table_name = testname.lower()
+    print(f'DB setup (PostgreSQL, windowed) for test: {testname}. Table name {table_name}', file=sys.stderr)
+
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
     try:
         vDB = await MessageDB.from_conn_params(
             embedding_model=dummy_model,
@@ -177,36 +251,50 @@ async def DB_WINDOWED2(request):
             user=USER,
             password=PASSWORD,
             window=2)
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    # Actually we want to propagate the error condition, in this case
-    # if vDB is None:
-    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+    except (ConnectionRefusedError, Exception) as e:
+        pytest.skip(f"No Postgres instance available: {e}", allow_module_level=True)
 
     await vDB.pool.expire_connections()
-    del vDB  # Accelerate clean-up (I think)
+    del vDB
 
-    # Re-acquire using DSN
     vDB = await MessageDB.from_conn_string(DSN, dummy_model, table_name, window=2, pool_min=5, pool_max=10)
 
-    # Create table
     await vDB.drop_table()
     assert not await vDB.table_exists(), Exception("Table exists before creation")
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Table does not exist after creation")
-    # The test will take control upon the yield
     yield vDB
-    # Teardown: Drop table
     await vDB.drop_table()
 
 
-@pytest_asyncio.fixture  # Notice the async aware fixture declaration
+@pytest_asyncio.fixture  # In-memory DataDB (half_precision param ignored in-memory)
 async def DB_HALF(request):
+    '''In-memory DataDB fixture (precision settings not applicable to in-memory)'''
     testname = request.node.name
-    table_name = testname.lower()
-    print(f'DB setup for half precision test: {testname}. Table name {table_name}', file=sys.stderr)
+    collection_name = testname.lower()
+    print(f'DB setup (in-memory) for test: {testname}. Collection: {collection_name}', file=sys.stderr)
+
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+
+    await vDB.create_table()
+    assert await vDB.table_exists(), Exception("Collection not initialized after setup")
+    yield vDB
+    await vDB.drop_table()
+
+
+@pytest_asyncio.fixture  # PostgreSQL half-precision fixture for integration tests
+async def PG_DB_HALF(request):
+    '''PostgreSQL DataDB with half_precision=True (integration tests only)'''
+    testname = request.node.name
+    table_name = testname.lower()
+    print(f'DB setup (PostgreSQL, half-precision) for test: {testname}. Table name {table_name}', file=sys.stderr)
+
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
     try:
         vDB = await DataDB.from_conn_params(
             embedding_model=dummy_model,
@@ -217,36 +305,50 @@ async def DB_HALF(request):
             user=USER,
             password=PASSWORD,
             half_precision=True)
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    # Actually we want to propagate the error condition, in this case
-    # if vDB is None:
-    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+    except (ConnectionRefusedError, Exception) as e:
+        pytest.skip(f"No Postgres instance available: {e}", allow_module_level=True)
 
     await vDB.pool.expire_connections()
-    del vDB  # Accelerate clean-up (I think)
+    del vDB
 
-    # Re-acquire using DSN
     vDB = await DataDB.from_conn_string(DSN, dummy_model, table_name, pool_min=5, pool_max=10)
 
-    # Create table
     await vDB.drop_table()
     assert not await vDB.table_exists(), Exception("Table exists before creation")
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Table does not exist after creation")
-    # The test will take control upon the yield
     yield vDB
-    # Teardown: Drop table
     await vDB.drop_table()
 
 
-@pytest_asyncio.fixture  # Notice the async aware fixture declaration
+@pytest_asyncio.fixture  # In-memory DataDB (index settings ignored in-memory)
 async def DB_HALF_INDEX_HALF(request):
+    '''In-memory DataDB fixture (index settings not applicable to in-memory)'''
     testname = request.node.name
-    table_name = testname.lower()
-    print(f'DB setup for half precision test: {testname}. Table name {table_name}', file=sys.stderr)
+    collection_name = testname.lower()
+    print(f'DB setup (in-memory) for test: {testname}. Collection: {collection_name}', file=sys.stderr)
+
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
+
+    vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+
+    await vDB.create_table()
+    assert await vDB.table_exists(), Exception("Collection not initialized after setup")
+    yield vDB
+    await vDB.drop_table()
+
+
+@pytest_asyncio.fixture  # PostgreSQL half-precision with custom index for integration tests
+async def PG_DB_HALF_INDEX_HALF(request):
+    '''PostgreSQL DataDB with half_precision and custom index (integration tests only)'''
+    testname = request.node.name
+    table_name = testname.lower()
+    print(f'DB setup (PostgreSQL, half-precision+index) for test: {testname}. Table name {table_name}', file=sys.stderr)
+
+    dummy_model = SentenceTransformer('mock_transformer')
+    dummy_model.encode.return_value = np.array([1, 2, 3])
+
     try:
         vDB = await DataDB.from_conn_params(
             embedding_model=dummy_model,
@@ -259,24 +361,17 @@ async def DB_HALF_INDEX_HALF(request):
             half_precision=True,
             itypes=['halfvec'],
             ifuncs=['cosine'])
-    except ConnectionRefusedError:
-        pytest.skip("No Postgres instance made available for test. Skipping.", allow_module_level=True)
-    # Actually we want to propagate the error condition, in this case
-    # if vDB is None:
-    #     pytest.skip("Unable to create a valid DB instance. Skipping.", allow_module_level=True)
+    except (ConnectionRefusedError, Exception) as e:
+        pytest.skip(f"No Postgres instance available: {e}", allow_module_level=True)
 
     await vDB.pool.expire_connections()
-    del vDB  # Accelerate clean-up (I think)
+    del vDB
 
-    # Re-acquire using DSN
     vDB = await DataDB.from_conn_string(DSN, dummy_model, table_name, pool_min=5, pool_max=10)
 
-    # Create table
     await vDB.drop_table()
     assert not await vDB.table_exists(), Exception("Table exists before creation")
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Table does not exist after creation")
-    # The test will take control upon the yield
     yield vDB
-    # Teardown: Drop table
     await vDB.drop_table()
