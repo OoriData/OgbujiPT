@@ -188,7 +188,7 @@ def clean_html(html: str, attr_max_len: int = 0) -> tuple[str, str]:
             for attr in ATTRS_TO_TRIM:
                 if attr in elem.attrs:
                     if len(elem.attrs[attr]) > attr_max_len:
-                        elem.attrs[attr] = elem.attrs[attr][:attr_max_len] + "…"
+                        elem.attrs[attr] = elem.attrs[attr][:attr_max_len] + '…'
 
     return tree, removed_content
 
@@ -223,7 +223,7 @@ def html2markdown(root, chunks=None):
         Otherwise, returns markdown string.
     '''
     if HTMLParser is None:
-        raise ImportError("selectolax is required for html2markdown")
+        raise ImportError('selectolax is required for html2markdown')
     
     # If root is a string, parse it
     if isinstance(root, str):
@@ -245,7 +245,7 @@ def html2markdown(root, chunks=None):
         if title_elem:
             title_text = title_elem.text(deep=True, separator='', strip=True)
             if title_text:
-                chunks.append(f"# {title_text}\n\n")
+                chunks.append(f'# {title_text}\n\n')
         
         # Process main content
         _process_element_to_markdown(body, chunks)
@@ -284,16 +284,16 @@ def _process_element_to_markdown(elem, chunks, level=0):
         level_num = int(tag[1])
         prefix = '#' * level_num + ' '
         if text:
-            chunks.append(f"\n{prefix}{text}\n\n")
+            chunks.append(f'\n{prefix}{text}\n\n')
     elif tag == 'p':
         if text:
-            chunks.append(f"{text}\n\n")
+            chunks.append(f'{text}\n\n')
     elif tag == 'strong' or tag == 'b':
         if text:
-            chunks.append(f"**{text}**")
+            chunks.append(f'**{text}**')
     elif tag == 'em' or tag == 'i':
         if text:
-            chunks.append(f"*{text}*")
+            chunks.append(f'*{text}*')
     elif tag == 'code':
         # Check if parent is pre for code blocks
         parent_tag = elem.parent.tag.lower() if elem.parent and hasattr(elem.parent, 'tag') else ''
@@ -302,18 +302,18 @@ def _process_element_to_markdown(elem, chunks, level=0):
             pass
         else:
             if text:
-                chunks.append(f"`{text}`")
+                chunks.append(f'`{text}`')
     elif tag == 'pre':
         code_text = elem.text(deep=True, separator='\n', strip=False)
         if code_text:
-            chunks.append(f"\n```\n{code_text}\n```\n\n")
+            chunks.append(f'\n```\n{code_text}\n```\n\n')
         return  # Don't process children for pre
     elif tag == 'a':
         href = elem.attrs.get('href', '') if hasattr(elem, 'attrs') else ''
         link_text = elem.text(deep=True, separator='', strip=True)
         if link_text:
             if href:
-                chunks.append(f"[{link_text}]({href})")
+                chunks.append(f'[{link_text}]({href})')
             else:
                 chunks.append(link_text)
     elif tag == 'ul':
@@ -330,20 +330,20 @@ def _process_element_to_markdown(elem, chunks, level=0):
             if child != elem and hasattr(child, 'tag') and child.tag.lower() == 'li':
                 li_text = child.text(deep=True, separator='', strip=True)
                 if li_text:
-                    chunks.append(f"{idx}. {li_text}\n")
+                    chunks.append(f'{idx}. {li_text}\n')
                 idx += 1
         chunks.append('\n')
         return
     elif tag == 'li':
         li_text = elem.text(deep=True, separator='', strip=True)
         if li_text:
-            chunks.append(f"* {li_text}\n")
+            chunks.append(f'* {li_text}\n')
     elif tag == 'blockquote':
         quote_text = elem.text(deep=True, separator='\n', strip=True)
         if quote_text:
             lines = quote_text.split('\n')
             for line in lines:
-                chunks.append(f"> {line}\n")
+                chunks.append(f'> {line}\n')
             chunks.append('\n')
     elif tag == 'table':
         # Simple table conversion
@@ -383,15 +383,15 @@ def _process_element_to_markdown(elem, chunks, level=0):
 
 
 def post_processing(markdown_content: str):
-    """
+    '''
     Post processing to remove extra spaces and new lines.
-    """
-    lines = [line for line in markdown_content.split("\n")]
-    # if this line matches spaces, then replace with ""
-    lines = [re.sub(r"^\s+$", "", line) for line in lines]
-    markdown_content = "\n".join(lines)
-    markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
+    '''
+    lines = [line for line in markdown_content.split('\n')]
+    # if this line matches spaces, then replace with ''
+    lines = [re.sub(r'^\s+$', '', line) for line in lines]
+    markdown_content = '\n'.join(lines)
+    markdown_content = re.sub(r'\n{3,}', '\n\n', markdown_content)
     # replace ` .` with `.
-    markdown_content = re.sub(r"` \.", "`.", markdown_content)
-    markdown_content = re.sub(r"` \,", "`,", markdown_content)
+    markdown_content = re.sub(r'` \.', '`.', markdown_content)
+    markdown_content = re.sub(r'` \,', '`,', markdown_content)
     return markdown_content.strip()

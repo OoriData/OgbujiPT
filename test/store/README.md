@@ -1,5 +1,35 @@
-To run these tests, first set up a mock Postgres instance with the following commands 
-(make sure you don't have anything running on port 0.0.0.0:5432):
+Vector Store Tests. By default, tests use **in-memory vector store implementations** (`RAMDataDB`, `RAMMessageDB`), requiring few external dependencies and setup:
+
+```bash
+# Run all store tests (fast, no PostgreSQL needed)
+pytest test/store/ -v
+
+# Run specific test file
+pytest test/store/test_pgvector_data.py -v
+```
+
+Tests complete in ~0.5 seconds with zero setup. Perfect for:
+- CI/CD pipelines
+- Local development without Docker
+- Quick iteration during feature development
+
+# In-Memory Vector Stores
+
+These implementations aren't just test doubles - they're **user-facing features** for:
+- Rapid prototyping
+- Embedded applications
+- Demos and tutorials
+- Small-scale deployments
+
+See `../../demo/ram-store/README.md` for more info.
+
+# Integration Tests (Optional PostgreSQL)
+
+Integration tests verify behavior against real PostgreSQL with pgvector. These are **skipped by default** but can be run when needed.
+
+### Setup PostgreSQL for Integration Tests
+
+**Option 1: Docker (Recommended)**
 
 ```sh
 docker pull pgvector/pgvector:pg17
@@ -8,25 +38,39 @@ docker run --name mock-postgres -p 5432:5432 \
     -d pgvector/pgvector:pg17
 ```
 
-You can also use another PGVector setup, but then you need the following environment variables:
+**Option 2: Custom PostgreSQL Setup**
 
-* `PG_DB_HOST`
-* `PG_DB_DATABASE`
-* `PG_DB_USER`
-* `PG_DB_PASSWORD`
-* `PG_DB_PORT`
+Set these environment variables:
 
-e.g.:
+* `PG_DB_HOST` - Database host (default: `localhost`)
+* `PG_DB_NAME` - Database name (default: `mock_db`)
+* `PG_DB_USER` - Database user (default: `mock_user`)
+* `PG_DB_PASSWORD` - Database password (default: `mock_password`)
+* `PG_DB_PORT` - Database port (default: `5432`)
+
+Example:
 
 ```sh
-PG_DB_HOST="localhost"
-PG_DB_PORT="5432"
-PG_DB_USER="username"
-PG_DB_PASSWORD="passwd"
-PG_DB_DATABASE="PeeGeeVee"
+export PG_DB_HOST='localhost'
+export PG_DB_PORT='5432'
+export PG_DB_USER='username'
+export PG_DB_PASSWORD='passwd'
+export PG_DB_NAME='PeeGeeVee'
 ```
 
-Make sure those are set in the subshell, for example by using an env.sh file and `set -o allexport && source env.sh && set +o allexport`! Further reading: (https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
+Or use an env.sh file: `set -o allexport && source env.sh && set +o allexport`
+
+Further reading: [Separate env setup from code](https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
+
+### Running Integration Tests
+
+```bash
+# Run integration tests with PostgreSQL
+pytest test/store/ -v -m integration
+
+# Run all tests (both in-memory and integration)
+pytest test/store/ -v -m ""
+```
 
 # Full clean-up/refresh
 

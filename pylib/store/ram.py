@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt.store.memory
+# ogbujipt.store.ram
 '''
 In-memory vector store implementations for testing and lightweight use cases.
 
@@ -13,12 +13,67 @@ but use in-memory data structures. Perfect for:
 
 Philosophy: Following hynek's "own your I/O boundaries" principle, these aren't
 mocks - they're legitimate alternative implementations of the vector store interface.
+
+Examples:
+    Basic document storage and search:
+
+    >>> from ogbujipt.store.ram import RAMDataDB
+    >>> from sentence_transformers import SentenceTransformer
+    >>> import asyncio
+    >>>
+    >>> async def example():
+    ...     model = SentenceTransformer('all-MiniLM-L6-v2')
+    ...     db = RAMDataDB(embedding_model=model, collection_name='docs')
+    ...     await db.setup()
+    ...
+    ...     # Insert documents
+    ...     await db.insert('Python is great for ML', metadata={'lang': 'python'})
+    ...     await db.insert('JavaScript for web dev', metadata={'lang': 'js'})
+    ...
+    ...     # Search
+    ...     async for result in db.search('machine learning', limit=5):
+    ...         print(f'{result.content} (score: {result.score:.3f})')
+    ...
+    ...     await db.cleanup()
+    >>>
+    >>> asyncio.run(example())
+
+    Message storage for chat applications:
+
+    >>> from ogbujipt.store import RAMMessageDB
+    >>> from uuid import uuid4
+    >>> from datetime import datetime, timezone
+    >>>
+    >>> async def chat_example():
+    ...     model = SentenceTransformer('all-MiniLM-L6-v2')
+    ...     db = RAMMessageDB(embedding_model=model, collection_name='chat')
+    ...     await db.setup()
+    ...
+    ...     conversation_id = uuid4()
+    ...     await db.insert(conversation_id, 'user', 'Hello!',
+    ...                    datetime.now(tz=timezone.utc), {})
+    ...     await db.insert(conversation_id, 'assistant', 'Hi! How can I help?',
+    ...                    datetime.now(tz=timezone.utc), {})
+    ...
+    ...     # Search conversation
+    ...     results = await db.search(conversation_id, 'greeting', limit=2)
+    ...     for msg in results:
+    ...         print(f'[{msg.role}] {msg.content}')
+    ...
+    ...     await db.cleanup()
+    >>>
+    >>> asyncio.run(chat_example())
+
+See Also:
+    - demo/memory-store/ - Complete working examples
+    - test/store/README.md - Testing guide
+    - store.postgres.pgvector_data.DataDB - PostgreSQL equivalent
+    - store.postgres.pgvector_message.MessageDB - PostgreSQL equivalent
 '''
 
-import json
 from uuid import UUID
 from datetime import datetime, timezone
-from typing import Iterable, Callable, List, Sequence, AsyncIterator, Any
+from typing import Iterable, Callable, List, Sequence, AsyncIterator
 from collections import defaultdict
 
 import numpy as np
@@ -26,7 +81,7 @@ import numpy as np
 from ogbujipt.memory.base import SearchResult
 from ogbujipt.config import attr_dict
 
-__all__ = ['InMemoryDataDB', 'InMemoryMessageDB']
+__all__ = ['RAMDataDB', 'RAMMessageDB']
 
 
 def _cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
@@ -42,11 +97,33 @@ def _cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 
-class InMemoryDataDB:
+class RAMDataDB:
     '''
     In-memory vector store for data/document snippets.
 
-    Drop-in replacement for DataDB from ogbujipt.store.postgres.pgvector_data
+    Drop-in replacement for DataDB from ogbujipt.store.postgres.pgvector_data.
+    Uses numpy for cosine similarity calculations and Python data structures for storage.
+
+    Perfect for:
+        - Testing without PostgreSQL setup
+        - Rapid prototyping and demos
+        - Small datasets (<10K documents)
+        - Embedded applications
+
+    Example:
+        >>> from ogbujipt.store import RAMDataDB
+        >>> from sentence_transformers import SentenceTransformer
+        >>>
+        >>> model = SentenceTransformer('all-MiniLM-L6-v2')
+        >>> db = RAMDataDB(embedding_model=model, collection_name='my_docs')
+        >>> await db.setup()
+        >>> await db.insert('Hello world', metadata={'source': 'greeting'})
+        >>> async for result in db.search('greeting', limit=5):
+        ...     print(result.content, result.score)
+        >>> await db.cleanup()
+
+    See Also:
+        store.postgres.pgvector_data.DataDB - PostgreSQL-backed equivalent
     '''
 
     def __init__(self, embedding_model, collection_name: str, **kwargs):
@@ -250,11 +327,44 @@ class InMemoryDataDB:
             )
 
 
-class InMemoryMessageDB:
+class RAMMessageDB:
     '''
     In-memory vector store for messages/chat logs.
 
-    Drop-in replacement for MessageDB from ogbujipt.store.postgres.pgvector_message
+    Drop-in replacement for MessageDB from ogbujipt.store.postgres.pgvector_message.
+    Supports message windowing, semantic search over conversations, and chronological retrieval.
+
+    Perfect for:
+        - Testing chat applications
+        - Prototyping conversational AI
+        - Small-scale chatbots
+        - In-memory conversation history
+
+    Example:
+        >>> from ogbujipt.store import RAMMessageDB
+        >>> from sentence_transformers import SentenceTransformer
+        >>> from uuid import uuid4
+        >>> from datetime import datetime, timezone
+        >>>
+        >>> model = SentenceTransformer('all-MiniLM-L6-v2')
+        >>> db = RAMMessageDB(embedding_model=model, collection_name='chat')
+        >>> await db.setup()
+        >>>
+        >>> conversation_id = uuid4()
+        >>> await db.insert(conversation_id, 'user', 'Hello!',
+        ...                datetime.now(tz=timezone.utc), {})
+        >>> await db.insert(conversation_id, 'assistant', 'Hi there!',
+        ...                datetime.now(tz=timezone.utc), {})
+        >>>
+        >>> # Search conversation
+        >>> results = await db.search(conversation_id, 'greeting', limit=2)
+        >>> for msg in results:
+        ...     print(f'[{msg.role}] {msg.content}')
+        >>>
+        >>> await db.cleanup()
+
+    See Also:
+        store.postgres.pgvector_message.MessageDB - PostgreSQL-backed equivalent
     '''
 
     def __init__(self, embedding_model, collection_name: str, window: int = 0, **kwargs):

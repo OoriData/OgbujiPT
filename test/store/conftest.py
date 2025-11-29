@@ -28,7 +28,7 @@ from urllib.parse import quote_plus
 import numpy as np
 
 # In-memory implementations (default for unit tests)
-from ogbujipt.store.memory import InMemoryDataDB, InMemoryMessageDB
+from ogbujipt.store import RAMDataDB, RAMMessageDB
 
 # PostgreSQL implementations (for integration tests)
 from ogbujipt.store.postgres.pgvector_message import MessageDB
@@ -124,8 +124,8 @@ class SentenceTransformer(object):
 
 # Mapping of test files to their in-memory implementations
 INMEMORY_CLASS = {
-    'test/store/test_pgvector_message.py': InMemoryMessageDB,
-    'test/store/test_pgvector_data.py': DataDB,  # Will map to InMemoryDataDB
+    'test/store/test_pgvector_message.py': RAMMessageDB,
+    'test/store/test_pgvector_data.py': DataDB,  # Will map to RAMDataDB
 }
 
 # Mapping for PostgreSQL integration tests
@@ -153,9 +153,9 @@ async def DB(request):
 
     # Determine which class to use based on test file
     if 'message' in testfile:
-        vDB = InMemoryMessageDB(embedding_model=dummy_model, collection_name=collection_name)
+        vDB = RAMMessageDB(embedding_model=dummy_model, collection_name=collection_name)
     else:
-        vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+        vDB = RAMDataDB(embedding_model=dummy_model, collection_name=collection_name)
 
     # Setup
     await vDB.create_table()
@@ -223,7 +223,7 @@ async def DB_WINDOWED2(request):
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
 
-    vDB = InMemoryMessageDB(embedding_model=dummy_model, collection_name=collection_name, window=2)
+    vDB = RAMMessageDB(embedding_model=dummy_model, collection_name=collection_name, window=2)
 
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Collection not initialized after setup")
@@ -277,7 +277,7 @@ async def DB_HALF(request):
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
 
-    vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+    vDB = RAMDataDB(embedding_model=dummy_model, collection_name=collection_name)
 
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Collection not initialized after setup")
@@ -331,7 +331,7 @@ async def DB_HALF_INDEX_HALF(request):
     dummy_model = SentenceTransformer('mock_transformer')
     dummy_model.encode.return_value = np.array([1, 2, 3])
 
-    vDB = InMemoryDataDB(embedding_model=dummy_model, collection_name=collection_name)
+    vDB = RAMDataDB(embedding_model=dummy_model, collection_name=collection_name)
 
     await vDB.create_table()
     assert await vDB.table_exists(), Exception("Collection not initialized after setup")

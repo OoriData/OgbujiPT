@@ -22,11 +22,14 @@ uv pip install -U .
 # Install with all test dependencies (includes PostgreSQL/PGVector, Qdrant, etc.)
 uv pip install -U ".[testall]"
 
-# Run tests (skips integration tests by default)
+# Run tests (uses in-memory stores, skips PostgreSQL integration tests)
 pytest test/ -v
 
 # Run specific test file
 pytest test/test_llm_wrapper.py -v
+
+# Run vector store tests (fast, no PostgreSQL needed)
+pytest test/store/ -v
 
 # Run integration tests (requires PostgreSQL with PGVector)
 pytest test/ -v -m integration
@@ -298,13 +301,58 @@ After the first manual upload, you can use trusted publishing for all future rel
 - You can't overwrite versions on PyPI
 - Increment the version in `pylib/__about__.py` and create a new release
 
-## Testing Integration Features
+## Testing Strategies
 
-Some features require external services:
+### In-Memory Testing (Default)
 
-- **PostgreSQL with PGVector**: Required for vector store integration tests
-  - Set environment variables: `PG_HOST`, `PG_DATABASE`, `PG_USER`, `PG_PASSWORD`, `PG_PORT`
-  - Or use Docker: `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=testpass pgvector/pgvector:pg16`
+By default, vector store tests use **in-memory implementations** requiring zero setup:
+
+```bash
+# Fast tests, no external dependencies
+pytest test/store/ -v          # ~0.5 seconds
+
+# All tests (skips integration by default)
+pytest test/ -v
+```
+
+**Benefits:**
+- ✅ Zero setup - works everywhere
+- ✅ Lightning fast execution
+- ✅ Perfect for CI/CD
+- ✅ Ideal for rapid iteration
+
+The in-memory stores (`RAMDataDB`, `RAMMessageDB`) are full-featured and also available to users for prototyping. See `demo/ram-store/` for examples.
+
+### Integration Testing (Optional PostgreSQL)
+
+Integration tests verify behavior against real PostgreSQL with pgvector. These are **skipped by default** but useful for:
+- Validating database-specific features
+- Testing migration paths
+- Performance benchmarking
+
+**Setup PostgreSQL for Integration Tests:**
+
+```bash
+# Option 1: Docker (recommended)
+docker run -d -p 5432:5432 \
+  -e POSTGRES_USER=mock_user \
+  -e POSTGRES_PASSWORD=mock_password \
+  -e POSTGRES_DB=mock_db \
+  pgvector/pgvector:pg17
+
+# Option 2: Set environment variables for existing PostgreSQL
+export PG_DB_HOST='localhost'
+export PG_DB_NAME='test_db'
+export PG_DB_USER='user'
+export PG_DB_PASSWORD='pass'
+export PG_DB_PORT='5432'
+
+# Run integration tests
+pytest test/store/ -v -m integration
+```
+
+**Other Integration Tests:**
+
 - **Qdrant**: Required for Qdrant store tests (optional)
   - Can be run locally or via Docker
 

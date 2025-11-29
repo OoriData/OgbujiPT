@@ -57,7 +57,7 @@ from ogbujipt.text.splitter import text_split_fuzzy
 from ogbujipt.store.postgres import DataDB
 from ogbujipt.retrieval import BM25Search, HybridSearch, SimpleDenseSearch
 
-# Avoid re-entrace complaints from huggingface/tokenizers
+# Avoid re-entrancy complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 USER_PROMPT = 'What do you want to know from the documents?\n'

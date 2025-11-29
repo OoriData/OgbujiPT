@@ -123,8 +123,17 @@ class collection:
         # self._vector_size = partial_embeddings.shape[1]
 
         # Create a collection in the Qdrant client, and configure its vectors
-        # Using REcreate_collection ensures overwrite for a clean, fresh, new collection
-        self.db.recreate_collection(
+        # Check if collection exists and delete it first for a clean, fresh collection
+        try:
+            self.db.get_collection(self.name)
+            # Collection exists, delete it
+            self.db.delete_collection(collection_name=self.name)
+        except (ValueError, Exception):
+            # Collection doesn't exist, which is fine
+            pass
+        
+        # Create the collection with the vector configuration
+        self.db.create_collection(
             collection_name=self.name,
             vectors_config=models.VectorParams(
                 size=self._vector_size, 
@@ -206,8 +215,9 @@ class collection:
         Args:
             query (str): string to compare against items in the collection
 
-            kwargs: other args to be passed to qdrant_client.QdrantClient.search(). Common ones:
+            kwargs: other args to be passed to qdrant_client.QdrantClient.query_points(). Common ones:
                     limit - maximum number of results to return (useful for top-k query)
+                    score_threshold - minimum similarity score threshold
         '''
         if not self._db_initialized:
             warnings.warn('Qdrant Collection must be initialized. No contents.')
@@ -216,7 +226,11 @@ class collection:
         if query.__class__.__name__ != 'str':
             raise ValueError('query must be a string')
         embedded_query = self._embedding_model.encode(query)
-        return self.db.search(collection_name=self.name, query_vector=embedded_query, **kwargs)
+        # Convert numpy array to list if needed
+        if hasattr(embedded_query, 'tolist'):
+            embedded_query = embedded_query.tolist()
+        # Use query_points instead of deprecated search method
+        return self.db.query_points(collection_name=self.name, query=embedded_query, **kwargs)
 
     def count(self):
         '''

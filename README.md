@@ -1,15 +1,9 @@
 ![ogbujipt github header](https://github.com/OoriData/OgbujiPT/assets/43561307/1a88b411-1ce2-43df-83f0-c9c39d6679bc)
 
 
-Toolkit for using self-hosted large language models (LLMs), but also with support for full-service such as OpenAI's GPT models.
+**OgbujiPT** is a general-purpose knowledge bank system for LLM-based applications. It provides a unified API for storing, retrieving, and managing semantic knowledge across multiple backends, with support for dense vector search, sparse retrieval, hybrid search, and more.
 
-Includes demos with RAG ("chat your documents") and AGI/AutoGPT/privateGPT-style capabilities, via streamlit, Discord, command line, etc.
-
-There are some helper functions for common LLM tasks, such as those provided by projects such as langchain, but not meant to be as extensive. The OgbujiPT approach emphasizes simplicity and transparency.
-
-Tested back ends are [llama.cpp](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md) (custom HTTP API), [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)  (OpenAI HTTP API), [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba) and in-memory hosted LLaMA-class (and more) models via [ctransformers](https://github.com/marella/ctransformers). In our own practice we apply these with Nvidia and Apple M1/M2 GPU enabled.
-
-We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply these in our practice.
+Built with Pythonic simplicity and transparency in mind; avoiding the over-frameworks that plague the LLM ecosystem. Every abstraction must justify its existence.
 
 <table><tr>
   <td><a href="https://oori.dev/"><img src="https://www.oori.dev/assets/branding/oori_Logo_FullColor.png" width="64" /></a></td>
@@ -22,6 +16,8 @@ We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply thes
 ## Quick links
 
 - [Getting started](#getting-started)
+- [Knowledge bank features](#knowledge-bank-features)
+- [LLM integration](#llm-integration)
 - [License](#license)
 
 -----
@@ -29,178 +25,335 @@ We also test with OpenAI's full service GPT (3, 3.5, and 4) APIs, and apply thes
 ## Getting started
 
 ```console
-pip install ogbujipt
+uv pip install ogbujipt
 ```
 
-### Just show me some code, dammit!
+### Quick example: In-memory knowledge bank
+
+Perfect for prototyping, testing, or small applications—no database setup required:
+
+```py
+import asyncio
+from ogbujipt.store import RAMDataDB
+from sentence_transformers import SentenceTransformer
+
+async def main():
+    # Load embedding model
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    # Create in-memory knowledge base
+    kb = RAMDataDB(embedding_model=model, collection_name='docs')
+    await kb.setup()
+    
+    # Insert documents
+    await kb.insert('Python is great for machine learning', metadata={'lang': 'python'})
+    await kb.insert('JavaScript powers modern web applications', metadata={'lang': 'js'})
+    
+    # Semantic search
+    async for result in kb.search('programming languages', limit=5):
+        print(f'{result.content} (score: {result.score:.3f})')
+    
+    await kb.cleanup()
+
+asyncio.run(main())
+```
+
+### Hybrid search with reranking
+
+Combine dense vector search with sparse BM25 retrieval, then rerank for best results:
+
+```py
+from ogbujipt.retrieval.hybrid import RerankedHybridSearch
+from ogbujipt.retrieval.sparse import BM25Search
+from ogbujipt.retrieval.dense import DenseSearch
+from rerankers import Reranker
+
+# Initialize components
+reranker = Reranker(model_name='BAAI/bge-reranker-base')
+hybrid = RerankedHybridSearch(
+    strategies=[DenseSearch(), BM25Search()],
+    reranker=reranker,
+    rerank_top_k=20
+)
+
+# Search across knowledge bases
+async for result in hybrid.execute('machine learning', backends=[kb], limit=5):
+    print(f'{result.score:.3f}: {result.content[:50]}...')
+```
+
+## Knowledge bank features
+
+OgbujiPT provides a flexible knowledge bank system with multiple storage backends and retrieval strategies.
+
+### Storage backends
+
+- **In-memory (`RAMDataDB`, `RAMMessageDB`)**: Zero-setup stores perfect for testing, prototyping, and small applications. Drop-in replacements for PostgreSQL versions with identical APIs.
+- **PostgreSQL + pgvector**: Production-ready persistent storage with advanced indexing (HNSW, IVFFlat) and full SQL capabilities.
+- **Qdrant**: High-performance vector database with distributed capabilities.
+
+### Retrieval strategies
+
+- **Dense vector search**: Semantic similarity using embeddings (e.g., SentenceTransformers, OpenAI embeddings)
+- **Sparse retrieval**: BM25 keyword-based search for exact term matching
+- **Hybrid search**: Combine multiple strategies using Reciprocal Rank Fusion (RRF)
+- **Reranking**: Cross-encoder reranking for improved precision (e.g., BGE-reranker, ZeRank)
+
+### Message/conversation storage
+
+Store and search chat history with semantic retrieval:
+
+```py
+from ogbujipt.store import RAMMessageDB
+from uuid import uuid4
+from datetime import datetime, timezone
+
+async def chat_example():
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    db = RAMMessageDB(embedding_model=model, collection_name='chat')
+    await db.setup()
+    
+    conversation_id = uuid4()
+    
+    # Store messages
+    await db.insert(conversation_id, 'user', 'What is machine learning?',
+                   datetime.now(tz=timezone.utc), {})
+    await db.insert(conversation_id, 'assistant', 'ML is a subset of AI...',
+                   datetime.now(tz=timezone.utc), {})
+    
+    # Semantic search over conversation
+    results = await db.search(conversation_id, 'AI concepts', limit=2)
+    for msg in results:
+        print(f'[{msg.role}] {msg.content}')
+    
+    await db.cleanup()
+```
+
+### Design philosophy
+
+- **Composability over monoliths**: Mix and match backends and strategies
+- **Explicit over implicit**: No hidden magic—you control connection pooling, retries, caching
+- **Pythonic simplicity**: Minimal abstractions, clear APIs, sensible defaults
+- **Production-ready**: Structured logging, retry logic, async-first design
+
+## LLM integration
+
+OgbujiPT includes LLM wrapper utilities for integrating knowledge banks with language models.
+
+### Basic LLM usage
 
 ```py
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
+llm_api = openai_chat_api(base_url='http://localhost:8000')
 prompt = 'Write a short birthday greeting for my star employee'
 
-# You can set model params as needed
 resp = llm_api.call(prompt_to_chat(prompt), temperature=0.1, max_tokens=256)
-# Extract just the response text, but the entire structure is available
 print(resp.first_choice_text)
 ```
 
-The [Nous-Hermes 13B](https://huggingface.co/TheBloke/Nous-Hermes-13B-GGML) LLM offered the following response:
-
-> Dear [Employee's Name],
-> I hope this message finds you well on your special day! I wanted to take a moment to wish you a very happy birthday and express how much your contributions have meant to our team. Your dedication, hard work, and exceptional talent have been an inspiration to us all.
-> On this occasion, I want you to know that you are appreciated and valued beyond measure. May your day be filled with joy and laughter.
-
-### Asynchronous by design
-
-Above example shows the synchronous API, provided for dumb convenience, but for most use cases you'll want to use the asynchronous API. This example also adds a system message.
+### Asynchronous API
 
 ```py
 import asyncio
 from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = openai_chat_api(base_url='http://localhost:8000')  # Update for your LLM API host
-prompt = 'Write a short birthday greeting for my star employee'
-
-messages = prompt_to_chat(prompt, system='You are a helpful AI agent…')
-resp = await asyncio.run(llm_api(messages, temperature=0.1, max_tokens=256))
-# Extract just the response text, but the entire structure is available
+llm_api = openai_chat_api(base_url='http://localhost:8000')
+messages = prompt_to_chat('Hello!', system='You are a helpful AI agent…')
+resp = await llm_api(messages, temperature=0.1, max_tokens=256)
 print(resp.first_choice_text)
 ```
 
-### llama.cpp HTTP API for flexible LLM control
+### Supported LLM backends
 
-Here's an example using a model hosted directly by [llama.cpp's server](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md).
+You can use the OpenAI cloud LLM API and APIs which conform to this, including Anthropic's, local LM Studio, Ollama, etc. Users on Mac might want to check out our sister project [Toolio](https://github.com/OoriData/Toolio) which provides a local LLM inference server on Apple Silicon.
+
+### RAG example: Chat with your documents
 
 ```py
-import asyncio
-from ogbujipt.llm_wrapper import prompt_to_chat, llama_cpp_http_chat
+from ogbujipt.store import RAMDataDB
+from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
 
-llm_api = llama_cpp_http_chat('http://localhost:8000')
-resp = asyncio.run(llm_api(prompt_to_chat('Knock knock!'), min_p=0.05))
+# Setup knowledge base
+kb = RAMDataDB(embedding_model=model, collection_name='docs')
+await kb.setup()
+await kb.insert('Your document content here...', metadata={'source': 'doc.pdf'})
+
+# Retrieve relevant context
+contexts = []
+async for result in kb.search('user question', limit=3):
+    contexts.append(result.content)
+
+# Build RAG prompt
+context_text = '\n\n'.join(contexts)
+prompt = f"""Based on the following context, answer the question.
+
+Context:
+{context_text}
+
+Question: user question"""
+
+# Get LLM response
+llm_api = openai_chat_api(base_url='http://localhost:8000')
+resp = await llm_api(prompt_to_chat(prompt))
 print(resp.first_choice_text)
 ```
 
-### ctransformers for local in-process loaded LLMs
+## Demos and examples
 
-Here's an example using a model loaded in-process using ctransformers.
+See the [`demo/`](https://github.com/OoriData/OgbujiPT/tree/main/demo) directory for complete examples:
 
-```py
-from ctransformers import AutoModelForCausalLM
+### Knowledge bank demos
 
-from ogbujipt.llm_wrapper import ctransformer as ctrans_wrapper
+- **`ram-store/`**: In-memory vector stores—zero setup, perfect for learning
+  - `simple_search_demo.py`: Basic semantic search with filtering
+  - `chat_with_memory.py`: Conversational AI with message history
+- **`pg-hybrid/`**: PostgreSQL-based production examples
+  - `chat_with_hybrid_kb.py`: Hybrid search with RRF fusion
+  - `hybrid_rerank_demo.py`: Reranking with cross-encoders
+  - `chat_doc_folder_pg.py`: RAG chat application
 
-model = AutoModelForCausalLM.from_pretrained('TheBloke_LlongOrca-13B-16K-GGUF',
-        model_file='llongorca-13b-16k.Q5_K_M.gguf', model_type="llama", gpu_layers=50)
-llm = ctrans_wrapper(model=model)
+### LLM demos
 
-print(llm(prompt='Write a short birthday greeting for my star employee', max_new_tokens=100))
+- Basic LLM text completion and format correction
+- Multiple simultaneous queries via multiprocessing
+- OpenAI-style function calling
+- Discord bot integration
+- Streamlit UI for PDF chat
+
+## Roadmap
+
+OgbujiPT is evolving into a comprehensive knowledge bank system. Current focus (v0.10.0+):
+
+### ✅ Implemented
+
+- In-memory vector stores (RAMDataDB, RAMMessageDB)
+- Dense vector search (PostgreSQL, Qdrant, in-memory)
+- Sparse retrieval (BM25)
+- Hybrid search with RRF fusion
+- Cross-encoder reranking
+- Message/conversation storage
+- Metadata filtering
+
+### 🚧 In progress
+
+- GraphRAG support using [Onya](https://github.com/OoriData/Onya)
+- Unified knowledge base API
+- Query classification and routing
+- Multi-backend aggregation
+
+### 📋 Planned
+
+- RSS feed ingestion and caching
+- Link management with update mechanisms
+- Graph curation strategies
+- KB maintenance and pruning (summarization, obsolescence marking)
+- RBAC and multi-tenancy
+- Observability (query logging, tracing, performance monitoring)
+- MCP (Model Context Protocol) provider/server
+- Query sampling for refinement
+- Additional backends (filesystem, Marqo, etc.)
+- Multi-modal support
+
+See [discussion #92](https://github.com/OoriData/OgbujiPT/discussions/92) for detailed roadmap and design philosophy.
+
+## Installation
+
+```console
+uv pip install ogbujipt
 ```
 
-### For more examples…
+### Optional dependencies
 
-See the [demo directory](https://github.com/uogbuji/OgbujiPT/tree/main/demo). Demos include:
+For specific features:
 
-* Basics:
-  * Use of basic LLM text completion to correct a data format (XML)
-  * Multiple simultaneous LLM queries via multiprocessing
-* Chatbots/agents:
-  * Simple Discord bot
-* Advanced LLM API features:
-  * OpenAI-style function calling
-* Retrieval Augmented Generation (RAG):
-  * Ask LLM questions based on web site contents, on the command line
-  * Ask LLM questions based on uploaded PDF, via Streamlit interactive UI
-  * Use PostgreSQL/PGVector for extracting context which can be fed to LLMs
+```console
+# PostgreSQL + pgvector support
+uv pip install "ogbujipt[postgres]"
 
-## A bit more explanation
+# Qdrant support
+uv pip install "ogbujipt[qdrant]"
 
-Many self-hosted AI large language models are now astonishingly good, even running on consumer-grade hardware, which provides an alternative for those of us who would rather not be sending all our data out over the network to the likes of ChatGPT & Bard. OgbujiPT provides a toolkit for using and experimenting with LLMs as loaded into memory via or via OpenAI API-compatible network servers such as:
+# Reranking support
+uv pip install "rerankers[transformers]"
 
-* [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
-* [text-generation-webui](https://github.com/oobabooga/text-generation-webui) (AKA Oobabooga or Ooba)
-
-OgbujiPT can invoke these to complete prompted tasks on self-hosted LLMs. It can also be used for building front ends to ChatGPT and Bard, if these are suitable for you.
-
-* [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
-* [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
-
-Right now OgbujiPT requires a bit of Python development on the user's part, but more general capabilities are coming.
-
-## Bias to sound software engineering
-
-I've seen many projects taking stabs at something like this one, but they really just seem to be stabs, usually by folks interested in LLM who admit they don't have strong coding backgrounds. This not only leads to a lumpy patchwork of forks and variations, as people try to figure out the narrow, gnarly paths that cater to their own needs, but also hampers maintainability just at a time when everything seems to be changing drastically every few days.
-
-I have a strong Python and software engineering background, and I'm looking to apply that in this project, to hopefully create something more easily speclailized for other needs, built-upon, maintained and contributed to.
-
-This project is packaged using [hatch](https://hatch.pypa.io/), a modern Python packaging tool. I plan to write tests as I go along, and to incorporate continuous integration. Admit I may be slow to find the cycles for all that, but at least the intent and architecture is there from the beginning.
-
-## Prompting patterns
-
-Different LLMs have different conventions you want to use in order to get high
-quality responses. If you've looked into [self-hosted LLMs](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard) you might have heard
-of the likes of alpaca, vicuña or even airoboros. OgbujiPT includes some shallow
-tools in order to help construct prompts according to the particular conventions
-that would be best for your choice of LLM. This makes it easier to quickly launch
-experiments, adapt to and adopt other models.
-
-# Contributions
-
-If you want to run the test suite, a quick recipe is as follows:
-
-```shell
-pip install ruff pytest pytest-mock pytest-asyncio respx pgvector asyncpg pytest-asyncio
-pytest test
+# GraphRAG support (when available)
+uv pip install "ogbujipt[graph]"
 ```
 
-If you want to make contributions to the project, please [read these notes](https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors).
+## Development and Contribution
 
-# Resources
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [contributor notes](https://github.com/OoriData/OgbujiPT/wiki/Notes-for-contributors) for development setup and guidelines.
+Toolio, 
+## Design principles
 
-* [Against mixing environment setup with code](https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
+### Avoid over-frameworks
 
-# License
+OgbujiPT deliberately avoids becoming another LangChain. We emphasize:
 
-Apache 2. For tha culture!
+- **Minimal abstractions**: Every layer must justify its existence
+- **Explicit over implicit**: No hidden magic—be clear about connection pooling, retries, caching
+- **Configuration clarity**: Help automate config without creating configuration hell
+- **Composability**: Mix and match components rather than monolithic frameworks
+- **Pythonic**: Old-school Python simplicity and clarity
 
-# Credits
+### Memory taxonomy
+
+Different memory types need different strategies:
+
+- **Conversational memory**: Recent chat history (working memory)
+- **Semantic memory**: Long-term knowledge (documents, facts)
+- **Scratchpad**: Temporary computation state
+- **Observability logs**: Query/retrieval tracing
+
+OgbujiPT provides explicit APIs for each, avoiding one-size-fits-all "universal memory" patterns.
+
+## Resources
+
+- [Against mixing environment setup with code](https://huggingface.co/blog/ucheog/separate-env-setup-from-code)
+- [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
+- [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
+
+## License
+
+Apache 2.0. For tha culture!
+
+## Credits
 
 Some initial ideas & code were borrowed from these projects, but with heavy refactoring:
 
 * [ChobPT/oobaboogas-webui-langchain_agent](https://github.com/ChobPT/oobaboogas-webui-langchain_agent)
 * [wafflecomposite/langchain-ask-pdf-local](https://github.com/wafflecomposite/langchain-ask-pdf-local)
 
-# Related projects
+## Related projects
 
-* [mlx-tuning-fork
-](https://github.com/chimezie/mlx-tuning-fork)—"very basic framework for parameterized Large Language Model (Q)LoRa fine-tuning with MLX. It uses mlx, mlx_lm, and OgbujiPT, and is based primarily on the excellent mlx-example libraries but adds very minimal architecture for systematic running of easily parameterized fine tunes, hyperparameter sweeping, declarative prompt construction, an equivalent of HF's train on completions, and other capabilities."
+* [mlx-tuning-fork](https://github.com/chimezie/mlx-tuning-fork)—"very basic framework for parameterized Large Language Model (Q)LoRa fine-tuning with MLX. It uses mlx, mlx_lm, and OgbujiPT, and is based primarily on the excellent mlx-example libraries but adds very minimal architecture for systematic running of easily parameterized fine tunes, hyperparameter sweeping, declarative prompt construction, an equivalent of HF's train on completions, and other capabilities."
 * [living-bookmarks](https://github.com/uogbuji/living-bookmarks)—"Uses [OgbujiPT] to Help a user manage their bookmarks in context of various chat, etc."
 
-# FAQ
+## FAQ
 
-- [What's unique about this toolkit?](#whats-unique-about-this-toolkit)
-- [Does this support GPU for locally-hosted models](#does-this-support-gpu-for-locally-hosted-models)
-- [What's with the crazy name?](#whats-with-the-crazy-name)
+### What's unique about OgbujiPT?
 
-## What's unique about this toolkit?
+Unlike frameworks that try to do everything, OgbujiPT focuses on:
 
-I mentioned the bias to software engineering, but what does this mean?
+- **Knowledge bank primitives**: Clean APIs for storage and retrieval
+- **Composability**: Mix backends and strategies without lock-in
+- **Pythonic simplicity**: Minimal abstractions, clear code
+- **Production-ready**: Async-first, structured logging, retry logic
+- **Explicit design**: No hidden magic—you control the details
 
-* Emphasis on modularity, but seeking as much consistency as possible
-* Support for multitasking
-* Finding ways to apply automated testing
+### Why not just use LangChain?
 
-## Does this support GPU for locally-hosted models
+LangChain is great for many use cases, but it's also:
+- Overly abstracted (hard to understand what's happening)
+- Monolithic (hard to use just the parts you need)
+- Configuration-heavy (too many ways to configure the same thing)
 
-Yes, but you have to make sure you set up your back end LLM server (llama.cpp or text-generation-webui) with GPU, and properly configure the model you load into it.
+OgbujiPT provides a lighter-weight alternative focused on knowledge banks, with clear boundaries and explicit control.
 
-Many install guides I've found for Mac, Linux and Windows touch on enabling GPU, but the ecosystem is still in its early days, and helpful resouces can feel scattered.
+### Does this support GPU for locally-hosted models?
 
-* [Quick setup for llama-cpp-python](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-llama-cpp-python-backend)
-* [Quick setup for Ooba](https://github.com/uogbuji/OgbujiPT/wiki/Quick-setup-for-text-generation-webui-(Ooba)-backend)
+Yes! Make sure your LLM backend (Toolio, llama.cpp, text-generation-webui, etc.) is configured with GPU support. OgbujiPT works with any OpenAI-compatible API, so GPU acceleration is handled by your backend.
 
-## What's with the crazy name?
+### What's with the crazy name?
 
-Enh?! Yo mama! 😝 My surname is Ogbuji, so it's a bit of a pun.
-This is the notorious OGPT, ya feel me?
+Enh?! Yo mama! 😝 My surname is Ogbuji, so it's a bit of a pun. This is the notorious OGPT, ya feel me?
