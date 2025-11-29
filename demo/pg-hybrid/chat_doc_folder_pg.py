@@ -1,13 +1,14 @@
+#!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2023-present Oori Data <info@oori.dev>
 # SPDX-License-Identifier: Apache-2.0
-# ogbujipt/demo/chat_doc_folder.py
+# demo/pg-hybrid/chat_doc_folder.py
 '''
-"Chat my docs" demo, using docs in a folder. Skill level: intermediate
+"Chat my docs" demo using PG hybrid search. Skill level: intermediate
 
 Indexes a folder full of Word, PDF & Markdown documents, then query an LLM using these as context.
 
-Vector store: Chroma - https://docs.trychroma.com/getting-started
-    Alternatives: pgvector & Qdrant (built-in support from OgbujiPT), Faiss, Weaviate, etc.
+Vector store: PostgreSQL with pgvector - https://github.com/pgvector/pgvector
+    Uses OgbujiPT's hybrid search combining dense vector search with sparse BM25 retrieval
 Text to vector (embedding) model: 
     Alternatives: https://www.sbert.net/docs/pretrained_models.html / OpenAI ada002
 PDF to text [PyPDF2](https://pypdf2.readthedocs.io/en/3.x/)
@@ -17,21 +18,23 @@ Needs access to an OpenAI-like service. This can be private/self-hosted, though.
 OgbujiPT's sister project Toolio would work - https://github.com/OoriData/Toolio
 via e.g. llama-cpp-python, text-generation-webui, Ollama
 
-Prerequisites, in addition to OgbujiPT (warning: chromadb installs a lot of stuff):
+Prerequisites, in addition to OgbujiPT (or you can just use the `mega` package):
 
 ```sh
-pip install click sentence-transformers chromadb docx2python PyPDF2 PyCryptodome
+uv pip install fire sentence-transformers docx2python PyPDF2 PyCryptodome  # or uv pip install -U ".[mega]"
 ```
 
-Assume for the following the server is running on localhost, port 8000.
+PostgreSQL with pgvector must be running. See README.md in this directory for setup.
+
+Assume for the following the LLM server is running on localhost, port 8000.
 
 ```sh
-python demo/chat_doc_folder.py --docs=demo/sample-docs --apibase=http://localhost:8000
+python chat_doc_folder_pg.py --docs=../sample-docs --apibase=http://localhost:8000
 ```
 
-Sample query: Tell me about the Calabar Kingdom
+Sample query: "Tell me about the Calabar Kingdom"
 
-You can always check the retrieval using `--verbose`
+You can always check the retrieval using --verbose
 
 You can specify your document directory, and/or tweak it with the following command line options:
 --verbose - print more information while processing (for debugging)
@@ -45,90 +48,135 @@ import asyncio
 from pathlib import Path
 
 import fire
-import chromadb
 from docx2python import docx2python
 from PyPDF2 import PdfReader
+from sentence_transformers import SentenceTransformer
 
 from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
 from ogbujipt.text.splitter import text_split_fuzzy
+from ogbujipt.store.postgres import DataDB
+from ogbujipt.retrieval import BM25Search, HybridSearch, SimpleDenseSearch
 
-# Avoid re-entrace complaints from huggingface/tokenizers
+# Avoid re-entrancy complaints from huggingface/tokenizers
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-COLLECTION_NAME = 'chat-doc-folder'
 USER_PROMPT = 'What do you want to know from the documents?\n'
 
+# Database connection parameters (can be overridden via environment variables)
+PG_DB_NAME = os.environ.get('PG_DB_NAME', 'hybrid_demo')
+PG_DB_HOST = os.environ.get('PG_DB_HOST', 'localhost')
+PG_DB_PORT = int(os.environ.get('PG_DB_PORT', '5432'))
+PG_DB_USER = os.environ.get('PG_DB_USER', 'demo_user')
+PG_DB_PASSWORD = os.environ.get('PG_DB_PASSWORD', 'demo_pass_2025')
 
-# Note: simple demo mode, so no duplicate management, cleanup, etc of the chroma DB
-# You can always add self.coll.delete_collection(name='chat_doc_folder'), but take case!
-class vector_store:
-    '''Encapsulates Chroma the vector store and its parameters (e.g. for doc chunking)'''
-    def __init__(self, chunk_size, chunk_overlap):
+# Default embedding model
+DEFAULT_EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
+
+
+class VectorStore:
+    '''Encapsulates PostgreSQL DataDB and hybrid search with chunking parameters'''
+    def __init__(self, chunk_size, chunk_overlap, embedding_model, table_name='chat_doc_folder'):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.chroma_client = chromadb.Client()
-        self.coll = self.chroma_client.get_or_create_collection(name='chat_doc_folder')
-        self.id_counter = 0
+        self.embedding_model = embedding_model
+        self.table_name = table_name
+        self.kb_db = None
+        self.hybrid_search = None
+
+    async def initialize(self):
+        '''Initialize database connection and hybrid search'''
+        # Connect to PostgreSQL
+        self.kb_db = await DataDB.from_conn_params(
+            embedding_model=self.embedding_model,
+            table_name=self.table_name,
+            db_name=PG_DB_NAME,
+            host=PG_DB_HOST,
+            port=PG_DB_PORT,
+            user=PG_DB_USER,
+            password=PG_DB_PASSWORD,
+            itypes=['vector'],  # Create HNSW index for fast vector search
+            ifuncs=['cosine']
+        )
+
+        # Drop existing table if present (for clean demo)
+        if await self.kb_db.table_exists():
+            await self.kb_db.drop_table()
+
+        # Create fresh table
+        await self.kb_db.create_table()
+
+        # Initialize hybrid search
+        self.hybrid_search = HybridSearch(
+            strategies=[
+                SimpleDenseSearch(),  # Dense vector search
+                BM25Search(k1=1.5, b=0.75, epsilon=0.25)  # Sparse BM25 search
+            ],
+            k=60  # RRF constant
+        )
 
     def text_split(self, text):
         return text_split_fuzzy(text, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap, separator='\n')
 
-    def new_docid(self):
-        self.id_counter += 1
-        nid = f'id-{self.id_counter}'
-        return nid
+    async def update(self, chunks, metas):
+        '''Insert chunks into the database'''
+        content_list = [(chunk, meta) for chunk, meta in zip(chunks, metas)]
+        await self.kb_db.insert_many(content_list)
 
-    def update(self, chunks, metas):
-        ids = [self.new_docid() for c in chunks]
-        self.coll.add(documents=chunks, ids=ids, metadatas=metas)
+    async def search(self, q, limit=None):
+        '''Search using hybrid search and return content strings'''
+        results = []
+        async for result in self.hybrid_search.execute(
+            query=q,
+            backends=[self.kb_db],
+            limit=limit or 4
+        ):
+            results.append(result.content)
+        return results
 
-    def search(self, q, limit=None):
-        results = self.coll.query(query_texts=[q], n_results=limit)
-        print(results['documents'][0][0][:100])
-        return results['documents'][0]
 
-
-def read_word_doc(fpath, store):
+async def read_word_doc(fpath, store):
     '''Convert a single word doc to text, split into chunks & add these to vector store'''
     print('Processing as Word doc:', fpath)  # e.g. 'path/to/file.docx'
     with docx2python(fpath) as docx_content:
         doctext = docx_content.text
     chunks = list(store.text_split(doctext))
     metas = [{'source': str(fpath)}]*len(chunks)
-    store.update(chunks, metas=metas)
+    await store.update(chunks, metas=metas)
 
 
-def read_pdf_doc(fpath, store):
+async def read_pdf_doc(fpath, store):
     '''Convert a single PDF to text, split into chunks & add these to vector store'''
     print('Processing as PDF:', fpath)  # e.g. 'path/to/file.pdf'
     pdf_reader = PdfReader(fpath)
     doctext = ''.join((page.extract_text() for page in pdf_reader.pages))
     chunks = list(store.text_split(doctext))
     metas = [{'source': str(fpath)}]*len(chunks)
-    store.update(chunks, metas=metas)
+    await store.update(chunks, metas=metas)
 
 
-def read_text_or_markdown_doc(fpath, store):
+async def read_text_or_markdown_doc(fpath, store):
     '''Split a single text or markdown file into chunks & add these to vector store'''
     print('Processing as text:', fpath)  # e.g. 'path/to/file.txt'
     with open(fpath) as docx_content:
         doctext = docx_content.read()
     chunks = list(store.text_split(doctext))
     metas = [{'source': str(fpath)}]*len(chunks)
-    store.update(chunks, metas=metas)
+    await store.update(chunks, metas=metas)
 
 
-async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, question):
-    store = vector_store(chunk_size, chunk_overlap)
+async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, question, embedding_model):
+    store = VectorStore(chunk_size, chunk_overlap, embedding_model)
+    await store.initialize()
 
+    # Process all documents
     for fname in docs.iterdir():
         # print(fname, fname.suffix)
         if fname.suffix in ['.doc', '.docx']:
-            read_word_doc(fname, store)
+            await read_word_doc(fname, store)
         elif fname.suffix == '.pdf':
-            read_pdf_doc(fname, store)
+            await read_pdf_doc(fname, store)
         elif fname.suffix in ['.txt', '.md', '.mdx']:
-            read_text_or_markdown_doc(fname, store)
+            await read_text_or_markdown_doc(fname, store)
 
     # Main chat loop
     done = False
@@ -141,7 +189,7 @@ async def async_main(oapi, docs, verbose, limit, chunk_size, chunk_overlap, ques
         if user_question.strip() == 'done':
             break
 
-        docs = store.search(user_question, limit=limit)
+        docs = await store.search(user_question, limit=limit)
         if verbose:
             print(docs)
         if docs:
@@ -182,10 +230,11 @@ def main(
     openai_key=None,
     apibase='http://127.0.0.1:8000',
     model='',
-    question=None
+    question=None,
+    embedding_model=DEFAULT_EMBEDDING_MODEL
 ):
     '''
-    Chat with documents using ChromaDB vector store.
+    Chat with documents using PG hybrid search.
 
     Args:
         docs: Path to directory containing documents (Word, PDF, Markdown, Text)
@@ -197,10 +246,16 @@ def main(
         apibase: OpenAI API base URL (default: http://127.0.0.1:8000)
         model: OpenAI model to use (see https://platform.openai.com/docs/models). Use only with --openai-key
         question: The question to ask (or prompt for one if None)
+        embedding_model: Sentence transformer model for embeddings (default: all-MiniLM-L6-v2)
     '''
     docs_path = Path(docs)
     if not docs_path.exists() or not docs_path.is_dir():
         raise ValueError(f'Document directory does not exist: {docs}')
+
+    # Load embedding model
+    print(f'\n📦 Loading embedding model: {embedding_model}…')
+    embedding_model_instance = SentenceTransformer(embedding_model)
+    print('   ✓ Model loaded!')
 
     # Use OpenAI API if specified, otherwise emulate with supplied URL info
     if openai_key:
@@ -208,8 +263,11 @@ def main(
     else:
         oapi = openai_chat_api(model=model, base_url=apibase)
 
-    asyncio.run(async_main(oapi, docs_path, verbose, limit, chunk_size, chunk_overlap, question))
+    asyncio.run(
+        async_main(oapi, docs_path, verbose, limit, chunk_size, chunk_overlap, question, embedding_model_instance)
+    )
 
 
 if __name__ == '__main__':
     fire.Fire(main)
+

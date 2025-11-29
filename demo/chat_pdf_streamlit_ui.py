@@ -36,9 +36,9 @@ import os
 import streamlit as st
 from PyPDF2 import PdfReader
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_split_fuzzy
-from ogbujipt.embedding.qdrant import collection
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.text.splitter import text_split_fuzzy
+from ogbujipt.store.qdrant.collection import collection
 
 from sentence_transformers import SentenceTransformer
 

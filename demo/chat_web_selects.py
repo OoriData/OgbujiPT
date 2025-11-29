@@ -19,7 +19,7 @@ MAKE SURE YOU USE A WORKING SERVER BECAUSE THIS IS A DEMO & THE ERROR HANDLING I
 
 pip install prerequisites, in addition to OgbujiPT cloned dir:
 
-click sentence_transformers qdrant-client httpx html2text amara3.xml
+click sentence_transformers qdrant-client httpx html2text amara
 
 ```sh
 python demo/chat_web_selects.py --apibase http://localhost:8000 "www.newworldencyclopedia.org/entry/Igbo_People"
@@ -42,9 +42,9 @@ import click
 import httpx
 import html2text
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
-from ogbujipt.text_helper import text_split_fuzzy
-from ogbujipt.embedding.qdrant import collection
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.text.splitter import text_split_fuzzy
+from ogbujipt.store.qdrant.collection import collection
 
 
 # Avoid re-entrace complaints from huggingface/tokenizers

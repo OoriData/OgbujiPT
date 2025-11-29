@@ -28,7 +28,7 @@ It requires properly fine-tuned models, the right systems prompts and also suppo
 Useful discussion re llama-cpp-python: https://github.com/abetlen/llama-cpp-python/discussions/397
 '''
 
-from ogbujipt.llm_wrapper import openai_chat_api, prompt_to_chat
+from ogbujipt.llm.wrapper import openai_chat_api, prompt_to_chat
 
 FUNC_SPEC = {
     'title': 'ExecuteStepByStepPlan',

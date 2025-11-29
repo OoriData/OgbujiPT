@@ -12,7 +12,7 @@ pytest test/test_ogbujipt.py
 
 # import pytest
 
-from ogbujipt.llm_wrapper import llm_response  #, openai_chat_api
+from ogbujipt.llm.wrapper import llm_response  #, openai_chat_api
 
 def test_oapi_first_choice_text(OPENAI_TEXT_RESPONSE_OBJECT):
     text1 = llm_response.from_openai_chat(OPENAI_TEXT_RESPONSE_OBJECT).first_choice_text

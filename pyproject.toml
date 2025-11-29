@@ -7,7 +7,7 @@ name = "OgbujiPT"
 dynamic = ["version"]
 description = 'Client-side tools for using large language models, full service (e.g. ChatGPT & Bard) or locally hosted (e.g. LLaMA derivatives)'
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "Apache-2.0"
 keywords = []
 authors = [
@@ -19,16 +19,34 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Utilities",
 ]
 dependencies = [
+  # Core LLM
   "openai>=1.1.0",
   "tomli",
-  "amara3.iri"
+  "amara",
+
+  # Memory & Knowledge Bank
+  "onya>=0.1.0",           # GraphRAG knowledge graphs
+  "chonkie",               # Document chunking
+  "rank-bm25",             # Sparse retrieval (BM25)
+  "rerankers[transformers]",  # Cross-encoder reranking
+
+  # Production utilities
+  "structlog",             # Structured logging
+  "tenacity",              # Retry logic
+  "httpx",                 # Async HTTP client
+
+  # MCP protocol
+  "mcp",                   # Model Context Protocol
 ]
 
 [project.optional-dependencies]
@@ -41,11 +59,38 @@ dev = [
   "ruff",
   "pytest",
   "pytest-mock",
+]
+
+testall = [
+  "ruff",
+  "pytest",
+  "pytest-mock",
+  "pytest-httpx",
   "pytest-asyncio",
-  "pytest-cov",
   "respx",
   "pgvector",
   "asyncpg",
+  "qdrant-client>=1.10.0",
+  "coverage[toml]>=6.5",
+]
+
+pgvector = [
+  "pgvector",
+  "asyncpg",
+]
+
+mega = [
+  "chromadb",
+  "docx2python",
+  "PyPDF2",
+  "PyCryptodome",
+  "qdrant-client",
+  "streamlit",
+  "watchdog",
+  "html2text",
+  "tqdm",
+  "fire",
+  "sentence_transformers",
 ]
 
 [project.urls]
@@ -56,11 +101,9 @@ Source = "https://github.com/OoriData/OgbujiPT"
 [tool.hatch.version]
 path = "pylib/__about__.py"
 
-# Rewriting path in distribution
-[tool.hatch.build.sources]
-"pylib" = "ogbujipt"
-"resources" = "ogbujipt/resources"
-
+# Package configuration
+# Note: We only remap pylib->ogbujipt for wheels, not for sdist
+# This ensures both direct wheel builds and wheels-from-sdist work correctly
 [tool.hatch.build.targets.wheel]
 only-include = ["pylib", "resources"]
 
@@ -68,11 +111,24 @@ only-include = ["pylib", "resources"]
 "pylib" = "ogbujipt"
 "resources" = "ogbujipt/resources"
 
-# Hatch environemnts are too fiddly. For example, from `hatch run test` I get 
-# ModuleNotFoundError: No module named 'ogbujipt'
-# This may well have to do with my rewriting path in distribution,
-# But I'm not compromising on that, so I guess just install & use
-# e.g. pytest directly (tried dev-mode false, but no difference)
+[tool.hatch.build.targets.sdist]
+# Preserve original pylib structure in sdist so wheel-from-sdist can find it
+only-include = [
+    "pylib",
+    "resources",
+    "test",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+# Note: hatch environments don't work well with our pylib→ogbujipt source remapping.
+# The path remapping in [tool.hatch.build.targets.wheel.sources] only applies during wheel building,
+# not in dev environments. Hatch's dev-mode uses editable installs which can't apply
+# the remapping, and dev-mode=false means no install happens at all.
+#
+# We prefer proper installation over dev-mode shortcuts anyway.
+# Use: `uv pip install -U . && pytest test/`
 [tool.hatch.envs.default]
 dependencies = [
   "coverage[toml]>=6.5",
@@ -95,7 +151,7 @@ cov = [
 ]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11", "3.12"]
+python = ["3.12", "3.13"]
 
 [tool.hatch.envs.lint]
 detached = true
@@ -160,6 +216,12 @@ ban-relative-imports = "all"
 "!pylib/**.py" = ["D"]
 # Ignore `E501` (line too long) in Jupyter notebooks
 "*.ipynb" = ["E501"]
+# Ignore `E501` (line too long) in the following files:
+"demo/pg-hybrid/hybrid_search_demo.py" = ["E501"]
+"demo/pg-hybrid/chat_with_hybrid_kb.py" = ["E501"]
+"demo/pg-hybrid/hybrid_rerank_demo.py" = ["E501"]
+"demo/ram-store/chat_with_memory.py" = ["E501"]
+"demo/ram-store/simple_search_demo.py" = ["E501"]
 
 [tool.coverage.run]
 source_pkgs = ["ogbujipt", "test"]
@@ -179,3 +241,12 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (deselected by default, require external services like PostgreSQL)",
+]
+# By default, skip integration tests
+addopts = "-m 'not integration'"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
