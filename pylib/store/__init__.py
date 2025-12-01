@@ -3,3 +3,4 @@
 # ogbujipt.store
 
 from ogbujipt.store.ram import *  # noqa: F401, F403
+from ogbujipt.store.kgraph import *  # noqa: F401, F403

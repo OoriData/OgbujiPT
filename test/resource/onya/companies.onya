@@ -1,0 +1,15 @@
+# @docheader
+* @document: http://example.org/companies
+* @base: http://example.org/companies/
+
+# TechCorp [Organization]
+* name: TechCorp Inc.
+* industry: Technology
+* description: Leading AI and machine learning company
+* founded: 2010
+
+# DataSystems [Organization]
+* name: DataSystems LLC
+* industry: Technology
+* description: Enterprise data analytics and Python-based solutions
+* founded: 2015

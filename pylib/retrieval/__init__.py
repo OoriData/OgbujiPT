@@ -5,3 +5,4 @@
 from ogbujipt.retrieval.sparse import *  # noqa: F401, F403
 from ogbujipt.retrieval.dense import *  # noqa: F401, F403
 from ogbujipt.retrieval.hybrid import *  # noqa: F401, F403
+from ogbujipt.retrieval.graph import *  # noqa: F401, F403
