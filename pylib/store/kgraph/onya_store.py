@@ -131,6 +131,7 @@ class OnyaKB:
 
             # Parse into graph
             doc_iri = literate_lex.parse(onya_text, self._graph)
+
             self._loaded_files.append({
                 'path': str(onya_file),
                 'doc_iri': str(doc_iri) if doc_iri else None,
@@ -265,7 +266,30 @@ class OnyaKB:
         if not self._initialized:
             raise RuntimeError(f'KB {self.name} not initialized. Call setup() first.')
 
-        matched_nodes = list(self._graph.typematch(type_iri))
+        type_iri_str = str(type_iri)
+        type_iri_str_lower = type_iri_str.lower()
+
+        def _is_relative_iri(s: str) -> bool:
+            return '://' not in s and not s.startswith('urn:')
+
+        def _matches_type(t: Any) -> bool:
+            t_str = str(t)
+            if t_str == type_iri_str:
+                return True
+            # Back-compat: if Onya returns relative types (e.g. "Person") but the
+            # caller passes a full IRI, allow matching by localname.
+            if _is_relative_iri(t_str) and type_iri_str_lower.endswith(('/' + t_str.lower(), '#' + t_str.lower())):
+                return True
+            return False
+
+        matched_nodes = [
+            node
+            for node in self._graph.values()
+            if any(
+                _matches_type(t)
+                for t in getattr(node, 'types', ())
+            )
+        ]
 
         # Apply limit
         if limit > 0:
@@ -317,11 +341,19 @@ class OnyaKB:
             return None
 
         # Convert to dict representation
+        def _localname(iri_or_label: str) -> str:
+            s = str(iri_or_label)
+            if '#' in s:
+                s = s.rsplit('#', 1)[-1]
+            if '/' in s:
+                s = s.rsplit('/', 1)[-1]
+            return s
+
         return {
             'id': str(node.id),
             'types': [str(t) for t in node.types],
             'properties': {
-                prop.label: prop.value
+                _localname(prop.label): prop.value
                 for prop in node.properties
             }
         }

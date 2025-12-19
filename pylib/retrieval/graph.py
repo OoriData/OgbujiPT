@@ -172,6 +172,37 @@ class PropertySearch:
 
         return False
 
+    @staticmethod
+    def _localname(iri_or_label: str) -> str:
+        '''
+        Best-effort extraction of a "local name" from an IRI.
+
+        Examples:
+            - "https://schema.org/bio" -> "bio"
+            - "http://example.org/people/Person" -> "Person"
+            - "name" -> "name"
+        '''
+        s = str(iri_or_label)
+        if '#' in s:
+            s = s.rsplit('#', 1)[-1]
+        if '/' in s:
+            s = s.rsplit('/', 1)[-1]
+        return s
+
+    def _property_label_matches(self, prop_label: object) -> bool:
+        '''
+        Allow matching properties regardless of whether labels are stored as
+        local names ("bio") or full IRIs ("https://schema.org/bio").
+        '''
+        want = str(self.property_label)
+        have = str(prop_label)
+        if have == want:
+            return True
+        # If caller provided a local name, compare against localname(have)
+        if '://' not in want and not want.startswith('urn:'):
+            return self._localname(have) == want
+        return False
+
     async def execute(
         self,
         query: str,
@@ -208,7 +239,7 @@ class PropertySearch:
 
                 # Check properties
                 for prop in node.properties:
-                    if prop.label == self.property_label:
+                    if self._property_label_matches(prop.label):
                         if self._matches(prop.value):
                             matched = True
                             break

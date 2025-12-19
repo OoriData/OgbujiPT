@@ -33,10 +33,10 @@ async def test_onya_kb_setup():
     loaded_files = kb.get_loaded_files()
     assert len(loaded_files) == 2
 
-    # Should have multiple nodes
+    # Should have multiple nodes (includes 2 document nodes from Onya)
     node_count = kb.count_nodes()
     assert node_count > 0
-    assert node_count == 5  # 3 people + 2 companies
+    assert node_count == 7  # 3 people + 2 companies + 2 document nodes
 
     await kb.cleanup()
 

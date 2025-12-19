@@ -33,7 +33,9 @@ Basic `.onya` format example:
 ```onya
 # @docheader
 * @document: http://example.org/mydata
-* @base: http://example.org/entities/
+* @nodebase: http://example.org/entities/
+* @schema: https://schema.org/
+* @language: en
 
 # Alice [Person]
 * name: Alice Smith
@@ -45,7 +47,7 @@ Basic `.onya` format example:
 * occupation: Data Scientist
 ```
 
-There is a document header which declares namespaces and base IRIs (URIs). Node definitions are marked with `# NodeID [Type]`. The node ID is resolved against `@document` and the type against 
+There is a document header which declares namespaces and base IRIs (URIs). Node definitions are marked with `# NodeID [Type]`. Node IDs are resolved against `@nodebase`, while types and property labels are resolved against `@schema`.
 - **Properties**: Listed with `* property: value`
 - **Types**: Entities can have one or more types
 
@@ -61,12 +63,14 @@ There is a document header which declares namespaces and base IRIs (URIs). Node 
    cat > my_knowledge/people.onya << 'EOF'
    # @docheader
    * @document: http://example.org/mykg
-   * @base: http://example.org/
+   * @nodebase: http://example.org/
+   * @schema: https://schema.org/
+   * @language: en
 
    # Person1 [Person]
    * name: Your Name
-   * role: Your Role
-   * expertise: Your Expertise
+   * jobTitle: Your Role
+   * knowsAbout: Your Expertise
    EOF
    ```
 

@@ -1,6 +1,7 @@
 # @docheader
 * @document: http://example.org/companies
-* @base: http://example.org/companies/
+* @nodebase: http://example.org/companies/
+* @schema: http://example.org/companies/
 
 # TechCorp [Organization]
 * name: TechCorp Inc.

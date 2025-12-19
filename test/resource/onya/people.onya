@@ -1,6 +1,7 @@
 # @docheader
 * @document: http://example.org/people
-* @base: http://example.org/people/
+* @nodebase: http://example.org/people/
+* @schema: http://example.org/people/
 
 # Alice [Person]
 * name: Alice Smith
