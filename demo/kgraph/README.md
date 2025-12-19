@@ -45,9 +45,7 @@ Basic `.onya` format example:
 * occupation: Data Scientist
 ```
 
-Key elements:
-- **Document header**: Declares namespaces and base URI
-- **Nodes**: Marked with `# NodeName [Type]`
+There is a document header which declares namespaces and base IRIs (URIs). Node definitions are marked with `# NodeID [Type]`. The node ID is resolved against `@document` and the type against 
 - **Properties**: Listed with `* property: value`
 - **Types**: Entities can have one or more types
 
@@ -175,7 +173,7 @@ print(response.first_choice_text)
 ## Read-Only by Design
 
 `OnyaKB` is intentionally read-only:
-- **insert()** and **delete()** raise `NotImplementedError`
+- `insert()` and `delete()` raise `NotImplementedError`
 - Edit `.onya` files directly using your text editor
 - Reload by calling `cleanup()` then `setup()` again
 - This design encourages human curation and version control

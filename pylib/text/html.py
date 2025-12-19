@@ -9,15 +9,12 @@ which is chunked with some semantic awareness
 import re
 import warnings
 
-# Just use tiktoken, even though it's OpenAI specific
-import tiktoken
-
 try:
     import cssutils  # pip install cssutils
 except ImportError:
     cssutils = None
     warnings.warn(
-        'Using html_helper without cssutils, which will limit features. May want to do e.g. `pip install cssutils`')
+        'Using html_helper without cssutils, which will limit features. Recommend e.g. `pip install cssutils`')
 
 # selectolax install is optional for OgbujiPT, but mandatory for html_helper
 try:
@@ -25,8 +22,7 @@ try:
 except ImportError:
     HTMLParser = None
     warnings.warn(
-        'Cannot use html_helper without selectolax. May want to do e.g. `pip install selectolax`')
-
+        'Cannot use html_helper without selectolax. Recommend e.g. `pip install selectolax`')
 
 
 HTML_SAMPLE1 = '''\
@@ -124,6 +120,8 @@ def html_split(text: str, chunk_size: int, separator: str='\n\n', joiner=None, l
 
 
 def count_tokens(text: str) -> int:
+    # Just use tiktoken, even though it's OpenAI specific
+    import tiktoken
     encoder = tiktoken.encoding_for_model('gpt-3.5-turbo')
     tokens = encoder.encode(text)
     return len(tokens)
