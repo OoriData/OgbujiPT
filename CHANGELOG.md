@@ -2,10 +2,30 @@
 
 Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!--
 ## [Unreleased]
 
--->
+### Added
+- **Onya Knowledge Graph Support**: New `OnyaKB` backend for loading and searching `.onya` files from directories
+  - File-based knowledge graph storage without database overhead
+  - Compatible with `KBBackend` protocol for unified KB system integration
+  - Text-based search across node properties
+  - Type-based filtering using `search_by_type()`
+  - Direct node retrieval by IRI with `get_node()`
+- **Graph Retrieval Strategies**: New retrieval strategies in `ogbujipt.retrieval.graph`
+  - `TypeSearch`: Filter nodes by type (e.g., all Person entities)
+  - `PropertySearch`: Match nodes by property values with multiple match types (contains, equals, startswith, endswith)
+- **Demo**: Complete demonstration in `demo/kgraph/simple_onya_demo.py` showing all Onya KG features
+- **Tests**: Comprehensive test suite for Onya KG functionality in `test/store/kgraph/` and `test/retrieval/test_graph.py`
+
+## [0.10.0] - 20251129
+
+Major reorientation (or "pivot" as the cool kids say) for the project. OgbujiPT is now a general-purpose knowledge bank system for LLM-based applications. It provides a unified API for storing, retrieving, and managing semantic knowledge across multiple backends, with support for dense vector search, sparse retrieval, hybrid search, and more.
+
+As always, we build with Pythonic simplicity and transparency in mind; avoiding the over-frameworks that plague the LLM ecosystem.
+
+Please see the discussion, as this is ongoing work: https://github.com/OoriData/OgbujiPT/discussions/92
+
+Not listing granular changes for this change set, as it is a foundational one; a full reset, just about.
 
 ## [0.9.4] - 20241119
 

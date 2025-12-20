@@ -19,6 +19,9 @@ OPENAI_KEY_DUMMY = 'OPENAI_DUMMY'
 
 
 class attr_dict(dict):
+    '''
+    Dictionary with attribute access
+    '''
     # XXX: Should unknown attr access return None rather than raise?
     # If so, can just do: __getattr__ = dict.get
     # __getattr__ = dict.__getitem__

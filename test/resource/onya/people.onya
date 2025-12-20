@@ -1,0 +1,22 @@
+# @docheader
+* @document: http://example.org/people
+* @nodebase: http://example.org/people/
+* @schema: http://example.org/people/
+
+# Alice [Person]
+* name: Alice Smith
+* age: 30
+* bio: A software engineer who loves Python and machine learning
+* occupation: Software Engineer
+
+# Bob [Person]
+* name: Bob Jones
+* age: 25
+* bio: A data scientist working on NLP and deep learning models
+* occupation: Data Scientist
+
+# Charlie [Person]
+* name: Charlie Brown
+* age: 35
+* bio: Product manager with experience in AI startups
+* occupation: Product Manager

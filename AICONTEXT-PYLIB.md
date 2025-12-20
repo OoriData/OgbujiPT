@@ -1,4 +1,4 @@
-Additional context on this repository for AI tools & coding agents
+Additional context on this project for AI tools & coding agents
 
 - Python 3.12+ code, unless otherwise specified
 - Python code uses single outer quotes, including triple single quotes for e.g. docstrings
@@ -10,12 +10,13 @@ Additional context on this repository for AI tools & coding agents
 - Try to stick to 120 characters per line
   - if one of those comments would break this guideline, just put that comment above the line instead, as is standard convention
 - If there is a pyproject.toml in place, use it as a reference for builds, installs, etc. The basic packaging and dev preference, including if you have to supply your own pyproject.toml, is as follows:
-  - Use pyproject.toml with hatchling, not e.g. setup.py
+  - Prefer hatchling build system over setuptools, poetry, etc. Avoid setuptools as much as possible. No setup.py.
   - Reusable Python code modules are developed in the `pylib` folder, and installed using e.g. `uv pip install -U .`, which includes proper mapping to Python library package namespace via `tool.hatch.build.sources`. The `__init__.py` and other modules in the top-level package go directly in `pylib`, though submodules can use subdirectories, e.g. `pylib/a/b` becomes `installed_library_name.a.b`. Ultimately this will mean the installed package is importable as `from installed_library_name.etc import …`
-  - Yes this means editable and "dev mode" environments are NOT desirable, nor are shenanigans adding pylib to `sys.path`. Layer-efficient dockerization is an option if that's needed.
-  - The ethos is to always develop keeping things properly installable. No dev mode shortcuts
-  - Prefer hatchling build system over setuptools, poetry, etc. Avoid setuptools as much as possible. Use `[tool.hatch.build.sources]` to map source directories to package namespaces (e.g., `"pylib" = "installed_library_name"`).
   - Use `[tool.hatch.build.targets.wheel]` with `only-include = ["pylib"]` to ensure the pylib directory structure gets included properly in the wheel, avoiding the duplication issue that can occur with sources mapping
+  - Yes this means editable and "dev mode" environments are NOT desirable, nor are shenanigans adding pylib to `sys.path`. Layer-efficient dockerization is an option if that's needed.
+  - The ethos is to always develop keeping things properly installable. No dev mode shortcuts. Substantive modification to libray code requires e.g. `uv pip install -U .` each time.
+  - Note: This avoidance of editable installs can be relaxed for non-library code, such as demos or main app launch scripts (e.g. webapp back ends)
+  - If it's a CLI provided as part of a library, though, it should still use proper installation via `[project.scripts]` entry points (e.g., `ooriscout = 'ooriscout.cli.scout:main'`), which creates console scripts that work correctly after `uv pip install -U .`. The CLI module lives in `pylib/cli/` and exposes a `main()` function that uses fire to handle command-line arguments. 
 - **Debugging package issues**: When modules aren't importing correctly after installation, check:
   - That you are in the correct virtualenv (you may have to ask the developer)
   - Package structure in site-packages (e.g., `ls -la /path/to/site-packages/package_name/`)
