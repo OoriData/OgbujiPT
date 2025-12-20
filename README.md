@@ -81,6 +81,37 @@ async for result in hybrid.execute('machine learning', backends=[kb], limit=5):
     print(f'{result.score:.3f}: {result.content[:50]}...')
 ```
 
+### Unified knowledge base API
+
+Manage multiple backends (RAM, PostgreSQL, Qdrant, Onya graphs) with a single interface:
+
+```py
+from ogbujipt.memory.unified import UnifiedKB
+from ogbujipt.store.ram import RAMDataDB
+from ogbujipt.store.postgres import DataDB
+
+# Create backends
+ram_kb = RAMDataDB(embedding_model=model, collection_name='cache')
+await ram_kb.setup()
+
+pg_kb = await DataDB.from_conn_params(
+    host='localhost', db_name='knowledge',
+    embedding_model=model, table_name='documents'
+)
+
+# Create unified KB and register backends
+kb = UnifiedKB()
+kb.add_backend('cache', ram_kb, weight=1.0)
+kb.add_backend('persistent', pg_kb, weight=1.5)
+
+# Search across all backends automatically
+async for result in kb.search('machine learning', limit=10):
+    print(f'{result.score:.3f} [{result.source}]: {result.content[:50]}')
+
+# Insert to all backends
+await kb.insert('New content', metadata={'topic': 'AI'})
+```
+
 ## Knowledge bank features
 
 OgbujiPT provides a flexible knowledge bank system with multiple storage backends and retrieval strategies.
@@ -204,6 +235,8 @@ See the [`demo/`](https://github.com/OoriData/OgbujiPT/tree/main/demo) directory
 
 ### Knowledge bank demos
 
+- **`unified-kb/`**: Unified knowledge base API
+  - `simple_unified_demo.py`: Managing multiple backends with automatic aggregation
 - **`ram-store/`**: In-memory vector stores—zero setup, perfect for learning
   - `simple_search_demo.py`: Basic semantic search with filtering
   - `chat_with_memory.py`: Conversational AI with message history
@@ -211,6 +244,8 @@ See the [`demo/`](https://github.com/OoriData/OgbujiPT/tree/main/demo) directory
   - `chat_with_hybrid_kb.py`: Hybrid search with RRF fusion
   - `hybrid_rerank_demo.py`: Reranking with cross-encoders
   - `chat_doc_folder_pg.py`: RAG chat application
+- **`kgraph/`**: Onya knowledge graph integration
+  - `simple_onya_demo.py`: Graph-based knowledge retrieval
 
 ### LLM demos
 
@@ -226,20 +261,21 @@ OgbujiPT is evolving into a comprehensive knowledge bank system. Current focus (
 
 ### ✅ Implemented
 
+- **Unified KB API**: Single interface for multiple backends with automatic aggregation
 - In-memory vector stores (RAMDataDB, RAMMessageDB)
 - Dense vector search (PostgreSQL, Qdrant, in-memory)
 - Sparse retrieval (BM25)
 - Hybrid search with RRF fusion
 - Cross-encoder reranking
+- GraphRAG support using [Onya](https://github.com/OoriData/Onya)
 - Message/conversation storage
 - Metadata filtering
 
 ### 🚧 In progress
 
-- GraphRAG support using [Onya](https://github.com/OoriData/Onya)
-- Unified knowledge base API
-- Query classification and routing
-- Multi-backend aggregation
+- Query classification and intelligent routing
+- Score normalization across backend types
+- Result deduplication
 
 ### 📋 Planned
 

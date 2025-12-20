@@ -185,13 +185,16 @@ class RAMDataDB:
             self,
             content: str,
             metadata: dict | None = None
-    ) -> None:
+    ) -> int:
         '''
         Insert a document into the collection
 
         Args:
             content: Text content of the document
             metadata: Optional metadata dictionary
+
+        Returns:
+            The index (ID) of the inserted item
         '''
         if not self._initialized:
             raise RuntimeError(f'Collection {self.collection_name} not initialized. Call setup() first.')
@@ -206,6 +209,9 @@ class RAMDataDB:
         metadata_copy = dict(metadata) if metadata else {}
 
         self._items.append((embedding_array, content, metadata_copy))
+
+        # Return the index of the newly inserted item
+        return len(self._items) - 1
 
     async def insert_many(
             self,
@@ -462,7 +468,7 @@ class RAMMessageDB:
             content: str,
             timestamp: datetime | None = None,
             metadata: dict | None = None
-    ) -> None:
+    ) -> tuple[UUID, int]:
         '''
         Insert a message into the collection
 
@@ -472,6 +478,9 @@ class RAMMessageDB:
             content: Text content of the message
             timestamp: Message timestamp (defaults to now)
             metadata: Optional metadata dictionary
+
+        Returns:
+            Tuple of (history_key, message_index) identifying the inserted message
         '''
         if not self._initialized:
             raise RuntimeError(f'Collection {self.collection_name} not initialized. Call setup() first.')
@@ -497,8 +506,14 @@ class RAMMessageDB:
             (timestamp, role, content, content_embedding, metadata_copy)
         )
 
+        # Get the index before applying window constraint
+        message_index = len(self._messages[history_key]) - 1
+
         # Apply windowing
         self._apply_window(history_key)
+
+        # Return identifier for this message
+        return (history_key, message_index)
 
     async def insert_many(
             self,
