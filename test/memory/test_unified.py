@@ -9,10 +9,10 @@ Run with: pytest test/memory/test_unified.py
 
 import pytest
 from typing import AsyncIterator, Any
-from unittest.mock import AsyncMock, MagicMock
+# from unittest.mock import AsyncMock, MagicMock
 
-from ogbujipt.memory.unified import UnifiedKB, BackendInfo
-from ogbujipt.memory.base import SearchResult, KBBackend
+from ogbujipt.memory.unified import UnifiedKB # , BackendInfo
+from ogbujipt.memory.base import SearchResult #, KBBackend
 
 
 # Mock backend for testing
