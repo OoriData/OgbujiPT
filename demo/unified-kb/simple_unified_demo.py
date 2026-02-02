@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # demo/unified-kb/simple_unified_demo.py
 '''
-Simple demonstration of UnifiedKB - the unified knowledge base API.
+Simple demonstration of UnifiedKB - OgbujiPT's unified knowledge base API.
 
 UnifiedKB provides a single interface for managing multiple backend stores
 (RAM, PostgreSQL, Qdrant, Onya graphs, etc.) and automatically aggregates
@@ -35,7 +35,7 @@ SAMPLE_DOCS = [
      'It excels in data science, machine learning, and web development.',
      {'language': 'Python', 'category': 'programming', 'popularity': 'high'}),
 
-    ('JavaScript is the language of the web, powering interactive websites and modern web applications. '
+    ('JavaScript is the language of web browsers, also popular on the server side. '
      'It runs in browsers and on servers via Node.js.',
      {'language': 'JavaScript', 'category': 'programming', 'popularity': 'high'}),
 
@@ -52,40 +52,39 @@ SAMPLE_DOCS = [
      {'language': 'Swift', 'category': 'programming', 'popularity': 'medium'}),
 ]
 
+ENCODER_MODEL = 'all-MiniLM-L6-v2'
+GENERAL_COLLECTION_NAME = 'general_kb'
+LANGUAGE_COLLECTION_NAME = 'language_kb'
+CACHE_COLLECTION_NAME = 'cache_kb'
 
 async def main():
-    print('=' * 70)
-    print('UnifiedKB Demo: Unified Knowledge Base API')
-    print('=' * 70)
-    print()
+    print('===', 'UnifiedKB Demo: Unified Knowledge Base API', '===')
 
     # Load embedding model (shared across backends)
-    print('[1] Loading embedding model...')
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    print('    ✓ Model loaded: all-MiniLM-L6-v2')
-    print()
+    print('[1] Loading embedding model…')
+    model = SentenceTransformer(ENCODER_MODEL)
+    print('    ✓ Model loaded: ', ENCODER_MODEL, '\n')
 
     # Create multiple backend stores
-    print('[2] Setting up backend stores...')
+    print('[2] Setting up backend stores…')
 
     # Backend 1: General programming knowledge
-    backend1 = RAMDataDB(embedding_model=model, collection_name='general_kb')
+    backend1 = RAMDataDB(embedding_model=model, collection_name=GENERAL_COLLECTION_NAME)
     await backend1.setup()
-    print('    ✓ Backend 1: General programming KB (in-memory)')
+    print('    ✓ Backend 1: General programming KB (in-memory)', GENERAL_COLLECTION_NAME, '\n')
 
     # Backend 2: Language-specific knowledge
-    backend2 = RAMDataDB(embedding_model=model, collection_name='language_kb')
+    backend2 = RAMDataDB(embedding_model=model, collection_name=LANGUAGE_COLLECTION_NAME)
     await backend2.setup()
-    print('    ✓ Backend 2: Language-specific KB (in-memory)')
+    print('    ✓ Backend 2: Language-specific KB (in-memory)', LANGUAGE_COLLECTION_NAME, '\n')
 
     # Backend 3: Cache/temporary storage
-    backend3 = RAMDataDB(embedding_model=model, collection_name='cache')
+    backend3 = RAMDataDB(embedding_model=model, collection_name=CACHE_COLLECTION_NAME)
     await backend3.setup()
-    print('    ✓ Backend 3: Cache KB (in-memory)')
-    print()
+    print('    ✓ Backend 3: Cache KB (in-memory)', CACHE_COLLECTION_NAME, '\n')
 
     # Create UnifiedKB and register backends
-    print('[3] Creating UnifiedKB and registering backends...')
+    print('[3] Creating UnifiedKB and registering backends…')
     kb = UnifiedKB()
 
     # Register with different weights (importance for scoring)
@@ -96,8 +95,7 @@ async def main():
     kb.add_backend('cache', backend3, weight=0.8,
                   metadata={'type': 'vector', 'persistence': 'volatile', 'scope': 'temporary'})
 
-    print(f'    ✓ Registered {len(kb.backends)} backends')
-    print()
+    print(f'    ✓ Registered {len(kb.backends)} backends', '\n')
 
     # Display backend info
     print('[4] Backend information:')
@@ -109,7 +107,7 @@ async def main():
     print()
 
     # Insert documents - they go to all enabled backends by default
-    print('[5] Inserting sample documents...')
+    print('[5] Inserting sample documents…')
     print(f'    Inserting {len(SAMPLE_DOCS)} documents about programming languages')
 
     for i, (content, metadata) in enumerate(SAMPLE_DOCS):
@@ -118,9 +116,8 @@ async def main():
     print()
 
     # Search across all backends
-    print('[6] Searching across all backends...')
-    print('    Query: "web development and programming"')
-    print()
+    print('[6] Searching across all backends…')
+    print('    Query: "web development and programming"', '\n')
 
     results = []
     async for result in kb.search('web development and programming', limit=5):
@@ -129,15 +126,13 @@ async def main():
     print(f'    Found {len(results)} results (aggregated from all backends):')
     for i, result in enumerate(results, 1):
         # Extract language from metadata
-        lang = result.metadata.get('language', 'Unknown')
+        lang = result.metadata.get('language', 'UNKNOWN')
         print(f'    {i}. [{result.source}] Score: {result.score:.3f} | {lang}')
-        print(f'       {result.content[:80]}...')
-        print()
+        print(f'       {result.content[:80]}…', '\n')
 
     # Search specific backends only
-    print('[7] Searching specific backends...')
-    print('    Query: "systems programming" (searching only "general" backend)')
-    print()
+    print('[7] Searching specific backends…')
+    print('    Query: "systems programming" (searching only "general" backend)', '\n')
 
     results = []
     async for result in kb.search('systems programming', backends=['general'], limit=3):
@@ -145,20 +140,17 @@ async def main():
 
     print(f'    Found {len(results)} results:')
     for i, result in enumerate(results, 1):
-        lang = result.metadata.get('language', 'Unknown')
+        lang = result.metadata.get('language', 'UNKNOWN')
         print(f'    {i}. Score: {result.score:.3f} | {lang}')
-        print(f'       {result.content[:80]}...')
-        print()
+        print(f'       {result.content[:80]}…', '\n')
 
     # Demonstrate backend enable/disable
     print('[8] Managing backends: disable cache backend')
     kb.disable_backend('cache')
-    print('    ✓ Cache backend disabled')
-    print()
+    print('    ✓ Cache backend disabled', '\n')
 
-    print('[9] Searching with cache disabled...')
-    print('    Query: "mobile apps"')
-    print()
+    print('[9] Searching with cache disabled…')
+    print('    Query: "mobile apps"', '\n')
 
     results = []
     async for result in kb.search('mobile apps', limit=3):
@@ -166,38 +158,32 @@ async def main():
 
     print(f'    Found {len(results)} results (cache backend excluded):')
     for i, result in enumerate(results, 1):
-        lang = result.metadata.get('language', 'Unknown')
+        lang = result.metadata.get('language', 'UNKNOWN')
         print(f'    {i}. [{result.source}] Score: {result.score:.3f} | {lang}')
-        print(f'       {result.content[:60]}...')
-        print()
+        print(f'       {result.content[:60]}…', '\n')
 
     # Re-enable cache
     print('[10] Re-enabling cache backend')
     kb.enable_backend('cache')
-    print('     ✓ Cache backend re-enabled')
-    print()
+    print('     ✓ Cache backend re-enabled', '\n')
 
     # Insert to specific backends only
     print('[11] Selective insertion: adding document to cache only')
-    new_doc = 'TypeScript adds static typing to JavaScript for better tooling and error detection.'
+    new_doc = 'TypeScript adds static typing to JavaScript according to tooling and error detection preferences.'
     result_ids = await kb.insert(new_doc,
                                 metadata={'language': 'TypeScript', 'category': 'programming'},
                                 backends=['cache'])  # Only to cache
 
-    print(f'     ✓ Inserted to: {list(result_ids.keys())}')
-    print()
+    print(f'     ✓ Inserted to: {list(result_ids.keys())}', '\n')
 
     # Cleanup
-    print('[12] Cleaning up...')
+    print('[12] Cleaning up…')
     await backend1.cleanup()
     await backend2.cleanup()
     await backend3.cleanup()
-    print('     ✓ All backends cleaned up')
-    print()
+    print('     ✓ All backends cleaned up', '\n')
 
-    print('=' * 70)
-    print('Demo complete!')
-    print()
+    print('===', 'Demo complete!', '===', '\n')
     print('Key takeaways:')
     print('• UnifiedKB provides a single interface for multiple backends')
     print('• Results are automatically aggregated and sorted by score')
