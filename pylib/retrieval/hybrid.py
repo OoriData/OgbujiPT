@@ -276,7 +276,8 @@ class RerankedHybridSearch:
         >>> async for result in results:
         ...     print(f'{result.score:.3f}: {result.content[:50]}...')
 
-    Note: Install rerankers with: pip install "rerankers[transformers]"
+    Note: Reranking is an optional feature. Install with: pip install "ogbujipt[reranking]"
+    (equivalently: pip install "rerankers[transformers]")
 
     For some models, you may need special configuration:
         >>> # ZeRank-2 requires trust_remote_code and batch_size=1 (padding token issue)
@@ -377,7 +378,13 @@ class RerankedHybridSearch:
 
         # Stage 2: Rerank using cross-encoder
         # Build documents for reranker (format expected by rerankers library)
-        from rerankers import Document
+        try:
+            from rerankers import Document
+        except ImportError as e:
+            raise ImportError(
+                'Reranking requires the optional rerankers dependency. '
+                'Install with: pip install "ogbujipt[reranking]"'
+            ) from e
 
         # Pass explicit doc_ids to preserve mapping to original candidates
         docs = [

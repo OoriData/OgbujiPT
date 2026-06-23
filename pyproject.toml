@@ -38,7 +38,6 @@ dependencies = [
   "onya>=0.1.0",           # GraphRAG knowledge graphs
   "chonkie",               # Document chunking
   "rank-bm25",             # Sparse retrieval (BM25)
-  "rerankers[transformers]",  # Cross-encoder reranking
 
   # Production utilities
   "structlog",             # Structured logging
@@ -79,6 +78,11 @@ pgvector = [
   "asyncpg",
 ]
 
+# Cross-encoder reranking — pulls in transformers/torch, so kept optional
+reranking = [
+  "rerankers[transformers]",
+]
+
 mega = [
   "chromadb",
   "docx2python",
@@ -95,6 +99,7 @@ mega = [
   "tqdm",
   "fire",
   "sentence_transformers",
+  "rerankers[transformers]",
 ]
 
 [project.urls]
