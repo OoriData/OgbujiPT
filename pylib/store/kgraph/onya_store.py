@@ -44,7 +44,7 @@ from pathlib import Path
 from typing import AsyncIterator, Any
 
 from onya.graph import graph
-from onya.serial import literate_lex
+from onya.serial.literate import LiterateParser
 
 from ogbujipt.memory.base import SearchResult
 
@@ -130,7 +130,9 @@ class OnyaKB:
                 onya_text = f.read()
 
             # Parse into graph
-            doc_iri = literate_lex.parse(onya_text, self._graph)
+            op = LiterateParser()
+            result = op.parse(onya_text, self._graph)
+            doc_iri = result.doc_iri
 
             self._loaded_files.append({
                 'path': str(onya_file),
