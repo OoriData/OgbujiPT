@@ -5,6 +5,17 @@ Notable changes to  Format based on [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 
 ### Added
+- **UnifiedKB API**: Single interface for managing multiple knowledge base backends
+  - `UnifiedKB` class in `ogbujipt.memory.unified` orchestrates multiple backends
+  - Backend registration with `add_backend()`, `remove_backend()`, and metadata tracking
+  - Backend management: `enable_backend()`, `disable_backend()`, `list_backends()`
+  - Parallel search execution across backends with automatic result aggregation
+  - Parallel `insert()` and `delete()` operations to multiple backends
+  - Weight-based scoring to prioritize certain backends
+  - Error isolation - one backend failure doesn't break entire operation
+  - Selective operations - target all backends or specific ones
+  - Comprehensive test suite (27 unit tests) in `test/memory/test_unified.py`
+  - Demo and documentation in `demo/unified-kb/`
 - **Onya Knowledge Graph Support**: New `OnyaKB` backend for loading and searching `.onya` files from directories
   - File-based knowledge graph storage without database overhead
   - Compatible with `KBBackend` protocol for unified KB system integration
